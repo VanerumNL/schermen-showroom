@@ -48,8 +48,8 @@ body.verberg{cursor:none}
 .voortgang b{display:block;height:100%;background:var(--geel);transform-origin:0 50%;transform:scaleX(0)}
 .wissel{transition:opacity .6s}
 .wissel.uit{opacity:0}
-em.mark,.tekstblok em{font-style:normal;background:linear-gradient(transparent 64%,var(--geel) 64% 92%,transparent 92%);padding-inline:.04em}
-.thema-geel em.mark,.thema-geel .tekstblok em{background:linear-gradient(transparent 64%,#fff 64% 92%,transparent 92%)}
+#screen em{font-style:normal;background:linear-gradient(transparent 64%,var(--geel) 64% 92%,transparent 92%);padding-inline:.04em}
+.thema-geel #screen em,#screen.thema-geel em{background:linear-gradient(transparent 64%,#fff 64% 92%,transparent 92%)}
 
 /* mededelingen */
 .med h2{margin:min(3cqw,5cqh) 0 0;font-size:clamp(36px,min(8cqw,15cqh),130px);line-height:1.02;font-weight:700;letter-spacing:0;text-wrap:balance}
@@ -111,6 +111,12 @@ em.mark,.tekstblok em{font-style:normal;background:linear-gradient(transparent 6
 .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .leegmelding{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px;font-size:30px;color:var(--zacht)}
 
+/* productdemo: de demo draait op 1600 × 900 en wordt passend geschaald */
+.demo{background:var(--kaart)}
+.demo iframe{position:absolute;left:50%;top:50%;width:1600px;height:900px;border:0;transform-origin:50% 50%;pointer-events:none;opacity:0;transition:opacity 1s;background:#fff}
+.demo iframe.aan{opacity:1}
+.demo .demonaam{position:absolute;left:24px;bottom:22px;z-index:2;background:var(--zwart);color:#fff;font-weight:700;font-size:24px;padding:8px 16px;border-radius:12px;opacity:0;transition:opacity .6s}
+.demo .demonaam.aan{opacity:1}
 /* vimo */
 .vimo svg{position:absolute;inset:0;width:100%;height:100%}
 
@@ -134,6 +140,7 @@ em.mark,.tekstblok em{font-style:normal;background:linear-gradient(transparent 6
 <script src="/gedeeld.js"></script>
 <script src="/vimo2d.js"></script>
 <script src="/weer.js"></script>
+<script src="/demos.js"></script>
 <script>
 (function () {
   const Q = new URLSearchParams(location.search);
@@ -312,6 +319,52 @@ em.mark,.tekstblok em{font-style:normal;background:linear-gradient(transparent 6
       const f = h("iframe", "", b);
       f.allow = "autoplay; encrypted-media"; f.title = "Video";
       f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&rel=0&modestbranding=1&playsinline=1`;
+    },
+
+    demo(b, v) {
+      b.classList.add("demo");
+      const lijst = (v.demos || []).concat((v.eigen || []).filter(u => /^https?:\/\//.test(u))).filter(Boolean);
+      if (!lijst.length) { h("div", "leegmelding", b, "Nog geen demo gekozen"); return; }
+      const naam = h("div", "demonaam", b);
+      const sec = Math.max(15, +v.seconden || 45);
+      let huidig = null, i = 0;
+      const schaal = f => { const k = Math.min(b.clientWidth / 1600, b.clientHeight / 900); f.style.transform = `translate(-50%,-50%) scale(${k})`; };
+      const ro = new ResizeObserver(() => b.querySelectorAll("iframe").forEach(schaal)); ro.observe(b); spelers.push({ destroy: () => ro.disconnect() });
+      const toon = () => {
+        const pad = lijst[i % lijst.length]; i++;
+        const info = (window.VS_DEMOS || []).find(d => d.pad === pad) || { naam: "", soort: "pagina" };
+        const f = document.createElement("iframe");
+        f.setAttribute("tabindex", "-1"); f.setAttribute("aria-hidden", "true"); f.allow = "autoplay";
+        schaal(f); b.appendChild(f);
+        f.addEventListener("load", () => {
+          later(() => {
+            f.classList.add("aan");
+            if (huidig) { const oud = huidig; later(() => oud.remove(), 1100); }
+            huidig = f;
+            naam.textContent = info.naam; naam.classList.toggle("aan", !!info.naam);
+            later(() => naam.classList.remove("aan"), 6000);
+            try {
+              const d = f.contentDocument, w = f.contentWindow;
+              /* demo's met een afspeelknop starten */
+              const knop = d.querySelector("#play");
+              if (knop && /afspelen/i.test(knop.textContent)) knop.click();
+              /* lange pagina's rustig laten scrollen */
+              if (info.soort === "pagina") {
+                let y = 0, richting = 1;
+                elke(() => {
+                  if (!f.isConnected) return;
+                  const max = d.documentElement.scrollHeight - w.innerHeight;
+                  y += richting * 1.2; if (y > max + 80) richting = -6; if (y < -60) richting = 1;
+                  w.scrollTo(0, Math.max(0, Math.min(max, y)));
+                }, 40);
+              }
+            } catch (e) {}
+          }, 1500);
+        }, { once: true });
+        f.src = pad;
+      };
+      toon();
+      if (lijst.length > 1) elke(toon, sec * 1000);
     },
 
     tekst(b, v) {

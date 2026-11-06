@@ -50,6 +50,7 @@
     nieuws: { naam: "Nieuws", uitleg: "Koppen uit een nieuwsbron (RSS)", std: () => ({ titel: "Nieuws", feed: FEEDS[0].url, seconden: 10 }) },
     vimo: { naam: "Vimo", uitleg: "De bewegende mascotte met tekstballon", std: () => ({ kubus: true, zinnen: ["Welkom bij Vanerum!", "Kijk, de Motion Cube!", "Bewegen in de klas!", "Fijn dat u er bent!"] }) },
     fotos: { naam: "Foto's", uitleg: "Diavoorstelling van eigen afbeeldingen", std: () => ({ afbeeldingen: [], seconden: 8, passend: "vullen" }) },
+    demo: { naam: "Productdemo", uitleg: "Uw 3D-demo's en productpagina's; ze lopen vanzelf en wisselen elkaar af", std: () => ({ demos: ["/demos/multiflex-demo/"], seconden: 45, eigen: [] }) },
     video: { naam: "Video", uitleg: "YouTube-video, zonder geluid en herhalend", std: () => ({ youtube: "" }) },
     tekst: { naam: "Tekst", uitleg: "Kop en tekst; zet *sterretjes* om een woord voor een gele markering", std: () => ({ kop: "Welkom bij *Vanerum!*", tekst: "", grootte: "groot" }) },
     logo: { naam: "Logo", uitleg: "Het Vanerum-logo met streepjes", std: () => ({ ondertitel: "" }) },

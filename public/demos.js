@@ -1,0 +1,31 @@
+/* Productdemo's die op de schermen kunnen draaien. De bestanden staan in /demos/<map>/.
+   soort: "tour" loopt vanzelf door, "product" draait het model langzaam rond, "spel" is interactief (staat stil op een tv). */
+window.VS_DEMOS = [
+  { groep: "3D-demo's", naam: "MultiFLEX", pad: "/demos/multiflex-demo/", soort: "tour" },
+  { groep: "3D-demo's", naam: "SEED tafels", pad: "/demos/seed-demo/", soort: "tour" },
+  { groep: "3D-demo's", naam: "Solifiber", pad: "/demos/solifiber-demo/", soort: "tour" },
+  { groep: "3D-demo's", naam: "Opti+ Move stoel", pad: "/demos/opti-move-stoel-demo/", soort: "tour" },
+  { groep: "3D-demo's", naam: "Plantentafel", pad: "/demos/plantentafel-demo/", soort: "tour" },
+  { groep: "3D-demo's", naam: "Werkhuisjes", pad: "/demos/werkhuisjes-demo/", soort: "tour" },
+  { groep: "3D-demo's", naam: "Instructieplek", pad: "/demos/instructieplek-demo/", soort: "tour" },
+  { groep: "3D-demo's", naam: "Mobiline Lab", pad: "/demos/mobiline-demo/", soort: "tour" },
+  { groep: "Productpagina's", naam: "IZI tafel", pad: "/demos/izi-tafel/", soort: "product" },
+  { groep: "Productpagina's", naam: "Versa M tafels", pad: "/demos/versa-m-tafels/", soort: "product" },
+  { groep: "Productpagina's", naam: "MultiFLEX tafels", pad: "/demos/multiflex-tafels/", soort: "product" },
+  { groep: "Productpagina's", naam: "SEED tafels", pad: "/demos/seed-tafels/", soort: "product" },
+  { groep: "Productpagina's", naam: "Solifiber", pad: "/demos/solifiber/", soort: "product" },
+  { groep: "Productpagina's", naam: "Opti+ Move stoel", pad: "/demos/opti-move-stoel/", soort: "product" },
+  { groep: "Productpagina's", naam: "Opti+ Move tafel", pad: "/demos/opti-move-tafel/", soort: "product" },
+  { groep: "Productpagina's", naam: "Plantentafel", pad: "/demos/plantentafel/", soort: "product" },
+  { groep: "Productpagina's", naam: "Werkhuisjes", pad: "/demos/werkhuisjes/", soort: "product" },
+  { groep: "Productpagina's", naam: "Instructieplek", pad: "/demos/instructieplek/", soort: "product" },
+  { groep: "Productpagina's", naam: "Zand-watertafel", pad: "/demos/zand-watertafel/", soort: "product" },
+  { groep: "Bewegend leren", naam: "Motion Cubes Intro", pad: "/demos/motion-cubes-intro/", soort: "tour" },
+  { groep: "Bewegend leren", naam: "Vanerum Motion", pad: "/demos/vanerum-motion/", soort: "tour" },
+  { groep: "Bewegend leren", naam: "Motion Cube 3D", pad: "/demos/motion-cube-3d/", soort: "product" },
+  { groep: "Bewegend leren", naam: "Motion Cube Lab", pad: "/demos/motion-cube-lab/", soort: "product" },
+  { groep: "Bewegend leren", naam: "Agili Lab", pad: "/demos/agili-lab/", soort: "product" },
+  { groep: "Bewegend leren", naam: "Agili en Motion Cubes", pad: "/demos/agili-motion-cubes/", soort: "pagina" },
+  { groep: "Bewegend leren", naam: "Motion Cube Twister", pad: "/demos/motion-cube-twister/", soort: "spel" },
+  { groep: "Bewegend leren", naam: "Motion Missions", pad: "/demos/motion-missions/", soort: "spel" }
+];

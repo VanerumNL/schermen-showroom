@@ -168,6 +168,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 </main>
 
 <script src="/gedeeld.js"></script>
+<script src="/demos.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id);
@@ -526,6 +527,28 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       const r = document.createElement("div"); r.className = "rij2"; o.appendChild(r);
       veld(r, "Seconden per foto", invoer(v, "seconden", "number", { min: 3, max: 120 }));
       veld(r, "Weergave", keuze(v, "passend", [["vullen", "Vlak vullen (bijsnijden)"], ["passen", "Hele foto tonen"]]));
+    },
+    demo(o, v) {
+      if (!Array.isArray(v.demos)) v.demos = [];
+      if (!Array.isArray(v.eigen)) v.eigen = [];
+      const DEMOS = window.VS_DEMOS || [];
+      const wrap = document.createElement("div"); wrap.className = "demokeuze";
+      [...new Set(DEMOS.map(d => d.groep))].forEach(g => {
+        wrap.insertAdjacentHTML("beforeend", `<div class="lab" style="font-weight:700;font-size:13px;margin:10px 0 4px">${esc(g)}</div>`);
+        DEMOS.filter(d => d.groep === g).forEach(d => {
+          const l = document.createElement("label"); l.className = "vink";
+          l.innerHTML = `<input type="checkbox"${v.demos.includes(d.pad) ? " checked" : ""}> ${esc(d.naam)}${d.soort === "spel" ? ' <span class="hulp" style="margin:0">(spel: staat stil op een tv)</span>' : ""} <a href="${esc(d.pad)}" target="_blank" rel="noopener" style="margin-left:auto;font-size:12px;color:var(--grijs)">bekijk</a>`;
+          l.querySelector("input").addEventListener("change", e => {
+            v.demos = v.demos.filter(p => p !== d.pad); if (e.target.checked) v.demos.push(d.pad); stuur();
+          });
+          wrap.appendChild(l);
+        });
+      });
+      const d0 = document.createElement("div"); d0.className = "veld"; d0.innerHTML = `<span class="lab">Welke demo's? (ze wisselen in deze volgorde)</span>`; d0.appendChild(wrap); o.appendChild(d0);
+      veld(o, "Seconden per demo", invoer(v, "seconden", "number", { min: 15, max: 600 }), "Tip: rondleidingen duren ongeveer 45 seconden.");
+      const ta = document.createElement("textarea"); ta.value = v.eigen.join("\n"); ta.placeholder = "https://…";
+      ta.addEventListener("input", () => { v.eigen = ta.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); });
+      veld(o, "Andere websites (één adres per regel, mag leeg)", ta, "Bijvoorbeeld de Motion Studio. Niet elke website laat zich in een ander scherm tonen.");
     },
     video(o, v) {
       veld(o, "YouTube-link", invoer(v, "youtube", "url", { placeholder: "https://www.youtube.com/watch?v=…" }), "De video speelt zonder geluid en begint steeds opnieuw.");
