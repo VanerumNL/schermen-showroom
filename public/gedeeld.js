@@ -18,11 +18,26 @@
   };
 
   const FEEDS = [
-    { naam: "NOS – algemeen", url: "https://feeds.nos.nl/nosnieuwsalgemeen" },
-    { naam: "NOS – binnenland", url: "https://feeds.nos.nl/nosnieuwsbinnenland" },
-    { naam: "NOS – sport", url: "https://feeds.nos.nl/nossportalgemeen" },
-    { naam: "NOS – tech", url: "https://feeds.nos.nl/nosnieuwstech" },
-    { naam: "NU.nl – algemeen", url: "https://www.nu.nl/rss/Algemeen" }
+    { groep: "Landelijk", naam: "NOS – algemeen", url: "https://feeds.nos.nl/nosnieuwsalgemeen" },
+    { groep: "Landelijk", naam: "NOS – binnenland", url: "https://feeds.nos.nl/nosnieuwsbinnenland" },
+    { groep: "Landelijk", naam: "NOS – sport", url: "https://feeds.nos.nl/nossportalgemeen" },
+    { groep: "Landelijk", naam: "NOS – tech", url: "https://feeds.nos.nl/nosnieuwstech" },
+    { groep: "Landelijk", naam: "NU.nl – algemeen", url: "https://www.nu.nl/rss" },
+    { groep: "Landelijk", naam: "NU.nl – binnenland", url: "https://www.nu.nl/rss/Binnenland" },
+    { groep: "Landelijk", naam: "NU.nl – economie", url: "https://www.nu.nl/rss/Economie" },
+    { groep: "Landelijk", naam: "NU.nl – tech", url: "https://www.nu.nl/rss/Tech" },
+    { groep: "Landelijk", naam: "NU.nl – sport", url: "https://www.nu.nl/rss/Sport" },
+    { groep: "Landelijk", naam: "AD", url: "https://www.ad.nl/home/rss.xml" },
+    { groep: "Landelijk", naam: "de Volkskrant", url: "https://www.volkskrant.nl/voorpagina/rss.xml" },
+    { groep: "Landelijk", naam: "NRC", url: "https://www.nrc.nl/rss/" },
+    { groep: "Landelijk", naam: "De Telegraaf", url: "https://www.telegraaf.nl/rss" },
+    { groep: "Regionaal", naam: "RTV Utrecht", url: "https://www.rtvutrecht.nl/rss/index.xml" },
+    { groep: "Regionaal", naam: "Omroep Gelderland", url: "https://www.omroepgelderland.nl/rss" },
+    { groep: "Regionaal", naam: "RTV Oost (Overijssel)", url: "https://www.rtvoost.nl/rss/default.aspx" },
+    { groep: "Regionaal", naam: "RTV Noord (Groningen)", url: "https://www.rtvnoord.nl/rss" },
+    { groep: "Regionaal", naam: "Omroep Brabant", url: "https://www.omroepbrabant.nl/rss" },
+    { groep: "Regionaal", naam: "Omroep West", url: "https://www.omroepwest.nl/rss/index.xml" },
+    { groep: "Onderwijs", naam: "Kennisnet", url: "https://www.kennisnet.nl/feed/" }
   ];
 
   const VIMO_BEWEGINGEN = ["hoi", "wijzen", "kubus", "springen", "balans", "knieen", "draaien"];

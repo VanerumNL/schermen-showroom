@@ -1,0 +1,20 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weer-iconen</title>
+<style>
+@font-face{font-family:"Neue Montreal";src:url(/fonts/NeueMontreal-Regular.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Neue Montreal";src:url(/fonts/NeueMontreal-Bold.woff2) format("woff2");font-weight:700}
+body{margin:0;padding:32px 16px;background:#eef8fc;font-family:"Neue Montreal",Arial,sans-serif;letter-spacing:.03em;color:#1e1e1e}
+h1{margin:0 0 6px;font-size:32px}p{margin:0 0 24px;color:#5f5d58}
+.rooster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:1300px}
+.k{background:#fff;border-radius:18px;padding:14px;text-align:center;font-size:13px}
+.k .paar{display:flex;gap:6px;justify-content:center}.k svg{width:62px;height:auto}
+.k b{display:block;margin-top:6px;font-size:14px}.k span{color:#5f5d58}
+.klein{display:flex;gap:18px;margin:24px 0}.klein svg{width:44px}
+</style></head><body>
+<h1>Weer-iconen</h1><p>Alle weertypes van Open-Meteo, met dag- en nachtversie. Op het scherm bewegen ze licht.</p>
+<div class="rooster" id="r"></div><div class="klein" id="k"></div>
+<script src="/weer.js"></script>
+<script>
+document.getElementById("r").innerHTML=VW.CODES.map(c=>`<div class="k"><div class="paar">${VW.icoon(c,true)}${VW.icoon(c,false)}</div><b>${VW.omschrijving(c)}</b><span>code ${c}</span></div>`).join("");
+document.getElementById("k").innerHTML=["wind","paraplu","thermo","zonop","zononder"].map(VW.klein).join("");
+</script></body></html>

@@ -380,13 +380,25 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     const wrap = document.createElement("div");
     const bekend = VS.FEEDS.some(f => f.url === obj.feed);
     const sel = document.createElement("select");
-    sel.innerHTML = VS.FEEDS.map(f => `<option value="${esc(f.url)}"${f.url === obj.feed ? " selected" : ""}>${esc(f.naam)}</option>`).join("") + `<option value="eigen"${bekend ? "" : " selected"}>Eigen RSS-adres…</option>`;
+    const groepen = [...new Set(VS.FEEDS.map(f => f.groep))];
+    sel.innerHTML = groepen.map(g => `<optgroup label="${esc(g)}">` + VS.FEEDS.filter(f => f.groep === g).map(f => `<option value="${esc(f.url)}"${f.url === obj.feed ? " selected" : ""}>${esc(f.naam)}</option>`).join("") + `</optgroup>`).join("") + `<option value="eigen"${bekend ? "" : " selected"}>Eigen adres (RSS of website)…</option>`;
     const eigen = document.createElement("input"); eigen.type = "url"; eigen.placeholder = "https://…/rss"; eigen.value = bekend ? "" : (obj.feed || "");
     sel.addEventListener("change", () => { if (sel.value === "eigen") { eigenVeld.hidden = false; obj.feed = eigen.value; eigen.focus(); } else { eigenVeld.hidden = true; obj.feed = sel.value; } stuur(); });
     eigen.addEventListener("input", () => { obj.feed = eigen.value.trim(); stuur(); });
     veld(wrap, "Nieuwsbron", sel);
-    const eigenVeld = veld(wrap, "RSS-adres", eigen, "Bijvoorbeeld de nieuwsfeed van uw eigen website.").parentNode;
+    const eigenVeld = veld(wrap, "Adres", eigen, "Een RSS-adres, of gewoon het adres van een nieuwswebsite: dan zoeken we de nieuwsfeed zelf op.").parentNode;
     eigenVeld.hidden = bekend;
+    const test = document.createElement("button"); test.type = "button"; test.className = "knop licht klein"; test.textContent = "Test deze bron";
+    const uit = document.createElement("div"); uit.className = "hulp";
+    test.addEventListener("click", async () => {
+      uit.textContent = "Bezig…";
+      try {
+        const d = await api(`/api/nieuws?scherm=${encodeURIComponent(huidig.id)}&feed=${encodeURIComponent(obj.feed || "")}`);
+        uit.innerHTML = `✓ ${d.items.length} berichten${d.bron ? " van " + esc(d.bron) : ""}. Bovenaan: <i>${esc((d.items[0] || {}).titel || "")}</i>`;
+        if (d.feed && d.feed !== obj.feed && eigenVeld && !eigenVeld.hidden) { obj.feed = d.feed; eigen.value = d.feed; stuur(); uit.innerHTML += "<br>De nieuwsfeed is gevonden en ingevuld."; }
+      } catch (e) { uit.innerHTML = `<span style="color:var(--fout)">✕ ${esc(e.message)}</span>`; }
+    });
+    wrap.appendChild(test); wrap.appendChild(uit);
     ouder.appendChild(wrap); return wrap;
   }
 

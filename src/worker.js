@@ -53,6 +53,62 @@ function leesFeed(xml) {
   const bron = tekst((xml.match(/<title\b[^>]*>([\s\S]*?)<\/title>/) || [])[1]);
   return { bron, items };
 }
+/* Een feed ophalen. Lukt het niet direct, dan nog een keer met een andere browser-aanduiding;
+   is het adres een gewone website, dan zoeken we de RSS-link op die pagina of op /feed en /rss. */
+const UA = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 VanerumSchermen/1.0",
+  "VanerumSchermen/1.0 (+https://www.vanerum.nl)"
+];
+async function haalTekst(u) {
+  let laatste = 0;
+  for (const ua of UA) {
+    const res = await fetch(u, { redirect: "follow", headers: { "user-agent": ua, accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.8, */*;q=0.5", "accept-language": "nl-NL,nl;q=0.9" }, cf: { cacheTtl: 600 } });
+    if (res.ok) {
+      const buf = await res.arrayBuffer();
+      const kop = (res.headers.get("content-type") || "").match(/charset=([\w-]+)/i);
+      let tekst = new TextDecoder("utf-8").decode(buf);
+      const decl = (kop && kop[1]) || (tekst.slice(0, 300).match(/encoding=["']([\w-]+)["']/i) || [])[1];
+      if (decl && !/utf-?8/i.test(decl)) { try { tekst = new TextDecoder(decl).decode(buf); } catch (e) {} }
+      return { tekst, url: res.url || u };
+    }
+    laatste = res.status;
+    if (![401, 403, 406, 429].includes(res.status)) break;
+  }
+  throw new Error(laatste === 404 ? "Nieuwsbron niet gevonden (404). Klopt het adres?" : laatste === 403 ? "Deze website weigert nieuws te delen (403). Kies een andere bron." : "Nieuwsbron gaf een fout (" + laatste + ")");
+}
+async function haalFeed(feed) {
+  let eerste;
+  try { eerste = await haalTekst(feed); } catch (e) { eerste = { fout: e }; }
+  if (eerste.tekst) {
+    const d = leesFeed(eerste.tekst);
+    if (d.items.length) return Object.assign(d, { feed: eerste.url });
+  }
+  /* zoeken naar de echte feed */
+  const kandidaten = [];
+  if (eerste.tekst && /<html/i.test(eerste.tekst)) {
+    const re = /<link\b[^>]*>/gi; let m;
+    while ((m = re.exec(eerste.tekst))) {
+      const tag = m[0];
+      if (/rel=["']?alternate/i.test(tag) && /application\/(rss|atom)\+xml/i.test(tag)) {
+        const h = (tag.match(/href=["']([^"']+)["']/i) || [])[1];
+        if (h) kandidaten.push(new URL(h.replace(/&amp;/g, "&"), eerste.url).href);
+      }
+    }
+  }
+  try {
+    const basis = new URL(feed);
+    for (const pad of ["/feed/", "/rss", "/rss.xml", "/feed.xml"]) kandidaten.push(new URL(pad, basis.origin).href);
+  } catch (e) {}
+  for (const k of [...new Set(kandidaten)].filter(k => k !== feed).slice(0, 5)) {
+    try {
+      const t = await haalTekst(k), d = leesFeed(t.tekst);
+      if (d.items.length) return Object.assign(d, { feed: t.url });
+    } catch (e) {}
+  }
+  if (eerste.fout) throw eerste.fout;
+  throw new Error("Op dit adres staat geen nieuws (RSS) dat we kunnen lezen");
+}
+
 function feedsVan(scherm) {
   const f = [];
   for (const v of Object.values(scherm.vakken || {})) if (v && v.type === "nieuws" && v.feed) f.push(v.feed);
@@ -136,16 +192,20 @@ async function api(req, env, url, ctx) {
     const toegestaan = s ? feedsVan(s) : [];
     const voorbeeld = (await magBewerken(req, env)) && /^https?:\/\//.test(feed);
     if (!toegestaan.includes(feed) && !voorbeeld) return fout("Deze nieuwsbron hoort niet bij dit scherm", 403);
-    const cache = caches.default, sleutel = new Request("https://nieuws.cache/" + encodeURIComponent(feed));
+    const cache = caches.default, sleutel = new Request("https://nieuws.cache/v2/" + encodeURIComponent(feed));
     let r = await cache.match(sleutel);
     if (!r) {
-      let xml;
-      try {
-        const res = await fetch(feed, { headers: { "user-agent": "VanerumSchermen/1.0", accept: "application/rss+xml, application/atom+xml, application/xml, text/xml" }, cf: { cacheTtl: 600 } });
-        if (!res.ok) return fout("Nieuwsbron gaf een fout (" + res.status + ")", 502);
-        xml = await res.text();
-      } catch (e) { return fout("Nieuwsbron niet bereikbaar", 502); }
-      r = new Response(JSON.stringify(leesFeed(xml)), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600" } });
+      const reserve = "nieuws:" + (await sha(feed)).slice(0, 24);
+      let d;
+      try { d = await haalFeed(feed); }
+      catch (e) {
+        /* bron even onbereikbaar: laatste goede versie gebruiken */
+        const oud = await env.KV.get(reserve, "json");
+        if (oud) return json(Object.assign(oud, { oud: true }));
+        return fout(e.message, 502);
+      }
+      ctx.waitUntil(env.KV.put(reserve, JSON.stringify(d), { expirationTtl: 3 * 86400 }));
+      r = new Response(JSON.stringify(d), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600" } });
       ctx.waitUntil(cache.put(sleutel, r.clone()));
     }
     return new Response(r.body, { headers: JSON_H });
