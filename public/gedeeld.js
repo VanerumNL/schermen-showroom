@@ -18,6 +18,7 @@
   };
 
   const FEEDS = [
+    { groep: "Vanerum", naam: "Vanerum nieuws", url: "https://vanerum.nl/nl/rss.xml" },
     { groep: "Landelijk", naam: "NOS – algemeen", url: "https://feeds.nos.nl/nosnieuwsalgemeen" },
     { groep: "Landelijk", naam: "NOS – binnenland", url: "https://feeds.nos.nl/nosnieuwsbinnenland" },
     { groep: "Landelijk", naam: "NOS – sport", url: "https://feeds.nos.nl/nossportalgemeen" },
