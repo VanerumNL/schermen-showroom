@@ -66,15 +66,17 @@ body.verberg{cursor:none}
 .klokblok img{height:min(5cqw,8cqh);margin-top:min(4cqw,6cqh)}
 
 /* weer */
-.weer .nu{display:flex;align-items:center;gap:4cqmin;margin:auto 0}
-.weer .nu svg{width:min(30cqw,40cqh);height:auto;flex:0 0 auto}
+.weer.binnen{display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr auto auto;grid-template-areas:"label" "nu" "extra" "dagen"}
+.weer .label{grid-area:label}
+.weer .nu{grid-area:nu;display:flex;align-items:center;gap:4cqmin;min-height:0}
+.weer .nu svg{width:min(32cqw,40cqh);height:auto;flex:0 0 auto}
 .weer .graden{font-size:min(20cqw,26cqh);font-weight:700;line-height:1;letter-spacing:0}
 .weer .omschr{font-size:clamp(22px,min(3.4cqw,7cqh),46px);color:var(--zacht);margin-top:.3em}
-.weer .extra{display:flex;flex-wrap:wrap;gap:.5em 1.6em;font-size:clamp(17px,min(2.2cqw,4.6cqh),30px);color:var(--zacht);margin-bottom:min(3cqw,5cqh)}
+.weer .extra{grid-area:extra;display:flex;flex-wrap:wrap;gap:.5em 1.6em;font-size:clamp(17px,min(2.2cqw,4.6cqh),30px);color:var(--zacht);margin-bottom:min(3cqw,5cqh)}
 .weer .extra div{display:flex;align-items:center;gap:.4em}
 .weer .extra b{color:var(--ink)}
 .weer .extra svg{width:1.5em;height:auto}
-.weer .dagen{display:flex;gap:3cqmin;border-top:2px solid var(--lijn);padding-top:min(3cqw,5cqh)}
+.weer .dagen{grid-area:dagen;display:flex;gap:3cqmin;border-top:2px solid var(--lijn);padding-top:min(3cqw,5cqh)}
 .weer .dagen div{flex:1;text-align:center;font-size:clamp(18px,min(2.4cqw,5cqh),34px)}
 .weer .dagen b{display:block;text-transform:capitalize}
 .weer .dagen svg{width:min(11cqw,16cqh);height:auto;display:block;margin:.2em auto}
@@ -82,7 +84,19 @@ body.verberg{cursor:none}
 .weer .dagen div:nth-child(n+4){display:none}
 @container (min-width: 900px){ .weer .dagen div:nth-child(n+4){display:block} }
 @container (max-height: 560px){ .weer .extra div:nth-child(n+3){display:none} }
-@container (max-height: 420px){ .weer .dagen{display:none} }
+/* breed en laag vak (bijv. zijbalk): nu links groot, komende dagen rechts onder elkaar */
+@container (min-aspect-ratio: 5/4) and (max-height: 640px){
+  .weer.binnen{grid-template-columns:1.25fr 1fr;grid-template-rows:auto 1fr auto;grid-template-areas:"label dagen" "nu dagen" "extra dagen";column-gap:5cqw}
+  .weer .nu svg{width:min(22cqw,44cqh)}
+  .weer .graden{font-size:min(15cqw,32cqh)}
+  .weer .omschr{font-size:clamp(20px,min(3cqw,8cqh),44px)}
+  .weer .extra{font-size:clamp(16px,min(2.2cqw,5.6cqh),30px);margin-bottom:0}
+  .weer .dagen{flex-direction:column;justify-content:space-evenly;gap:0;border-top:0;border-left:2px solid var(--lijn);padding:0 0 0 4cqw}
+  .weer .dagen div,.weer .dagen div:nth-child(n+4){display:flex;align-items:center;gap:.6em;text-align:left;font-size:clamp(18px,min(2.6cqw,7cqh),40px)}
+  .weer .dagen div:nth-child(n+4){display:none}
+  .weer .dagen b{flex:0 0 2.2em}
+  .weer .dagen svg{width:min(8cqw,19cqh);margin:0}
+}
 
 /* nieuws */
 .nieuws .kop{font-size:clamp(30px,min(6cqw,12cqh),96px);line-height:1.08;font-weight:700;letter-spacing:0;margin:min(3cqw,5cqh) 0 0;text-wrap:balance}

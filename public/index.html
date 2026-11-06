@@ -87,6 +87,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .fotolijst div{position:relative;aspect-ratio:16/10;border-radius:8px;overflow:hidden;background:var(--bg)}
 .fotolijst img{width:100%;height:100%;object-fit:cover;display:block}
 .fotolijst button{position:absolute;top:4px;right:4px;background:rgba(30,30,30,.75);color:#fff;border:0;border-radius:6px;width:24px;height:24px;cursor:pointer}
+.fotolijst div{cursor:default}
+.fotolijst .links{left:4px;right:auto}
+.fotolijst.bieb{max-height:300px;overflow:auto;padding:2px}
+.fotolijst.bieb div{cursor:pointer;outline:2px solid transparent;outline-offset:1px}
+.fotolijst.bieb div.aan{outline-color:var(--zwart);box-shadow:0 0 0 5px var(--geel)}
+.fotolijst.bieb div.aan::after{content:"✓";position:absolute;left:5px;bottom:5px;width:22px;height:22px;border-radius:50%;background:var(--geel);color:var(--zwart);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.fotolijst.bieb .prul{opacity:0;transition:opacity .15s}
+.fotolijst.bieb div:hover .prul,.fotolijst.bieb .prul:focus{opacity:1}
 .zoekresultaten{display:flex;flex-direction:column;gap:4px;margin-top:6px}
 .zoekresultaten button{text-align:left;border:1.5px solid var(--lijn);background:#fff;border-radius:8px;padding:7px 10px;cursor:pointer}
 .zoekresultaten button:hover{border-color:var(--zwart)}
@@ -263,14 +271,47 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       document.querySelectorAll("aside button.scherm").forEach(b => b.classList.toggle("aan", b.dataset.id === id));
       const url = location.origin + "/s/" + id;
       $("adres").hidden = false; $("adresTekst").textContent = url; $("openScherm").href = url;
-      tekenFormulier(); stuur();
+      tekenFormulier(); startHistorie(); stuur();
     } catch (err) { toast(err.message); }
   }
 
   /* ===== voorbeeld ===== */
   let voorbeeldKlaar = false, stuurTimer = 0;
   addEventListener("message", e => { if (e.origin === location.origin && e.data && e.data.type === "klaar") { voorbeeldKlaar = true; stuur(); } });
+  /* ===== terug en opnieuw ===== */
+  let terugStapel = [], vooruitStapel = [], vasteStand = "", histTimer = 0;
+  function startHistorie() { terugStapel = []; vooruitStapel = []; vasteStand = JSON.stringify(huidig); knoppenHistorie(); }
+  function legVast() {
+    clearTimeout(histTimer);
+    if (!huidig) return;
+    const nu = JSON.stringify(huidig);
+    if (nu === vasteStand) return;
+    terugStapel.push(vasteStand); if (terugStapel.length > 80) terugStapel.shift();
+    vasteStand = nu; vooruitStapel = []; knoppenHistorie();
+  }
+  function herstel(stand) {
+    const scroll = $("formulier").scrollTop;
+    huidig = JSON.parse(stand); vasteStand = stand;
+    tekenFormulier(); $("formulier").scrollTop = scroll; stuur(); knoppenHistorie();
+  }
+  function terug() { legVast(); if (!terugStapel.length) return; vooruitStapel.push(vasteStand); herstel(terugStapel.pop()); toast("Teruggezet"); }
+  function opnieuw() { legVast(); if (!vooruitStapel.length) return; terugStapel.push(vasteStand); herstel(vooruitStapel.pop()); }
+  function knoppenHistorie() {
+    const t = $("terug"), o = $("opnieuw");
+    if (t) t.disabled = !terugStapel.length && JSON.stringify(huidig) === vasteStand;
+    if (o) o.disabled = !vooruitStapel.length;
+  }
+  addEventListener("keydown", e => {
+    if (!(e.ctrlKey || e.metaKey) || !huidig || $("werk").hidden) return;
+    const inVeld = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) && document.activeElement.type !== "checkbox";
+    if (inVeld) return;            /* in een tekstveld werkt de gewone ongedaan-maken van de browser */
+    const k = e.key.toLowerCase();
+    if (k === "z" && !e.shiftKey) { e.preventDefault(); terug(); }
+    else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); opnieuw(); }
+  });
+
   function stuur() {
+    clearTimeout(histTimer); histTimer = setTimeout(legVast, 700); knoppenHistorie();
     clearTimeout(stuurTimer);
     stuurTimer = setTimeout(() => { if (voorbeeldKlaar && huidig) $("voorbeeld").contentWindow.postMessage({ type: "indeling", scherm: JSON.parse(JSON.stringify(huidig)), ww }, location.origin); }, 250);
     status();
@@ -370,9 +411,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     VS.vakkenVan(s.sjabloon in VS.SJABLONEN ? s.sjabloon : "zijbalk").forEach(k => vakFormulier(f, k));
 
     const ob = document.createElement("div"); ob.className = "opslaanbalk";
-    ob.innerHTML = `<span class="status"></span><button class="knop gevaar klein" type="button" id="verwijder">Verwijderen</button><button class="knop geel" type="button" id="opslaan">Opslaan</button>`;
+    ob.innerHTML = `<button class="knop licht klein" type="button" id="terug" title="Laatste wijziging terugdraaien (Ctrl+Z)">↶ Terug</button><button class="knop licht klein" type="button" id="opnieuw" title="Opnieuw doen (Ctrl+Y)">↷</button><span class="status"></span><button class="knop gevaar klein" type="button" id="verwijder">Verwijderen</button><button class="knop geel" type="button" id="opslaan">Opslaan</button>`;
     f.appendChild(ob);
     ob.querySelector("#opslaan").addEventListener("click", opslaan);
+    ob.querySelector("#terug").addEventListener("click", terug);
+    ob.querySelector("#opnieuw").addEventListener("click", opnieuw);
+    knoppenHistorie();
     ob.querySelector("#verwijder").addEventListener("click", verwijder);
     status();
   }
@@ -502,11 +546,40 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     },
     fotos(o, v) {
       if (!Array.isArray(v.afbeeldingen)) v.afbeeldingen = [];
-      const lijstEl = document.createElement("div"); lijstEl.className = "fotolijst"; o.appendChild(lijstEl);
+      const gekozen = document.createElement("div"); gekozen.className = "fotolijst";
+      const kopG = document.createElement("div"); kopG.className = "veld"; kopG.innerHTML = `<span class="lab">Op het scherm (in deze volgorde)</span>`; kopG.appendChild(gekozen); o.appendChild(kopG);
+      const bieb = document.createElement("div"); bieb.className = "fotolijst bieb";
+      const kopB = document.createElement("div"); kopB.className = "veld"; kopB.innerHTML = `<span class="lab">Fotobibliotheek <span class="hulp" style="display:inline;font-weight:400">— klik een foto aan om hem toe te voegen of weg te halen</span></span>`; kopB.appendChild(bieb); o.appendChild(kopB);
       const teken = () => {
-        lijstEl.innerHTML = v.afbeeldingen.map((u, i) => `<div><img src="${esc(u)}" alt=""><button type="button" data-i="${i}" aria-label="Foto verwijderen">✕</button></div>`).join("");
+        gekozen.innerHTML = v.afbeeldingen.length ? v.afbeeldingen.map((u, i) => `<div><img src="${esc(u)}" alt="" loading="lazy"><button type="button" data-weg="${i}" title="Van dit scherm halen" aria-label="Van dit scherm halen">✕</button>${i > 0 ? `<button type="button" class="links" data-links="${i}" title="Eerder tonen" aria-label="Eerder tonen">←</button>` : ""}</div>`).join("")
+          : `<p class="hulp" style="grid-column:1/-1;margin:0">Nog geen foto's gekozen.</p>`;
+        bieb.innerHTML = fotoBieb === null ? `<p class="hulp" style="grid-column:1/-1;margin:0">Bibliotheek laden…</p>`
+          : fotoBieb.length ? fotoBieb.map(f => `<div class="${v.afbeeldingen.includes(f.url) ? "aan" : ""}" data-url="${esc(f.url)}" title="${esc(f.naam)}"><img src="${esc(f.url)}" alt="" loading="lazy"><button type="button" class="prul" data-del="${esc(f.id)}" title="Uit de bibliotheek verwijderen" aria-label="Uit de bibliotheek verwijderen">🗑</button></div>`).join("")
+          : `<p class="hulp" style="grid-column:1/-1;margin:0">Nog geen foto's geüpload.</p>`;
       };
-      lijstEl.addEventListener("click", e => { const i = e.target.dataset.i; if (i != null) { v.afbeeldingen.splice(+i, 1); teken(); stuur(); } });
+      gekozen.addEventListener("click", e => {
+        const w = e.target.dataset.weg, l = e.target.dataset.links;
+        if (w != null) v.afbeeldingen.splice(+w, 1);
+        else if (l != null) v.afbeeldingen.splice(+l - 1, 0, v.afbeeldingen.splice(+l, 1)[0]);
+        else return;
+        teken(); stuur();
+      });
+      bieb.addEventListener("click", async e => {
+        const del = e.target.dataset.del;
+        if (del) {
+          e.stopPropagation();
+          const f = fotoBieb.find(x => x.id === del);
+          if (!confirm("Deze foto uit de bibliotheek verwijderen? Op schermen die hem gebruiken verdwijnt hij dan ook.")) return;
+          try { await api("/api/media/" + del, { method: "DELETE" }); fotoBieb = fotoBieb.filter(x => x.id !== del); v.afbeeldingen = v.afbeeldingen.filter(u => u !== f.url); teken(); stuur(); }
+          catch (err) { toast(err.message); }
+          return;
+        }
+        const tegel = e.target.closest("[data-url]"); if (!tegel) return;
+        const u = tegel.dataset.url, i = v.afbeeldingen.indexOf(u);
+        if (i >= 0) v.afbeeldingen.splice(i, 1); else v.afbeeldingen.push(u);
+        teken(); stuur();
+      });
+      if (fotoBieb === null) laadBieb().then(teken);
       teken();
       const bestand = document.createElement("input"); bestand.type = "file"; bestand.accept = "image/*"; bestand.multiple = true;
       const st = document.createElement("div"); st.className = "hulp";
@@ -517,12 +590,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
           try {
             const blob = await verklein(files[i]);
             const d = await api("/api/media", { method: "POST", body: blob, headers: { "content-type": blob.type, "x-naam": encodeURIComponent(files[i].name) } });
+            (fotoBieb || (fotoBieb = [])).unshift({ id: d.id, url: d.url, naam: d.naam });
             v.afbeeldingen.push(d.url); teken(); stuur();
           } catch (e) { toast(files[i].name + ": " + e.message); }
         }
-        st.textContent = files.length ? "Klaar. Vergeet niet op te slaan." : ""; bestand.value = "";
+        st.textContent = files.length ? "Klaar. De foto's staan ook in de bibliotheek, voor andere vakken en schermen." : ""; bestand.value = "";
       });
-      veld(o, "Foto's toevoegen", bestand, "Grote foto's worden automatisch verkleind tot schermformaat.");
+      veld(o, "Nieuwe foto's uploaden", bestand, "Grote foto's worden automatisch verkleind tot schermformaat.");
       o.appendChild(st);
       const r = document.createElement("div"); r.className = "rij2"; o.appendChild(r);
       veld(r, "Seconden per foto", invoer(v, "seconden", "number", { min: 3, max: 120 }));
@@ -560,6 +634,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     },
     logo(o, v) { veld(o, "Tekst onder het logo (mag leeg)", invoer(v, "ondertitel", "text", { maxLength: 60 })); }
   };
+
+  /* gedeelde fotobibliotheek: alle geüploade foto's, voor elk vak en elk scherm */
+  let fotoBieb = null;
+  async function laadBieb() { try { fotoBieb = await api("/api/media"); } catch (e) { fotoBieb = []; } }
 
   /* foto's verkleinen tot max. 1920 px breed, als jpg/webp */
   async function verklein(file) {

@@ -172,6 +172,23 @@ async function api(req, env, url, ctx) {
   }
 
   /* Afbeeldingen */
+  if (p === "/api/media" && m === "GET") {
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    const uit = []; let cursor;
+    do {
+      const l = await env.KV.list({ prefix: "media:", cursor });
+      l.keys.forEach(k => uit.push({ id: k.name.slice(6), url: "/media/" + k.name.slice(6), naam: (k.metadata || {}).naam || "", grootte: (k.metadata || {}).grootte || 0, datum: (k.metadata || {}).datum || "" }));
+      cursor = l.list_complete ? null : l.cursor;
+    } while (cursor);
+    uit.sort((a, b) => (b.datum || "").localeCompare(a.datum || ""));
+    return json(uit);
+  }
+  let mmed = p.match(/^\/api\/media\/([a-f0-9]{16})$/);
+  if (mmed && m === "DELETE") {
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    await env.KV.delete("media:" + mmed[1]);
+    return json({ ok: true });
+  }
   if (p === "/api/media" && m === "POST") {
     if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
     const type = req.headers.get("content-type") || "";
@@ -180,7 +197,7 @@ async function api(req, env, url, ctx) {
     if (buf.byteLength > 8 * 1024 * 1024) return fout("Afbeelding is groter dan 8 MB; maak hem eerst kleiner");
     const id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
     const naam = decodeURIComponent(req.headers.get("x-naam") || "afbeelding").slice(0, 80);
-    await env.KV.put("media:" + id, buf, { metadata: { type, naam, grootte: buf.byteLength } });
+    await env.KV.put("media:" + id, buf, { metadata: { type, naam, grootte: buf.byteLength, datum: new Date().toISOString() } });
     return json({ id, url: "/media/" + id, naam });
   }
 
