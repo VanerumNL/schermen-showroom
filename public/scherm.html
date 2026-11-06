@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vanerum scherm</title>
+<link rel="preload" href="/fonts/NeueMontreal-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/NeueMontreal-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Neue Montreal";src:url(/fonts/NeueMontreal-Regular.woff2) format("woff2");font-weight:400;font-display:block}
+@font-face{font-family:"Neue Montreal";src:url(/fonts/NeueMontreal-Bold.woff2) format("woff2");font-weight:700;font-display:block}
+:root{--geel:#fbb900;--lichtblauw:#b8e7f9;--lila:#bda8bd;--groen:#a8cb67;--antraciet:#2e3033;--zwart:#1e1e1e;
+  --bg:#eef8fc;--kaart:#fff;--ink:#1e1e1e;--zacht:#5f5d58;--lijn:#eeedea;--font:"Neue Montreal",Arial,sans-serif}
+html,body{margin:0;height:100%;overflow:hidden;background:#111}
+body{font-family:var(--font);letter-spacing:.03em;color:var(--ink)}
+body.verberg{cursor:none}
+#screen{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+
+/* balk bovenaan */
+.balk{flex:0 0 auto;height:150px;display:flex;align-items:center;gap:30px;padding:0 70px;box-sizing:border-box}
+.balk .logo{height:56px;display:block}
+.balk .str{height:46px;display:block}
+.balk em{font-style:normal;background:linear-gradient(transparent 64%,var(--geel) 64% 92%,transparent 92%);padding-inline:.04em}
+.thema-geel .balk em{background:linear-gradient(transparent 64%,#fff 64% 92%,transparent 92%)}
+.balk .titel{flex:1;text-align:center;font-size:44px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.balk .ruimte{flex:1}
+.thema-donker .balk .logo{filter:brightness(0) invert(1)}
+.thema-geel .balk .logo,.thema-geel .logoblok .logo{filter:brightness(0)}
+
+/* kleine klok in de balk */
+.miniklok{display:flex;align-items:center;background:var(--kaart);border-radius:22px;padding:14px 32px;box-shadow:0 2px 0 rgba(30,30,30,.05)}
+.miniklok .dag{display:flex;flex-direction:column;line-height:1.05;text-align:right}
+.miniklok .dag b{font-size:22px;font-weight:700;text-transform:capitalize}
+.miniklok .dag span{font-size:20px;color:var(--zacht)}
+.miniklok img{height:30px;margin:0 30px}
+.tijd{font-weight:700;letter-spacing:.02em;font-variant-numeric:tabular-nums;line-height:1;background:linear-gradient(transparent 72%,var(--geel) 72% 92%,transparent 92%);padding-inline:.04em}
+.miniklok .tijd{font-size:40px}
+.sec{font-weight:700;color:var(--zacht);font-variant-numeric:tabular-nums}
+.miniklok .sec{font-size:24px;margin-left:12px;align-self:flex-end;padding-bottom:4px;min-width:2.4ch}
+
+/* vlakken */
+.vlakken{flex:1;display:grid;gap:30px;padding:0 70px 50px;box-sizing:border-box;min-height:0}
+.geen-balk .vlakken{padding-top:50px}
+.vak{position:relative;min-width:0;min-height:0;container-type:size;border-radius:28px;overflow:hidden}
+.vak.kaart{background:var(--kaart);box-shadow:0 2px 0 rgba(30,30,30,.05)}
+.vak .binnen{position:absolute;inset:0;padding:clamp(28px,min(4cqw,8cqh),60px);box-sizing:border-box;display:flex;flex-direction:column}
+.label{display:flex;align-items:center;gap:.6em;font-size:clamp(22px,min(2.6cqw,7cqh),36px);font-weight:700;color:var(--zacht)}
+.label i{width:.62em;height:.62em;border-radius:50%;background:var(--c,var(--geel));flex:0 0 auto}
+.label .tel{margin-left:auto;font-weight:400}
+.voortgang{height:6px;border-radius:3px;background:var(--lijn);overflow:hidden;margin-top:auto;flex:0 0 auto}
+.voortgang b{display:block;height:100%;background:var(--geel);transform-origin:0 50%;transform:scaleX(0)}
+.wissel{transition:opacity .6s}
+.wissel.uit{opacity:0}
+em.mark,.tekstblok em{font-style:normal;background:linear-gradient(transparent 64%,var(--geel) 64% 92%,transparent 92%);padding-inline:.04em}
+.thema-geel em.mark,.thema-geel .tekstblok em{background:linear-gradient(transparent 64%,#fff 64% 92%,transparent 92%)}
+
+/* mededelingen */
+.med h2{margin:min(3cqw,5cqh) 0 0;font-size:clamp(36px,min(8cqw,15cqh),130px);line-height:1.02;font-weight:700;letter-spacing:0;text-wrap:balance}
+.med p{margin:min(2.4cqw,4cqh) 0 min(3cqw,5cqh);font-size:clamp(24px,min(3.6cqw,7.5cqh),56px);line-height:1.28;color:var(--ink);text-wrap:pretty}
+.med .wissel{flex:1;min-height:0;overflow:hidden}
+
+/* klok */
+.klokblok{align-items:center;justify-content:center;text-align:center}
+.klokblok .rij{display:flex;align-items:baseline;justify-content:center}
+.klokblok .tijd{font-size:min(30cqw,48cqh)}
+.klokblok .sec{font-size:min(9cqw,14cqh);margin-left:.4em;min-width:2.4ch;text-align:left}
+.klokblok .datum{margin-top:min(4cqw,6cqh);font-size:min(7cqw,11cqh);color:var(--zacht)}
+.klokblok .datum b{color:var(--ink);text-transform:capitalize}
+.klokblok img{height:min(5cqw,8cqh);margin-top:min(4cqw,6cqh)}
+
+/* weer */
+.weer .nu{display:flex;align-items:center;gap:5cqmin;margin-top:auto;margin-bottom:auto}
+.weer .nu svg{width:min(34cqw,46cqh);height:auto;flex:0 0 auto}
+.weer .graden{font-size:min(24cqw,30cqh);font-weight:700;line-height:1;letter-spacing:0}
+.weer .omschr{font-size:clamp(22px,min(3.6cqw,8cqh),48px);color:var(--zacht);margin-top:.3em}
+.weer .dagen{display:flex;gap:3cqmin;border-top:2px solid var(--lijn);padding-top:4cqmin}
+.weer .dagen div{flex:1;text-align:center;font-size:clamp(18px,min(2.6cqw,5cqh),34px)}
+.weer .dagen b{display:block;text-transform:capitalize}
+.weer .dagen svg{width:min(14cqw,18cqh);height:auto;display:block;margin:.3em auto}
+.weer .dagen span{color:var(--zacht)}
+@container (max-height: 420px){ .weer .dagen{display:none} }
+
+/* nieuws */
+.nieuws .kop{font-size:clamp(30px,min(6cqw,12cqh),96px);line-height:1.08;font-weight:700;letter-spacing:0;margin:min(3cqw,5cqh) 0 0;text-wrap:balance}
+.nieuws .wanneer{font-size:clamp(20px,min(2.6cqw,6cqh),34px);color:var(--zacht);margin-top:.6em}
+.nieuws .ook{margin:auto 0 min(3cqw,5cqh);padding:0;list-style:none;border-top:2px solid var(--lijn)}
+.nieuws .ook li{font-size:clamp(20px,min(2.6cqw,5cqh),34px);padding:.55em 0;border-bottom:2px solid var(--lijn);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@container (max-height: 560px){ .nieuws .ook{display:none} .nieuws .voortgang{margin-top:auto} }
+
+/* tekst en logo */
+.tekstblok{justify-content:center}
+.tekstblok h2{margin:0;font-weight:700;letter-spacing:0;line-height:1;text-wrap:balance}
+.tekstblok.groot h2{font-size:min(14cqw,26cqh)}
+.tekstblok.middel h2{font-size:min(9cqw,17cqh)}
+.tekstblok p{margin:.8em 0 0;font-size:min(4.6cqw,9cqh);line-height:1.3;color:var(--zacht);white-space:pre-line}
+.logoblok{align-items:center;justify-content:center;gap:5cqmin}
+.logoblok .logo{width:72cqw;max-height:30cqh;object-fit:contain}
+.logoblok .str{height:min(8cqw,14cqh)}
+.logoblok p{margin:0;font-size:min(5cqw,10cqh);color:var(--zacht);text-align:center}
+.thema-donker .logoblok .logo{filter:brightness(0) invert(1)}
+
+/* foto's en video */
+.fotos img{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity 1.2s}
+.fotos img.aan{opacity:1}
+.fotos.vullen img{object-fit:cover}
+.fotos.passen img{object-fit:contain}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.leegmelding{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px;font-size:30px;color:var(--zacht)}
+
+/* vimo */
+.vimo svg{position:absolute;inset:0;width:100%;height:100%}
+
+/* band onderaan */
+.band{flex:0 0 auto;height:96px;background:var(--antraciet);color:#fff;display:flex;align-items:center;overflow:hidden}
+.thema-donker .band{background:#000}
+.band .naam{flex:0 0 auto;height:100%;display:flex;align-items:center;gap:16px;padding:0 40px 0 70px;background:var(--geel);color:var(--zwart);font-size:32px;font-weight:700;position:relative;z-index:1}
+.band .naam::after{content:"";position:absolute;right:-29px;top:0;bottom:0;width:30px;background:var(--geel);clip-path:polygon(0 0,100% 0,0 100%)}
+.band .loop{flex:1;overflow:hidden;white-space:nowrap;position:relative;height:100%;display:flex;align-items:center}
+.band .rol{display:inline-flex;gap:0;font-size:36px;padding-left:60px;will-change:transform}
+.band .rol span{padding-right:44px}
+.band .rol span::after{content:"";display:inline-block;width:42px;height:22px;margin-left:44px;vertical-align:middle;background:url(/img/streepjes.png) center/contain no-repeat}
+
+/* foutmelding */
+.melding{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-size:40px;color:var(--ink);background:var(--bg)}
+.melding img{height:60px}
+@media (prefers-reduced-motion: reduce){.wissel,.fotos img{transition:none}}
+</style></head>
+<body class="verberg">
+<div id="screen"></div>
+<script src="/gedeeld.js"></script>
+<script src="/vimo2d.js"></script>
+<script>
+(function () {
+  const Q = new URLSearchParams(location.search);
+  const VOORBEELD = Q.has("voorbeeld");
+  const ID = Q.get("id") || (location.pathname.match(/^\/s\/([a-z0-9-]+)/) || [])[1] || "";
+  const scr = document.getElementById("screen");
+  let ww = "";                      /* alleen in voorbeeldmodus, voor nieuws dat nog niet is opgeslagen */
+  let shift = [0, 0];
+  if (VOORBEELD) document.body.classList.remove("verberg");
+
+  /* ===== schalen naar het scherm ===== */
+  function fit() {
+    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+    const x = (innerWidth - 1920 * k) / 2 + shift[0], y = (innerHeight - 1080 * k) / 2 + shift[1];
+    scr.style.transform = `translate(${x}px,${y}px) scale(${k})`;
+  }
+  addEventListener("resize", fit); fit();
+  if (!VOORBEELD) setInterval(() => { shift = [Math.round(Math.random() * 10 - 5), Math.round(Math.random() * 10 - 5)]; fit(); }, 600000);
+
+  /* ===== hulpjes ===== */
+  const h = (tag, cls, ouder, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (ouder) ouder.appendChild(e); return e; };
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const markeer = s => esc(s).replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  const twee = n => String(n).padStart(2, "0");
+  const KLEUREN = ["#fbb900", "#b8e7f9", "#bda8bd", "#a8cb67"];
+  let timers = [], spelers = [];
+  const later = (f, ms) => { const t = setTimeout(f, ms); timers.push(t); return t; };
+  const elke = (f, ms) => { const t = setInterval(f, ms); timers.push(t); return t; };
+  function opruimen() { timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = []; spelers.forEach(p => p.destroy && p.destroy()); spelers = []; }
+  async function haal(url, metWw) {
+    const r = await fetch(url, { headers: metWw && ww ? { "x-wachtwoord": ww } : {}, cache: "no-store" });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).fout || r.status);
+    return r.json();
+  }
+  function voortgang(ouder, sec) {
+    const v = h("div", "voortgang", ouder), b = h("b", "", v);
+    return () => { b.style.transition = "none"; b.style.transform = "scaleX(0)"; void b.offsetWidth; b.style.transition = `transform ${sec}s linear`; b.style.transform = "scaleX(1)"; };
+  }
+  function vandaagGeldig(it) {
+    const d = new Date(), v = `${d.getFullYear()}-${twee(d.getMonth() + 1)}-${twee(d.getDate())}`;
+    return (!it.van || it.van <= v) && (!it.tot || it.tot >= v);
+  }
+
+  /* ===== klok (gedeeld door balk en blok) ===== */
+  const klokken = [];
+  function tik() {
+    const n = new Date();
+    const t = twee(n.getHours()) + ":" + twee(n.getMinutes()), s = twee(n.getSeconds());
+    const wd = n.toLocaleDateString("nl-NL", { weekday: "long" }), dm = n.toLocaleDateString("nl-NL", { day: "numeric", month: "long" });
+    const jaar = n.getFullYear();
+    klokken.forEach(k => { if (!k.isConnected) return; k.querySelectorAll("[data-t]").forEach(e => {
+      const w = { tijd: t, sec: s, wd, dm, jaar }[e.dataset.t]; if (e.textContent !== String(w)) e.textContent = w; }); });
+    setTimeout(tik, 1000 - n.getMilliseconds() + 5);
+  }
+  tik();
+
+  /* ===== weer ===== */
+  const WEER = c => c === 0 ? ["zon", "Zonnig"] : c <= 2 ? ["halfzon", c === 1 ? "Overwegend zonnig" : "Half bewolkt"] : c === 3 ? ["wolk", "Bewolkt"] :
+    c <= 48 ? ["mist", "Mist"] : c <= 57 ? ["regen", "Motregen"] : c <= 67 ? ["regen", "Regen"] : c <= 77 ? ["sneeuw", "Sneeuw"] :
+    c <= 82 ? ["regen", "Buien"] : c <= 86 ? ["sneeuw", "Sneeuwbuien"] : ["onweer", "Onweer"];
+  function icoon(soort) {
+    const ink = "var(--ink)", zon = `<circle cx="38" cy="38" r="17" fill="#fbb900" stroke="${ink}" stroke-width="3"/>` +
+      [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<line x1="38" y1="11" x2="38" y2="4" stroke="#fbb900" stroke-width="5" stroke-linecap="round" transform="rotate(${a} 38 38)"/>`).join("");
+    const wolk = (x, y, f) => `<path transform="translate(${x} ${y})" d="M18 60h44a16 16 0 0 0 0-32 22 22 0 0 0-42-5A17 17 0 0 0 18 60z" fill="${f}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>`;
+    const lijn = (x, y, kl) => `<line x1="${x}" y1="${y}" x2="${x - 5}" y2="${y + 12}" stroke="${kl}" stroke-width="5" stroke-linecap="round"/>`;
+    const s = {
+      zon: `<g transform="translate(12 12)">${zon}</g>`,
+      halfzon: `${zon}${wolk(24, 26, "#fff")}`,
+      wolk: `${wolk(6, 6, "#b8e7f9")}${wolk(22, 24, "#fff")}`,
+      mist: `${wolk(12, 0, "#fff")}<g stroke="${ink}" stroke-width="4" stroke-linecap="round"><line x1="14" y1="76" x2="86" y2="76"/><line x1="24" y1="88" x2="76" y2="88"/></g>`,
+      regen: `${wolk(12, 0, "#b8e7f9")}${lijn(36, 70, "#2f86b8")}${lijn(54, 70, "#2f86b8")}${lijn(72, 70, "#2f86b8")}`,
+      sneeuw: `${wolk(12, 0, "#fff")}<g fill="#b8e7f9" stroke="${ink}" stroke-width="2"><circle cx="34" cy="78" r="5"/><circle cx="54" cy="86" r="5"/><circle cx="74" cy="78" r="5"/></g>`,
+      onweer: `${wolk(12, 0, "#bda8bd")}<path d="M56 64 44 82h12l-8 16 20-22H56l8-12z" fill="#fbb900" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>`
+    }[soort];
+    return `<svg viewBox="0 0 100 100" aria-hidden="true">${s}</svg>`;
+  }
+
+  /* ===== blokken ===== */
+  const MAAK = {
+    leeg() { return { kaart: false }; },
+
+    mededelingen(b, v, kleurIdx) {
+      const bin = h("div", "binnen med", b);
+      const items = (v.items || []).filter(it => (it.kop || it.tekst) && vandaagGeldig(it));
+      const lab = h("div", "label", bin, `<i></i>${esc(v.titel || "Mededelingen")}<span class="tel"></span>`);
+      lab.style.setProperty("--c", KLEUREN[kleurIdx % 4]);
+      const w = h("div", "wissel", bin), sec = Math.max(4, +v.seconden || 12);
+      if (!items.length) { w.innerHTML = `<p>Er zijn nu geen mededelingen.</p>`; return; }
+      const start = items.length > 1 ? voortgang(bin, sec) : null;
+      let i = 0;
+      const toon = () => {
+        const it = items[i % items.length]; i++;
+        w.classList.add("uit");
+        later(() => {
+          w.innerHTML = (it.kop ? `<h2>${markeer(it.kop)}</h2>` : "") + (it.tekst ? `<p>${markeer(it.tekst)}</p>` : "");
+          lab.querySelector(".tel").textContent = items.length > 1 ? `${(i - 1) % items.length + 1}/${items.length}` : "";
+          w.classList.remove("uit"); if (start) start();
+        }, items.length > 1 ? 600 : 0);
+      };
+      toon(); if (items.length > 1) elke(toon, sec * 1000);
+    },
+
+    klok(b, v) {
+      const bin = h("div", "binnen klokblok", b);
+      bin.innerHTML = `<div class="rij"><span class="tijd" data-t="tijd"></span>${v.seconden === false ? "" : `<span class="sec" data-t="sec"></span>`}</div>
+        <div class="datum"><b data-t="wd"></b> <span data-t="dm"></span></div><img src="/img/streepjes.png" alt="">`;
+      klokken.push(bin);
+    },
+
+    weer(b, v) {
+      const bin = h("div", "binnen weer", b);
+      h("div", "label", bin, `<i style="--c:#b8e7f9"></i>Weer in ${esc(v.plaats || "")}`);
+      const nu = h("div", "nu", bin), dagen = h("div", "dagen", bin);
+      const laad = async () => {
+        try {
+          const u = `https://api.open-meteo.com/v1/forecast?latitude=${+v.lat}&longitude=${+v.lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FAmsterdam&forecast_days=4`;
+          const d = await (await fetch(u)).json();
+          const [s, o] = WEER(d.current.weather_code);
+          nu.innerHTML = `${icoon(s)}<div><div class="graden">${Math.round(d.current.temperature_2m)}°</div><div class="omschr">${o}</div></div>`;
+          dagen.innerHTML = d.daily.time.slice(1, 4).map((t, i) => {
+            const dag = new Date(t + "T12:00").toLocaleDateString("nl-NL", { weekday: "short" });
+            return `<div><b>${dag}</b>${icoon(WEER(d.daily.weather_code[i + 1])[0])}${Math.round(d.daily.temperature_2m_max[i + 1])}° <span>${Math.round(d.daily.temperature_2m_min[i + 1])}°</span></div>`;
+          }).join("");
+        } catch (e) { if (!nu.innerHTML) nu.innerHTML = `<div class="omschr">Weer wordt geladen…</div>`; later(laad, 60000); }
+      };
+      laad(); elke(laad, 15 * 60000);
+    },
+
+    nieuws(b, v, kleurIdx, scherm) {
+      const bin = h("div", "binnen nieuws", b);
+      const lab = h("div", "label", bin, `<i style="--c:#bda8bd"></i>${esc(v.titel || "Nieuws")}`);
+      const w = h("div", "wissel", bin), ook = h("ul", "ook", bin);
+      const sec = Math.max(5, +v.seconden || 10), start = voortgang(bin, sec);
+      let items = [], i = 0;
+      const toon = () => {
+        if (!items.length) return;
+        const it = items[i % items.length], volgende = [1, 2, 3].map(k => items[(i + k) % items.length]); i++;
+        w.classList.add("uit");
+        later(() => {
+          const tijd = it.datum && !isNaN(new Date(it.datum)) ? new Date(it.datum).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }) : "";
+          w.innerHTML = `<div class="kop">${esc(it.titel)}</div>${tijd ? `<div class="wanneer">${tijd}</div>` : ""}`;
+          ook.innerHTML = items.length > 3 ? volgende.map(x => `<li>${esc(x.titel)}</li>`).join("") : "";
+          w.classList.remove("uit"); start();
+        }, 600);
+      };
+      const laad = async () => {
+        try {
+          const d = await haal(`/api/nieuws?scherm=${encodeURIComponent(scherm.id || ID)}&feed=${encodeURIComponent(v.feed || "")}`, true);
+          const eerste = !items.length; items = d.items.slice(0, 15);
+          if (d.bron && !v.titel) lab.lastChild.textContent = d.bron;
+          if (eerste) toon();
+        } catch (e) { if (!items.length) w.innerHTML = `<div class="wanneer">Nieuws niet beschikbaar (${esc(e.message)})</div>`; }
+      };
+      laad(); elke(laad, 10 * 60000); elke(toon, sec * 1000);
+    },
+
+    vimo(b, v) {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("preserveAspectRatio", "xMidYMax meet"); b.classList.add("vimo"); b.appendChild(svg);
+      const kubus = v.kubus !== false;
+      const W = kubus ? 1000 : 640, H = 880;
+      const p = new Vimo2D.Player(svg, { width: W, height: H, home: { x: kubus ? 330 : 320, g: 812 }, scale: 1.6, cube: kubus ? { cx: 790, ground: 812, s: 210 } : null, fontSize: 40 });
+      spelers.push(p);
+      const zinnen = (v.zinnen || []).filter(Boolean);
+      const bew = VS.VIMO_BEWEGINGEN.filter(m => kubus || m !== "kubus");
+      let i = 0;
+      const volgende = () => {
+        const m = bew[i % bew.length], z = zinnen.length ? zinnen[i % zinnen.length] : ""; i++;
+        p.sequence([{ move: m, text: z }], () => later(volgende, 2500));
+      };
+      later(volgende, 1200);
+      return { kaart: false };
+    },
+
+    fotos(b, v) {
+      const lijst = (v.afbeeldingen || []).filter(Boolean);
+      b.classList.add("fotos", v.passend === "passen" ? "passen" : "vullen");
+      if (!lijst.length) { h("div", "leegmelding", b, "Nog geen foto's gekozen"); return; }
+      const imgs = lijst.map(src => { const im = h("img", "", b); im.alt = ""; im.src = src; return im; });
+      let i = 0; imgs[0].classList.add("aan");
+      if (imgs.length > 1) elke(() => { imgs[i % imgs.length].classList.remove("aan"); i++; imgs[i % imgs.length].classList.add("aan"); }, Math.max(3, +v.seconden || 8) * 1000);
+    },
+
+    video(b, v) {
+      const id = VS.youtubeId(v.youtube);
+      b.classList.add("video");
+      if (!id) { h("div", "leegmelding", b, "Nog geen video gekozen"); return; }
+      const f = h("iframe", "", b);
+      f.allow = "autoplay; encrypted-media"; f.title = "Video";
+      f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&rel=0&modestbranding=1&playsinline=1`;
+    },
+
+    tekst(b, v) {
+      const bin = h("div", "binnen tekstblok " + (v.grootte === "middel" ? "middel" : "groot"), b);
+      bin.innerHTML = (v.kop ? `<h2>${markeer(v.kop)}</h2>` : "") + (v.tekst ? `<p>${markeer(v.tekst)}</p>` : "");
+    },
+
+    logo(b, v) {
+      const bin = h("div", "binnen logoblok", b);
+      bin.innerHTML = `<img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">${v.ondertitel ? `<p>${esc(v.ondertitel)}</p>` : ""}`;
+    }
+  };
+
+  /* ===== band onderaan ===== */
+  function band(ouder, s) {
+    const bd = h("div", "band", ouder);
+    const nieuws = s.band.bron !== "mededelingen";
+    h("div", "naam", bd, nieuws ? "Nieuws" : "Mededelingen");
+    const loop = h("div", "loop", bd), rol = h("div", "rol", loop);
+    let x = 0, breedte = 0, last = 0, raf = 0;
+    const zet = teksten => {
+      if (!teksten.length) { rol.innerHTML = ""; return; }
+      rol.innerHTML = teksten.map(t => `<span>${esc(t)}</span>`).join("");
+      rol.innerHTML += rol.innerHTML;           /* twee keer, voor een naadloze lus */
+      breedte = rol.scrollWidth / 2;
+      if (!raf) raf = requestAnimationFrame(stap);
+    };
+    function stap(t) {
+      if (!bd.isConnected) return;
+      const dt = last ? Math.min(100, t - last) : 0; last = t;
+      x -= dt * .11; if (breedte && -x > breedte) x += breedte;
+      rol.style.transform = `translateX(${x}px)`;
+      raf = requestAnimationFrame(stap);
+    }
+    if (nieuws) {
+      const laad = async () => {
+        try { const d = await haal(`/api/nieuws?scherm=${encodeURIComponent(s.id || ID)}&feed=${encodeURIComponent(s.band.feed || "")}`, true); zet(d.items.slice(0, 12).map(i => i.titel)); }
+        catch (e) { zet(["Nieuws niet beschikbaar"]); }
+      };
+      laad(); elke(laad, 10 * 60000);
+    } else {
+      const items = [];
+      for (const v of Object.values(s.vakken || {})) if (v && v.type === "mededelingen") (v.items || []).filter(vandaagGeldig).forEach(it => items.push([it.kop, it.tekst].filter(Boolean).join(": ")));
+      zet((s.band.teksten || []).filter(Boolean).concat(items));
+    }
+  }
+
+  /* ===== het hele scherm tekenen ===== */
+  let huidig = null;
+  function teken(s) {
+    opruimen(); klokken.length = 0;
+    huidig = s; scr.innerHTML = "";
+    const th = VS.THEMAS[s.thema] || VS.THEMAS.licht;
+    scr.className = "thema-" + (s.thema || "licht") + (s.balk && s.balk.aan ? "" : " geen-balk");
+    const st = document.documentElement.style;
+    st.setProperty("--bg", th.bg); st.setProperty("--kaart", th.kaart); st.setProperty("--ink", th.ink); st.setProperty("--zacht", th.zacht); st.setProperty("--lijn", th.lijn);
+    scr.style.background = th.bg;
+
+    if (s.balk && s.balk.aan) {
+      const bk = h("div", "balk", scr);
+      if (s.balk.logo !== false) bk.innerHTML = `<img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">`;
+      h("div", s.balk.titel ? "titel" : "ruimte", bk, s.balk.titel ? markeer(s.balk.titel) : "");
+      if (s.balk.klok !== false) {
+        const k = h("div", "miniklok", bk, `<div class="dag"><b data-t="wd"></b><span data-t="dm"></span></div><img src="/img/streepjes.png" alt=""><span class="tijd" data-t="tijd"></span><span class="sec" data-t="sec"></span>`);
+        klokken.push(k);
+      }
+    }
+    const sj = VS.SJABLONEN[s.sjabloon] || VS.SJABLONEN.zijbalk;
+    const grid = h("div", "vlakken", scr);
+    grid.style.gridTemplateColumns = sj.cols; grid.style.gridTemplateRows = sj.rows;
+    grid.style.gridTemplateAreas = sj.areas.map(a => `"${a}"`).join(" ");
+    VS.vakkenVan(s.sjabloon in VS.SJABLONEN ? s.sjabloon : "zijbalk").forEach((k, idx) => {
+      const v = (s.vakken || {})[k] || { type: "leeg" };
+      const b = h("div", "vak", grid); b.style.gridArea = k;
+      let r;
+      try { r = (MAAK[v.type] || MAAK.leeg)(b, v, idx, s); } catch (e) { console.error(e); h("div", "leegmelding", b, "Dit blok kon niet laden"); }
+      if (!(r && r.kaart === false) && v.type !== "leeg") b.classList.add("kaart");
+      if (v.type === "fotos" || v.type === "video") b.classList.remove("kaart");
+    });
+    if (s.band && s.band.aan) band(scr, s);
+  }
+
+  function melding(tekst) {
+    scr.innerHTML = ""; scr.style.background = "#eef8fc";
+    h("div", "melding", scr, `<img src="/img/logo.png" alt="Vanerum"><div>${esc(tekst)}</div>`);
+  }
+
+  /* ===== laden en bijhouden ===== */
+  const opslagSleutel = "vs-scherm-" + ID;
+  async function controleer() {
+    try {
+      const s = await haal(`/api/scherm/${encodeURIComponent(ID)}?t=${Date.now()}`);
+      try { localStorage.setItem(opslagSleutel, JSON.stringify(s)); } catch (e) {}
+      if (!huidig || huidig.bijgewerkt !== s.bijgewerkt) teken(s);
+    } catch (e) {
+      if (!huidig) {
+        let bewaard = null; try { bewaard = JSON.parse(localStorage.getItem(opslagSleutel)); } catch (x) {}
+        if (bewaard) teken(bewaard); else melding(/bestaat niet/.test(e.message) ? `Scherm "${ID}" bestaat (nog) niet` : "Geen verbinding; nieuwe poging over een minuut");
+      }
+    }
+  }
+
+  if (VOORBEELD) {
+    addEventListener("message", e => {
+      if (e.origin !== location.origin || !e.data || e.data.type !== "indeling") return;
+      ww = e.data.ww || ""; teken(e.data.scherm);
+    });
+    parent.postMessage({ type: "klaar" }, location.origin);
+  } else if (!ID) {
+    melding("Geen scherm gekozen. Gebruik het adres uit de editor.");
+  } else {
+    controleer(); setInterval(controleer, 60000);
+    /* één keer per nacht volledig herladen, voor de zekerheid */
+    setInterval(() => { const n = new Date(); if (n.getHours() === 4 && n.getMinutes() === 0) location.reload(); }, 60000);
+  }
+})();
+</script>
+</body></html>
