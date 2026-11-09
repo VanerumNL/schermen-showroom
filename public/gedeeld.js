@@ -61,6 +61,8 @@
 
   /* Eigen video's: de bestanden staan in public/video/. Een nieuwe video toevoegen = bestand erbij zetten en hier een regel. */
   const VIDEOS = [
+    { naam: "Motion Cubes – intro (staand)", url: "/video/motion-cubes-intro.mp4" },
+    { naam: "Vanerum loopt (staand)", url: "/video/vanerum-loopt.mp4" }
   ];
 
   const VIMO_BEWEGINGEN = ["hoi", "wijzen", "kubus", "springen", "balans", "knieen", "draaien"];
