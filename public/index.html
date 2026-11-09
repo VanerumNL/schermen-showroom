@@ -69,6 +69,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .sjabloon.aan{border-color:var(--zwart);box-shadow:0 0 0 3px var(--geel)}
 .sjabloon .mini{aspect-ratio:16/9;display:grid;gap:3px;margin-bottom:6px}
 .sjabloon .mini b{background:#e6f4fa;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--grijs);text-transform:uppercase}
+.sjabloon .mini.mini-welkom{grid-template-columns:1fr}
+.sjabloon .mini.mini-welkom b{background:linear-gradient(180deg,#dcf1f9,#f7fbfc);color:var(--zwart);text-transform:none;font-weight:700;line-height:1.15}
 .themas{display:flex;gap:10px;flex-wrap:wrap}
 .thema{display:flex;align-items:center;gap:8px;border:2px solid var(--lijn);border-radius:12px;padding:7px 12px 7px 8px;background:#fff;cursor:pointer}
 .thema i{width:22px;height:22px;border-radius:7px;border:1px solid rgba(0,0,0,.12)}
@@ -271,7 +273,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       document.querySelectorAll("aside button.scherm").forEach(b => b.classList.toggle("aan", b.dataset.id === id));
       const url = location.origin + "/s/" + id;
       $("adres").hidden = false; $("adresTekst").textContent = url; $("openScherm").href = url;
-      tekenFormulier(); startHistorie(); stuur();
+      tekenFormulier(); opgeslagen = JSON.stringify(huidig); startHistorie(); stuur();
     } catch (err) { toast(err.message); }
   }
 
@@ -372,7 +374,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     const sj = alg.querySelector("#sjablonen");
     for (const [k, t] of Object.entries(VS.SJABLONEN)) {
       const b = document.createElement("button"); b.type = "button"; b.className = "sjabloon" + (s.sjabloon === k ? " aan" : "");
-      b.innerHTML = `<div class="mini" style="grid-template-columns:${t.cols};grid-template-rows:${t.rows};grid-template-areas:${t.areas.map(a => `'${a}'`).join(" ")}">${VS.vakkenVan(k).map(v => `<b style="grid-area:${v}">${v}</b>`).join("")}</div>${esc(t.naam)}`;
+      b.innerHTML = t.speciaal ? `<div class="mini mini-welkom"><b>Welkom<br>+ Vimo</b></div>${esc(t.naam)}`
+        : `<div class="mini" style="grid-template-columns:${t.cols};grid-template-rows:${t.rows};grid-template-areas:${t.areas.map(a => `'${a}'`).join(" ")}">${VS.vakkenVan(k).map(v => `<b style="grid-area:${v}">${v}</b>`).join("")}</div>${esc(t.naam)}`;
       b.addEventListener("click", () => { s.sjabloon = k; tekenFormulier(); stuur(); });
       sj.appendChild(b);
     }
@@ -384,31 +387,36 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       th.appendChild(b);
     }
 
-    const bk = blok(f, "Balk bovenaan", "var(--lichtblauw)");
-    const bkDelen = document.createElement("div");
-    vinkje(bk, s.balk, "aan", "Balk tonen", () => { bkDelen.hidden = s.balk.aan === false; });
-    bk.appendChild(bkDelen); bkDelen.hidden = s.balk.aan === false;
-    vinkje(bkDelen, s.balk, "logo", "Logo");
-    vinkje(bkDelen, s.balk, "klok", "Klok met datum");
-    veld(bkDelen, "Titel in het midden (mag leeg)", invoer(s.balk, "titel", "text", { maxLength: 60, placeholder: "Bijv. Welkom in de *showroom*" }), "Zet *sterretjes* om een woord voor een gele markering.");
+    if (s.sjabloon === "welkom") {
+      th.closest(".veld").hidden = true;
+      welkomFormulier(f, s);
+    } else {
+      const bk = blok(f, "Balk bovenaan", "var(--lichtblauw)");
+      const bkDelen = document.createElement("div");
+      vinkje(bk, s.balk, "aan", "Balk tonen", () => { bkDelen.hidden = s.balk.aan === false; });
+      bk.appendChild(bkDelen); bkDelen.hidden = s.balk.aan === false;
+      vinkje(bkDelen, s.balk, "logo", "Logo");
+      vinkje(bkDelen, s.balk, "klok", "Klok met datum");
+      veld(bkDelen, "Titel in het midden (mag leeg)", invoer(s.balk, "titel", "text", { maxLength: 60, placeholder: "Bijv. Welkom in de *showroom*" }), "Zet *sterretjes* om een woord voor een gele markering.");
 
-    const bd = blok(f, "Band onderaan", "var(--lila)");
-    const bdDelen = document.createElement("div");
-    vinkje(bd, s.band, "aan", "Lopende band tonen", () => { bdDelen.hidden = s.band.aan === false; });
-    bd.appendChild(bdDelen); bdDelen.hidden = s.band.aan === false;
-    const bandBron = () => {
-      bdDelen.querySelectorAll(".bron-nieuws").forEach(x => x.hidden = s.band.bron === "mededelingen");
-      bdDelen.querySelectorAll(".bron-med").forEach(x => x.hidden = s.band.bron !== "mededelingen");
-    };
-    veld(bdDelen, "Wat loopt er door de band?", keuze(s.band, "bron", [["nieuws", "Nieuwskoppen"], ["mededelingen", "Mededelingen en eigen teksten"]], bandBron));
-    const fv = feedVeld(bdDelen, s.band); fv.classList.add("bron-nieuws");
-    if (!Array.isArray(s.band.teksten)) s.band.teksten = [];
-    const ta = document.createElement("textarea"); ta.value = s.band.teksten.join("\n");
-    ta.addEventListener("input", () => { s.band.teksten = ta.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); });
-    veld(bdDelen, "Eigen teksten (één per regel)", ta, "De berichten uit de mededelingen-vakken lopen er automatisch achteraan.").parentNode.classList.add("bron-med");
-    bandBron();
+      const bd = blok(f, "Band onderaan", "var(--lila)");
+      const bdDelen = document.createElement("div");
+      vinkje(bd, s.band, "aan", "Lopende band tonen", () => { bdDelen.hidden = s.band.aan === false; });
+      bd.appendChild(bdDelen); bdDelen.hidden = s.band.aan === false;
+      const bandBron = () => {
+        bdDelen.querySelectorAll(".bron-nieuws").forEach(x => x.hidden = s.band.bron === "mededelingen");
+        bdDelen.querySelectorAll(".bron-med").forEach(x => x.hidden = s.band.bron !== "mededelingen");
+      };
+      veld(bdDelen, "Wat loopt er door de band?", keuze(s.band, "bron", [["nieuws", "Nieuwskoppen"], ["mededelingen", "Mededelingen en eigen teksten"]], bandBron));
+      const fv = feedVeld(bdDelen, s.band); fv.classList.add("bron-nieuws");
+      if (!Array.isArray(s.band.teksten)) s.band.teksten = [];
+      const ta = document.createElement("textarea"); ta.value = s.band.teksten.join("\n");
+      ta.addEventListener("input", () => { s.band.teksten = ta.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); });
+      veld(bdDelen, "Eigen teksten (één per regel)", ta, "De berichten uit de mededelingen-vakken lopen er automatisch achteraan.").parentNode.classList.add("bron-med");
+      bandBron();
 
-    VS.vakkenVan(s.sjabloon in VS.SJABLONEN ? s.sjabloon : "zijbalk").forEach(k => vakFormulier(f, k));
+      VS.vakkenVan(s.sjabloon in VS.SJABLONEN ? s.sjabloon : "zijbalk").forEach(k => vakFormulier(f, k));
+    }
 
     const ob = document.createElement("div"); ob.className = "opslaanbalk";
     ob.innerHTML = `<button class="knop licht klein" type="button" id="terug" title="Laatste wijziging terugdraaien (Ctrl+Z)">↶ Terug</button><button class="knop licht klein" type="button" id="opnieuw" title="Opnieuw doen (Ctrl+Y)">↷</button><span class="status"></span><button class="knop gevaar klein" type="button" id="verwijder">Verwijderen</button><button class="knop geel" type="button" id="opslaan">Opslaan</button>`;
@@ -445,6 +453,24 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     });
     wrap.appendChild(test); wrap.appendChild(uit);
     ouder.appendChild(wrap); return wrap;
+  }
+
+  function welkomFormulier(f, s) {
+    s.welkom = Object.assign(VS.WELKOM_STD(), s.welkom || {});
+    const w = s.welkom;
+    const b1 = blok(f, "Welkomstekst");
+    veld(b1, "Titel", invoer(w, "titel", "text", { maxLength: 60 }), "Zet *sterretjes* om een woord voor de gele markering, zoals *Vanerum!*");
+    veld(b1, "Ondertitel", invoer(w, "ondertitel", "textarea", { maxLength: 160 }));
+    vinkje(b1, w, "klok", "Klok met datum rechtsboven");
+    const b2 = blok(f, "Wist u dat…", "var(--lichtblauw)");
+    const ta = document.createElement("textarea"); ta.style.minHeight = "190px"; ta.value = w.weetjes.join("\n");
+    ta.addEventListener("input", () => { w.weetjes = ta.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); });
+    veld(b2, "Weetjes (één per regel)", ta, "Ze wisselen elkaar af. Houd ze kort: één of twee zinnen.");
+    veld(b2, "Seconden per weetje", invoer(w, "seconden", "number", { min: 5, max: 120 }));
+    const b3 = blok(f, "Vimo", "var(--lila)");
+    const tz = document.createElement("textarea"); tz.style.minHeight = "170px"; tz.value = w.zinnen.join("\n");
+    tz.addEventListener("input", () => { w.zinnen = tz.value.split("\n").map(x => x.trim()); stuur(); });
+    veld(b3, "Wat zegt Vimo? (één zin per regel)", tz, "Vimo doet steeds een andere beweging: zwaaien, wijzen, op de kubus springen, balanceren… Een lege regel betekent: even niets zeggen.");
   }
 
   const KLEUR = ["var(--geel)", "var(--lichtblauw)", "var(--lila)", "var(--groen)"];

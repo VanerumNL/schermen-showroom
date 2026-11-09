@@ -144,6 +144,26 @@ body.verberg{cursor:none}
 .band .rol span{padding-right:44px}
 .band .rol span::after{content:"";display:inline-block;width:42px;height:22px;margin-left:44px;vertical-align:middle;background:url(/img/streepjes.png) center/contain no-repeat}
 
+/* welkomstscherm */
+.wk{position:absolute;inset:0;background:linear-gradient(180deg,#dcf1f9 0%,#eef8fc 55%,#f7fbfc 100%);color:#1e1e1e}
+.wk .vloer{position:absolute;left:0;right:0;top:876px;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.9))}
+.wk .vloer::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:rgba(30,30,30,.06)}
+.wk .kop{position:absolute;left:110px;top:80px;display:flex;align-items:center;gap:30px}
+.wk .kop .logo{height:62px;display:block}
+.wk .kop .str{height:52px;display:block}
+.wk .miniklok{position:absolute;right:110px;top:30px;--kaart:#fff;--ink:#1e1e1e;--zacht:#5f5d58}
+.wk .tekst{position:absolute;left:110px;top:250px;width:860px}
+.wk h1{margin:0;font-weight:700;font-size:150px;line-height:.98;letter-spacing:0;text-wrap:balance}
+.wk .sub{margin:34px 0 0;font-size:46px;line-height:1.25;color:#2e3033}
+.wk .tip{position:absolute;left:110px;top:720px;width:820px;min-height:250px;box-sizing:border-box;background:#fff;border-radius:28px;padding:34px 40px 40px;box-shadow:0 2px 0 rgba(30,30,30,.05)}
+.wk .tip small{display:flex;align-items:center;gap:14px;font-size:26px;font-weight:700;color:#5f5d58}
+.wk .tip small i{width:16px;height:16px;border-radius:50%;background:var(--c,#fbb900)}
+.wk .tip p{margin:14px 0 0;font-size:38px;line-height:1.28;transition:opacity .6s}
+.wk .tip p.uit{opacity:0}
+.wk .tip .voortgang{position:absolute;left:40px;right:40px;bottom:20px;height:5px;margin:0;background:#eeedea}
+.wk svg.vimo2d{position:absolute;left:880px;top:70px;width:1000px;height:880px;overflow:visible}
+.wk .voet{position:absolute;left:110px;bottom:46px;display:flex;align-items:center;gap:16px;font-size:26px;color:#5f5d58}
+.wk .voet img{height:26px}
 /* foutmelding */
 .melding{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-size:40px;color:var(--ink);background:var(--bg)}
 .melding img{height:60px}
@@ -437,6 +457,7 @@ body.verberg{cursor:none}
     st.setProperty("--bg", th.bg); st.setProperty("--kaart", th.kaart); st.setProperty("--ink", th.ink); st.setProperty("--zacht", th.zacht); st.setProperty("--lijn", th.lijn);
     scr.style.background = th.bg;
 
+    if (s.sjabloon === "welkom") { tekenWelkom(s); return; }
     if (s.balk && s.balk.aan) {
       const bk = h("div", "balk", scr);
       if (s.balk.logo !== false) bk.innerHTML = `<img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">`;
@@ -459,6 +480,41 @@ body.verberg{cursor:none}
       if (v.type === "fotos" || v.type === "video") b.classList.remove("kaart");
     });
     if (s.band && s.band.aan) band(scr, s);
+  }
+
+  function tekenWelkom(s) {
+    const w = Object.assign(VS.WELKOM_STD(), s.welkom || {});
+    const wk = h("div", "wk", scr);
+    h("div", "vloer", wk);
+    if (w.klok !== false) klokken.push(h("div", "miniklok", wk, `<div class="dag"><b data-t="wd"></b><span data-t="dm"></span></div><img src="/img/streepjes.png" alt=""><span class="tijd" data-t="tijd"></span><span class="sec" data-t="sec"></span>`));
+    h("div", "kop", wk, `<img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">`);
+    h("div", "tekst", wk, `<h1>${markeer(w.titel)}</h1>${w.ondertitel ? `<p class="sub">${markeer(w.ondertitel)}</p>` : ""}`);
+    const weetjes = (w.weetjes || []).filter(Boolean);
+    if (weetjes.length) {
+      const tip = h("div", "tip", wk, `<small><i></i>Wist u dat…</small><p></p>`);
+      const p = tip.querySelector("p"), dot = tip.querySelector("i"), sec = Math.max(5, +w.seconden || 12);
+      const start = weetjes.length > 1 ? voortgang(tip, sec) : null;
+      let i = 0;
+      const volgende = () => {
+        p.classList.add("uit");
+        later(() => { p.innerHTML = markeer(weetjes[i % weetjes.length]); dot.style.setProperty("--c", KLEUREN[i % 4]); i++; p.classList.remove("uit"); if (start) start(); }, i ? 600 : 0);
+      };
+      volgende(); if (weetjes.length > 1) elke(volgende, sec * 1000);
+    }
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "vimo2d"); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Vimo, de mascotte van Vanerum, naast een Motion Cube");
+    wk.appendChild(svg);
+    const speler = new Vimo2D.Player(svg, { width: 1000, height: 880, home: { x: 330, g: 812 }, scale: 1.6, cube: { cx: 790, ground: 812, s: 210 }, fontSize: 40 });
+    spelers.push(speler);
+    const zinnen = w.zinnen || [], bew = VS.WELKOM_BEWEGINGEN;
+    let j = 0;
+    const stap = () => {
+      const st = { move: bew[j % bew.length] }, z = zinnen.length ? zinnen[j % zinnen.length] : "";
+      if (z) st.text = z; j++;
+      speler.sequence([st], () => later(stap, 2500));
+    };
+    later(stap, 1200);
+    h("div", "voet", wk, `<img src="/img/streepjes.png" alt="">vanerum.nl`);
   }
 
   function melding(tekst) {

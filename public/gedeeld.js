@@ -6,7 +6,8 @@
     zijbalk: { naam: "Groot + zijbalk", cols: "1.9fr 1fr", rows: "1fr 1fr", areas: ["a b", "a c"] },
     boven: { naam: "Groot boven, twee onder", cols: "1fr 1fr", rows: "1.5fr 1fr", areas: ["a a", "b c"] },
     drie: { naam: "Drie kolommen", cols: "1fr 1fr 1fr", rows: "1fr", areas: ["a b c"] },
-    vier: { naam: "Vier vlakken", cols: "1fr 1fr", rows: "1fr 1fr", areas: ["a b", "c d"] }
+    vier: { naam: "Vier vlakken", cols: "1fr 1fr", rows: "1fr 1fr", areas: ["a b", "c d"] },
+    welkom: { naam: "Welkomstscherm", cols: "1fr", rows: "1fr", areas: ["a"], speciaal: true }
   };
   const vakkenVan = sj => [...new Set(SJABLONEN[sj].areas.join(" ").split(" "))];
 
@@ -58,6 +59,25 @@
     leeg: { naam: "Leeg", uitleg: "Niets tonen", std: () => ({}) }
   };
 
+  /* het welkomstscherm met Vimo en wist-u-datjes */
+  const WELKOM_STD = () => ({
+    titel: "Welkom bij *Vanerum!*",
+    ondertitel: "Fijn dat u er bent. Samen maken we de ideale leeromgeving van morgen.",
+    weetjes: [
+      "Kinderen zitten een groot deel van de schooldag stil. Korte beweegmomenten helpen de aandacht vast te houden.",
+      "De Motion Cube is kruk, tafeltje en dobbelsteen in één, en werkt samen met het digibord.",
+      "Een stoel en tafel op de juiste hoogte helpen leerlingen om goed en geconcentreerd te zitten.",
+      "Goede akoestiek maakt een lokaal rustiger: leerlingen verstaan elkaar beter en de leerkracht hoeft minder hard te praten.",
+      "Vanerum maakt schoolmeubilair in een eigen fabriek in België.",
+      "Een leeromgeving op maat van de visie van uw school: daar denken wij graag over mee.",
+      "Onze meubels gaan lang mee, en losse onderdelen zijn te vervangen."
+    ],
+    seconden: 12,
+    zinnen: ["Welkom bij Vanerum!", "Kijk, de Motion Cube!", "Ik sta op de kubus!", "Bewegen in de klas!", "Fijn dat u er bent!", "Kunt u dit ook?", "", "Even draaien!"],
+    klok: true
+  });
+  const WELKOM_BEWEGINGEN = ["hoi", "wijzen", "kubus", "springen", "hoi", "balans", "knieen", "draaien"];
+
   function nieuwScherm(id, naam) {
     return {
       id, naam, sjabloon: "zijbalk", thema: "licht",
@@ -78,5 +98,5 @@
     return m ? m[1] : "";
   }
 
-  window.VS = { SJABLONEN, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId };
+  window.VS = { WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId };
 })();
