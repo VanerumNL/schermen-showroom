@@ -1,9 +1,12 @@
 /* Productdemo's die op de schermen kunnen draaien. De bestanden staan in /demos/<map>/.
    soort: "film" is een animatiefilmpje dat steeds opnieuw begint, "tour" loopt vanzelf door, "product" draait het model langzaam rond, "spel" is interactief (staat stil op een tv). */
 window.VS_DEMOS = [
-  { groep: "Filmpjes", naam: "Motion Cubes Intro", pad: "/demos/motion-cubes-intro/", soort: "film" },
-  { groep: "Filmpjes", naam: "Vanerum Loopt", pad: "/demos/vanerum-loopt/", soort: "film" },
-  { groep: "Filmpjes", naam: "Vanerum Motion", pad: "/demos/vanerum-motion/", soort: "film" },
+  { groep: "Filmpjes", naam: "Motion Cubes Intro (liggend 16:9)", pad: "/demos/motion-cubes-intro-169/", soort: "film" },
+  { groep: "Filmpjes", naam: "Vanerum Loopt (liggend 16:9)", pad: "/demos/vanerum-loopt-169/", soort: "film" },
+  { groep: "Filmpjes", naam: "Vanerum Motion (liggend 16:9)", pad: "/demos/vanerum-motion-169/", soort: "film" },
+  { groep: "Filmpjes", naam: "Motion Cubes Intro (staand)", pad: "/demos/motion-cubes-intro/", soort: "film" },
+  { groep: "Filmpjes", naam: "Vanerum Loopt (staand)", pad: "/demos/vanerum-loopt/", soort: "film" },
+  { groep: "Filmpjes", naam: "Vanerum Motion (staand)", pad: "/demos/vanerum-motion/", soort: "film" },
   { groep: "3D-demo's", naam: "MultiFLEX", pad: "/demos/multiflex-demo/", soort: "tour" },
   { groep: "3D-demo's", naam: "SEED tafels", pad: "/demos/seed-demo/", soort: "tour" },
   { groep: "3D-demo's", naam: "Solifiber", pad: "/demos/solifiber-demo/", soort: "tour" },

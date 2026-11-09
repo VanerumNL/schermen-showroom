@@ -437,7 +437,8 @@ body.verberg{cursor:none}
                 /* geen geluidsknop op een tv, en na afloop opnieuw beginnen */
                 const st = d.createElement("style"); st.textContent = "#sound{display:none!important}"; d.head.appendChild(st);
                 const api = w.__vanerum || w.__anim;
-                duur = api && api.duration ? api.duration() * 1000 + 1500 : 0;
+                const lengte = api ? (api.duration ? api.duration() : api.tl && api.tl.duration ? api.tl.duration() : 0) : 0;
+                duur = lengte ? lengte * 1000 + 1500 : 0;
                 const cover = d.getElementById("cover"), knop = d.getElementById("play");
                 let wacht = 0;
                 elke(() => {

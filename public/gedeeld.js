@@ -70,7 +70,7 @@
     vimo: { naam: "Vimo", uitleg: "De bewegende mascotte met tekstballon", std: () => ({ kubus: true, zinnen: ["Welkom bij Vanerum!", "Kijk, de Motion Cube!", "Bewegen in de klas!", "Fijn dat u er bent!"] }) },
     fotos: { naam: "Foto's", uitleg: "Diavoorstelling van eigen afbeeldingen", std: () => ({ afbeeldingen: [], seconden: 8, passend: "vullen" }) },
     demo: { naam: "Productdemo", uitleg: "Uw 3D-demo's en productpagina's; ze lopen vanzelf en wisselen elkaar af", std: () => ({ demos: ["/demos/multiflex-demo/"], seconden: 45, eigen: [] }) },
-    video: { naam: "Video / filmpje", uitleg: "Een Vanerum-filmpje of een YouTube-video, zonder geluid en steeds opnieuw", std: () => ({ youtube: "", film: "/demos/vanerum-loopt/" }) },
+    video: { naam: "Video / filmpje", uitleg: "Een Vanerum-filmpje of een YouTube-video, zonder geluid en steeds opnieuw", std: () => ({ youtube: "", film: "/demos/vanerum-loopt-169/" }) },
     tekst: { naam: "Tekst", uitleg: "Kop en tekst; zet *sterretjes* om een woord voor een gele markering", std: () => ({ kop: "Welkom bij *Vanerum!*", tekst: "", grootte: "groot" }) },
     logo: { naam: "Logo", uitleg: "Het Vanerum-logo met streepjes", std: () => ({ ondertitel: "" }) },
     leeg: { naam: "Leeg", uitleg: "Niets tonen", std: () => ({}) }
