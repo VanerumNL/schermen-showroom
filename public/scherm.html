@@ -387,6 +387,8 @@ body.verberg{cursor:none}
     },
 
     video(b, v) {
+      /* eigen Vanerum-filmpje: draait als demo en begint steeds opnieuw */
+      if (v.film) return MAAK.demo(b, { demos: [v.film], seconden: 3600 });
       const id = VS.youtubeId(v.youtube);
       b.classList.add("video");
       if (!id) { h("div", "leegmelding", b, "Nog geen video gekozen"); return; }
@@ -403,26 +405,44 @@ body.verberg{cursor:none}
       const sec = Math.max(15, +v.seconden || 45);
       let huidig = null, i = 0;
       const schaal = f => { const k = Math.min(b.clientWidth / 1600, b.clientHeight / 900); f.style.transform = `translate(-50%,-50%) scale(${k})`; };
-      const ro = new ResizeObserver(() => b.querySelectorAll("iframe").forEach(schaal)); ro.observe(b); spelers.push({ destroy: () => ro.disconnect() });
+      const ro = new ResizeObserver(() => b.querySelectorAll("iframe").forEach(schaal)); ro.observe(b);
+      spelers.push({ destroy: () => ro.disconnect() });
       const toon = () => {
         const pad = lijst[i % lijst.length]; i++;
         const info = (window.VS_DEMOS || []).find(d => d.pad === pad) || { naam: "", soort: "pagina" };
         const f = document.createElement("iframe");
         f.setAttribute("tabindex", "-1"); f.setAttribute("aria-hidden", "true"); f.allow = "autoplay";
         schaal(f); b.appendChild(f);
+        let geladen = false;
+        /* volgende demo; een filmpje mag altijd eerst helemaal uitspelen */
+        const plan = extra => { if (lijst.length > 1) later(toon, Math.max(sec * 1000, extra || 0)); };
+        later(() => { if (!geladen) { geladen = true; plan(); } }, 20000);
         f.addEventListener("load", () => {
+          if (geladen) return; geladen = true;
           later(() => {
             f.classList.add("aan");
             if (huidig) { const oud = huidig; later(() => oud.remove(), 1100); }
             huidig = f;
-            naam.textContent = info.naam; naam.classList.toggle("aan", !!info.naam);
+            naam.textContent = info.naam; naam.classList.toggle("aan", !!info.naam && info.soort !== "film");
             later(() => naam.classList.remove("aan"), 6000);
+            let duur = 0;
             try {
               const d = f.contentDocument, w = f.contentWindow;
-              /* demo's met een afspeelknop starten */
-              const knop = d.querySelector("#play");
-              if (knop && /afspelen/i.test(knop.textContent)) knop.click();
-              /* lange pagina's rustig laten scrollen */
+              if (info.soort === "film") {
+                /* geen geluidsknop op een tv, en na afloop opnieuw beginnen */
+                const st = d.createElement("style"); st.textContent = "#sound{display:none!important}"; d.head.appendChild(st);
+                const api = w.__vanerum || w.__anim;
+                duur = api && api.duration ? api.duration() * 1000 + 1500 : 0;
+                const cover = d.getElementById("cover"), knop = d.getElementById("play");
+                let wacht = 0;
+                elke(() => {
+                  if (!f.isConnected || !cover || !knop) return;
+                  if (!cover.hidden) { if (++wacht >= 2) { wacht = 0; knop.click(); } } else wacht = 0;
+                }, 1500);
+              } else {
+                const knop = d.querySelector("#play");
+                if (knop && /afspelen/i.test(knop.textContent)) knop.click();
+              }
               if (info.soort === "pagina") {
                 let y = 0, richting = 1;
                 elke(() => {
@@ -433,12 +453,12 @@ body.verberg{cursor:none}
                 }, 40);
               }
             } catch (e) {}
+            plan(duur);
           }, 1500);
         }, { once: true });
         f.src = pad;
       };
       toon();
-      if (lijst.length > 1) elke(toon, sec * 1000);
     },
 
     tekst(b, v) {

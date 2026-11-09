@@ -663,7 +663,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
         wrap.insertAdjacentHTML("beforeend", `<div class="lab" style="font-weight:700;font-size:13px;margin:10px 0 4px">${esc(g)}</div>`);
         DEMOS.filter(d => d.groep === g).forEach(d => {
           const l = document.createElement("label"); l.className = "vink";
-          l.innerHTML = `<input type="checkbox"${v.demos.includes(d.pad) ? " checked" : ""}> ${esc(d.naam)}${d.soort === "spel" ? ' <span class="hulp" style="margin:0">(spel: staat stil op een tv)</span>' : ""} <a href="${esc(d.pad)}" target="_blank" rel="noopener" style="margin-left:auto;font-size:12px;color:var(--grijs)">bekijk</a>`;
+          l.innerHTML = `<input type="checkbox"${v.demos.includes(d.pad) ? " checked" : ""}> ${esc(d.naam)}${d.soort === "spel" ? ' <span class="hulp" style="margin:0">(spel: staat stil op een tv)</span>' : d.soort === "film" ? ' <span class="hulp" style="margin:0">(speelt helemaal uit)</span>' : ""} <a href="${esc(d.pad)}" target="_blank" rel="noopener" style="margin-left:auto;font-size:12px;color:var(--grijs)">bekijk</a>`;
           l.querySelector("input").addEventListener("change", e => {
             v.demos = v.demos.filter(p => p !== d.pad); if (e.target.checked) v.demos.push(d.pad); stuur();
           });
@@ -677,7 +677,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       veld(o, "Andere websites (één adres per regel, mag leeg)", ta, "Bijvoorbeeld de Motion Studio. Niet elke website laat zich in een ander scherm tonen.");
     },
     video(o, v) {
-      veld(o, "YouTube-link", invoer(v, "youtube", "url", { placeholder: "https://www.youtube.com/watch?v=…" }), "De video speelt zonder geluid en begint steeds opnieuw.");
+      const films = (window.VS_DEMOS || []).filter(d => d.soort === "film");
+      const bron = document.createElement("select");
+      bron.innerHTML = `<option value="">YouTube-video</option>` + films.map(f => `<option value="${esc(f.pad)}"${v.film === f.pad ? " selected" : ""}>Vanerum-filmpje: ${esc(f.naam)}</option>`).join("");
+      const yt = document.createElement("div");
+      bron.addEventListener("change", () => { v.film = bron.value; yt.hidden = !!v.film; stuur(); });
+      veld(o, "Wat wilt u tonen?", bron);
+      o.appendChild(yt); yt.hidden = !!v.film;
+      veld(yt, "YouTube-link", invoer(v, "youtube", "url", { placeholder: "https://www.youtube.com/watch?v=…" }), "De video speelt zonder geluid en begint steeds opnieuw.");
     },
     tekst(o, v) {
       veld(o, "Kop", invoer(v, "kop", "text", { maxLength: 80 }), "*Sterretjes* om een woord geven een gele markering.");

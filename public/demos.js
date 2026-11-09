@@ -1,6 +1,9 @@
 /* Productdemo's die op de schermen kunnen draaien. De bestanden staan in /demos/<map>/.
-   soort: "tour" loopt vanzelf door, "product" draait het model langzaam rond, "spel" is interactief (staat stil op een tv). */
+   soort: "film" is een animatiefilmpje dat steeds opnieuw begint, "tour" loopt vanzelf door, "product" draait het model langzaam rond, "spel" is interactief (staat stil op een tv). */
 window.VS_DEMOS = [
+  { groep: "Filmpjes", naam: "Motion Cubes Intro", pad: "/demos/motion-cubes-intro/", soort: "film" },
+  { groep: "Filmpjes", naam: "Vanerum Loopt", pad: "/demos/vanerum-loopt/", soort: "film" },
+  { groep: "Filmpjes", naam: "Vanerum Motion", pad: "/demos/vanerum-motion/", soort: "film" },
   { groep: "3D-demo's", naam: "MultiFLEX", pad: "/demos/multiflex-demo/", soort: "tour" },
   { groep: "3D-demo's", naam: "SEED tafels", pad: "/demos/seed-demo/", soort: "tour" },
   { groep: "3D-demo's", naam: "Solifiber", pad: "/demos/solifiber-demo/", soort: "tour" },
@@ -20,8 +23,6 @@ window.VS_DEMOS = [
   { groep: "Productpagina's", naam: "Werkhuisjes", pad: "/demos/werkhuisjes/", soort: "product" },
   { groep: "Productpagina's", naam: "Instructieplek", pad: "/demos/instructieplek/", soort: "product" },
   { groep: "Productpagina's", naam: "Zand-watertafel", pad: "/demos/zand-watertafel/", soort: "product" },
-  { groep: "Bewegend leren", naam: "Motion Cubes Intro", pad: "/demos/motion-cubes-intro/", soort: "tour" },
-  { groep: "Bewegend leren", naam: "Vanerum Motion", pad: "/demos/vanerum-motion/", soort: "tour" },
   { groep: "Bewegend leren", naam: "Motion Cube 3D", pad: "/demos/motion-cube-3d/", soort: "product" },
   { groep: "Bewegend leren", naam: "Motion Cube Lab", pad: "/demos/motion-cube-lab/", soort: "product" },
   { groep: "Bewegend leren", naam: "Agili Lab", pad: "/demos/agili-lab/", soort: "product" },
