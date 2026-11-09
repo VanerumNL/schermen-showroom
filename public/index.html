@@ -677,6 +677,24 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       veld(o, "Andere websites (één adres per regel, mag leeg)", ta, "Bijvoorbeeld de Motion Studio. Niet elke website laat zich in een ander scherm tonen.");
     },
     video(o, v) {
+      if (!Array.isArray(v.videos)) v.videos = [];
+      if (VS.VIDEOS.length) {
+        const wrap = document.createElement("div"); wrap.className = "items";
+        VS.VIDEOS.forEach(x => {
+          const l = document.createElement("label"); l.className = "vink";
+          l.innerHTML = `<input type="checkbox"${v.videos.includes(x.url) ? " checked" : ""}> ${esc(x.naam)}`;
+          l.firstChild.addEventListener("change", e => {
+            v.videos = VS.VIDEOS.map(y => y.url).filter(u => u === x.url ? e.target.checked : v.videos.includes(u));
+            stuur();
+          });
+          wrap.appendChild(l);
+        });
+        const d0 = document.createElement("div"); d0.className = "veld";
+        d0.innerHTML = `<span class="lab">Eigen video's (ze spelen na elkaar)</span>`; d0.appendChild(wrap);
+        d0.insertAdjacentHTML("beforeend", `<div class="hulp">Kiest u hier een video, dan wordt de YouTube-link hieronder niet gebruikt.</div>`);
+        o.appendChild(d0);
+        veld(o, "Beeld", keuze(v, "passend", [["passen", "Hele video tonen"], ["vullen", "Vak helemaal vullen (randen vallen weg)"]]));
+      }
       veld(o, "YouTube-link", invoer(v, "youtube", "url", { placeholder: "https://www.youtube.com/watch?v=…" }), "De video speelt zonder geluid en begint steeds opnieuw.");
     },
     tekst(o, v) {

@@ -123,6 +123,9 @@ body.verberg{cursor:none}
 .fotos.vullen img{object-fit:cover}
 .fotos.passen img{object-fit:contain}
 .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.video video{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000}
+.video.vullen video{object-fit:cover}
+.video.passen video{object-fit:contain}
 .leegmelding{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px;font-size:30px;color:var(--zacht)}
 
 /* productdemo: de demo draait op 1600 × 900 en wordt passend geschaald */
@@ -389,6 +392,22 @@ body.verberg{cursor:none}
     video(b, v) {
       const id = VS.youtubeId(v.youtube);
       b.classList.add("video");
+      /* eigen video's gaan voor; ze spelen na elkaar en beginnen daarna opnieuw */
+      const eigen = (v.videos || []).filter(u => VS.VIDEOS.some(x => x.url === u));
+      if (eigen.length) {
+        b.classList.add(v.passend === "vullen" ? "vullen" : "passen");
+        const el = h("video", "", b);
+        el.muted = true; el.autoplay = true; el.playsInline = true; el.preload = "auto";
+        el.setAttribute("muted", ""); el.setAttribute("playsinline", "");
+        let i = 0;
+        const speel = () => { el.src = eigen[i % eigen.length]; el.loop = eigen.length === 1; el.play().catch(() => {}); };
+        el.addEventListener("ended", () => { i++; speel(); });
+        /* lukt een video niet, dan na een paar seconden de volgende (of dezelfde) opnieuw */
+        el.addEventListener("error", () => later(() => { i++; speel(); }, 5000));
+        speel();
+        spelers.push({ destroy: () => { el.pause(); el.removeAttribute("src"); el.load(); } });
+        return;
+      }
       if (!id) { h("div", "leegmelding", b, "Nog geen video gekozen"); return; }
       const f = h("iframe", "", b);
       f.allow = "autoplay; encrypted-media"; f.title = "Video";

@@ -59,6 +59,10 @@
     { groep: "Onderwijs", naam: "Kennisnet", url: "https://www.kennisnet.nl/feed/" }
   ];
 
+  /* Eigen video's: de bestanden staan in public/video/. Een nieuwe video toevoegen = bestand erbij zetten en hier een regel. */
+  const VIDEOS = [
+  ];
+
   const VIMO_BEWEGINGEN = ["hoi", "wijzen", "kubus", "springen", "balans", "knieen", "draaien"];
 
   /* Elk blok: naam, korte uitleg en standaardinstellingen */
@@ -70,7 +74,7 @@
     vimo: { naam: "Vimo", uitleg: "De bewegende mascotte met tekstballon", std: () => ({ kubus: true, zinnen: ["Welkom bij Vanerum!", "Kijk, de Motion Cube!", "Bewegen in de klas!", "Fijn dat u er bent!"] }) },
     fotos: { naam: "Foto's", uitleg: "Diavoorstelling van eigen afbeeldingen", std: () => ({ afbeeldingen: [], seconden: 8, passend: "vullen" }) },
     demo: { naam: "Productdemo", uitleg: "Uw 3D-demo's en productpagina's; ze lopen vanzelf en wisselen elkaar af", std: () => ({ demos: ["/demos/multiflex-demo/"], seconden: 45, eigen: [] }) },
-    video: { naam: "Video", uitleg: "YouTube-video, zonder geluid en herhalend", std: () => ({ youtube: "" }) },
+    video: { naam: "Video", uitleg: "Eigen video's of een YouTube-video, zonder geluid en herhalend", std: () => ({ videos: [], youtube: "", passend: "passen" }) },
     tekst: { naam: "Tekst", uitleg: "Kop en tekst; zet *sterretjes* om een woord voor een gele markering", std: () => ({ kop: "Welkom bij *Vanerum!*", tekst: "", grootte: "groot" }) },
     logo: { naam: "Logo", uitleg: "Het Vanerum-logo met streepjes", std: () => ({ ondertitel: "" }) },
     leeg: { naam: "Leeg", uitleg: "Niets tonen", std: () => ({}) }
@@ -115,5 +119,5 @@
     return m ? m[1] : "";
   }
 
-  window.VS = { WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, STAAND, isStaand, sjabloon, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId };
+  window.VS = { WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, STAAND, VIDEOS, isStaand, sjabloon, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId };
 })();
