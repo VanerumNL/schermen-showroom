@@ -121,6 +121,8 @@ async function api(req, env, url, ctx) {
   const m = req.method;
 
   if (p === "/api/status") return json(await wachtwoordStatus(env));
+  /* versie van de site: schermen herladen zichzelf als die verandert */
+  if (p === "/api/versie") return json({ versie: (env.CF_VERSION_METADATA && env.CF_VERSION_METADATA.id) || "" });
 
   if (p === "/api/wachtwoord" && m === "POST") {
     const st = await wachtwoordStatus(env);

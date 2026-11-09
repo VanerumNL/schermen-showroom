@@ -619,6 +619,17 @@ body.verberg{cursor:none}
     melding("Geen scherm gekozen. Gebruik het adres uit de editor.");
   } else {
     controleer(); setInterval(controleer, 60000);
+    /* is de site zelf bijgewerkt (nieuwe blokken, verbeteringen), dan laadt het scherm de nieuwe versie */
+    let versie = null;
+    const kijkVersie = async () => {
+      try {
+        const v = (await haal("/api/versie?t=" + Date.now())).versie;
+        if (!v) return;
+        if (versie === null) versie = v;
+        else if (v !== versie) setTimeout(() => location.reload(), Math.random() * 20000);
+      } catch (e) {}
+    };
+    kijkVersie(); setInterval(kijkVersie, 5 * 60000);
     /* één keer per nacht volledig herladen, voor de zekerheid */
     setInterval(() => { const n = new Date(); if (n.getHours() === 4 && n.getMinutes() === 0) location.reload(); }, 60000);
   }
