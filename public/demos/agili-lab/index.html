@@ -345,7 +345,7 @@ const heightCm = h => Math.floor((TOP_H - LIFT * (1 - h)) * 100 + 1e-6);
 /* ---------- renderer en scène ---------- */
 const stage = $('stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(1);
 renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.3;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);

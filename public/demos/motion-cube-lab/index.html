@@ -414,7 +414,7 @@ const padHTML = (label) => ['up', 'left', 'down', 'right'].map(d => `<button typ
 /* ---------- renderer en scène ---------- */
 const stage = $('stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(1);
 renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.45;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
@@ -1284,7 +1284,7 @@ function resetNa() { const B = builds.nabouwen; B.cubes = []; B.sel.clear(); B.p
 // klein voorbeeldvenster in het podium
 const pv = { el: $('preview') };
 pv.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-pv.renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); pv.renderer.toneMapping = THREE.NeutralToneMapping; pv.renderer.toneMappingExposure = 1.45;
+pv.renderer.setPixelRatio(1); pv.renderer.toneMapping = THREE.NeutralToneMapping; pv.renderer.toneMappingExposure = 1.45;
 pv.el.prepend(pv.renderer.domElement);
 pv.scene = new THREE.Scene();
 pv.scene.environment = new THREE.PMREMGenerator(pv.renderer).fromScene(new RoomEnvironment(), 0.04).texture;

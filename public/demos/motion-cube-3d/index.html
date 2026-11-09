@@ -136,7 +136,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 const box = document.getElementById('cube');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(1);
 renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.45;
 box.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
