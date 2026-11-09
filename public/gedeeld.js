@@ -65,12 +65,12 @@
     ondertitel: "Fijn dat u er bent. Samen maken we de ideale leeromgeving van morgen.",
     weetjes: [
       "Kinderen zitten een groot deel van de schooldag stil. Korte beweegmomenten helpen de aandacht vast te houden.",
-      "De Motion Cube is kruk, tafeltje en dobbelsteen in één, en werkt samen met het digibord.",
+      "De Motion Cube is kruk, tafeltje en dobbelsteen in één. Hij werkt samen met het digibord.",
       "Een stoel en tafel op de juiste hoogte helpen leerlingen om goed en geconcentreerd te zitten.",
       "Goede akoestiek maakt een lokaal rustiger: leerlingen verstaan elkaar beter en de leerkracht hoeft minder hard te praten.",
       "Vanerum maakt schoolmeubilair in een eigen fabriek in België.",
       "Een leeromgeving op maat van de visie van uw school: daar denken wij graag over mee.",
-      "Onze meubels gaan lang mee, en losse onderdelen zijn te vervangen."
+      "Onze meubels gaan lang mee en losse onderdelen zijn te vervangen."
     ],
     seconden: 12,
     zinnen: ["Welkom bij Vanerum!", "Kijk, de Motion Cube!", "Ik sta op de kubus!", "Bewegen in de klas!", "Fijn dat u er bent!", "Kunt u dit ook?", "", "Even draaien!"],
