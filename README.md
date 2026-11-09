@@ -7,6 +7,11 @@ Zelf indelingen maken voor de tv-schermen (AbleSign): klok, logo, mededelingen, 
 
 Wijzigingen die u in de editor opslaat, verschijnen binnen een minuut op het scherm. Valt het internet weg, dan blijft het scherm de laatste indeling tonen.
 
+## Staand (gekanteld) scherm
+
+Kies in de editor bij **Stand van het scherm** voor **Staand**. De indelingen worden dan staand (1080 × 1920).
+Geeft het apparaat nog een liggend beeld, dan draait het scherm de indeling zelf een kwartslag; staat alles op zijn kop, kies dan bij **Draairichting** de andere kant. Draait AbleSign of de tv het beeld al zelf, dan merkt het scherm dat vanzelf.
+
 ## Hoe het werkt
 
 | Bestand | Wat |

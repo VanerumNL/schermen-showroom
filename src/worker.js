@@ -144,7 +144,7 @@ async function api(req, env, url, ctx) {
     const uit = [];
     for (const k of lijst.keys) {
       const s = await env.KV.get(k.name, "json");
-      if (s) uit.push({ id: s.id, naam: s.naam, sjabloon: s.sjabloon, bijgewerkt: s.bijgewerkt });
+      if (s) uit.push({ id: s.id, naam: s.naam, sjabloon: s.sjabloon, stand: s.stand || "liggend", bijgewerkt: s.bijgewerkt });
     }
     uit.sort((a, b) => (a.naam || "").localeCompare(b.naam || "", "nl"));
     return json(uit);

@@ -164,6 +164,29 @@ body.verberg{cursor:none}
 .wk svg.vimo2d{position:absolute;left:880px;top:70px;width:1000px;height:880px;overflow:visible}
 .wk .voet{position:absolute;left:110px;bottom:46px;display:flex;align-items:center;gap:16px;font-size:26px;color:#5f5d58}
 .wk .voet img{height:26px}
+/* staand scherm (1080 × 1920) */
+.staand .balk{height:auto;min-height:140px;flex-wrap:wrap;gap:20px 22px;padding:32px 50px 30px}
+.staand .balk .logo{height:42px}
+.staand .balk .str{height:34px}
+.staand .balk .titel{order:3;flex:1 0 100%;text-align:left;font-size:52px;white-space:normal;line-height:1.1}
+.staand .balk .miniklok{margin-left:auto;padding:12px 24px}
+.staand .balk .miniklok img{margin:0 18px;height:24px}
+.staand .balk .miniklok .tijd{font-size:34px}
+.staand .balk .miniklok .sec{display:none}
+.staand .vlakken{gap:26px;padding:0 50px 44px}
+.staand.geen-balk .vlakken{padding-top:44px}
+.staand .band .naam{padding:0 34px 0 50px}
+.staand .wk .kop{left:80px;top:70px;gap:22px}
+.staand .wk .kop .logo{height:46px}
+.staand .wk .kop .str{height:38px}
+.staand .wk .miniklok{right:80px;top:auto;bottom:30px}
+.staand .wk .tekst{left:80px;top:240px;width:920px}
+.staand .wk h1{font-size:150px}
+.staand .wk .sub{font-size:42px;margin-top:28px}
+.staand .wk svg.vimo2d{left:40px;top:640px}
+.staand .wk .vloer{top:1446px}
+.staand .wk .tip{left:80px;top:1500px;width:920px;min-height:240px}
+.staand .wk .voet{left:80px;bottom:40px}
 /* foutmelding */
 .melding{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-size:40px;color:var(--ink);background:var(--bg)}
 .melding img{height:60px}
@@ -185,11 +208,28 @@ body.verberg{cursor:none}
   let shift = [0, 0];
   if (VOORBEELD) document.body.classList.remove("verberg");
 
-  /* ===== schalen naar het scherm ===== */
+  /* ===== schalen naar het scherm =====
+     Liggend tekenen we op 1920 × 1080, staand op 1080 × 1920.
+     Is een staand scherm gekanteld opgehangen, maar geeft het apparaat (AbleSign, Android) nog een liggend beeld,
+     dan draaien we de hele indeling zelf een kwartslag. Draait het apparaat het beeld al, dan is het venster
+     staand en draaien we niet. In het voorbeeld van de editor draaien we nooit. */
+  let staand = false, draai = "rechtsom";
   function fit() {
-    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
-    const x = (innerWidth - 1920 * k) / 2 + shift[0], y = (innerHeight - 1080 * k) / 2 + shift[1];
-    scr.style.transform = `translate(${x}px,${y}px) scale(${k})`;
+    const W = staand ? 1080 : 1920, H = staand ? 1920 : 1080;
+    scr.style.width = W + "px"; scr.style.height = H + "px";
+    const kwart = staand && !VOORBEELD && innerWidth > innerHeight;
+    if (!kwart) {
+      const k = Math.min(innerWidth / W, innerHeight / H);
+      const x = (innerWidth - W * k) / 2 + shift[0], y = (innerHeight - H * k) / 2 + shift[1];
+      scr.style.transform = `translate(${x}px,${y}px) scale(${k})`;
+      return;
+    }
+    /* na het draaien is de indeling H breed en W hoog */
+    const k = Math.min(innerWidth / H, innerHeight / W);
+    const x = (innerWidth - H * k) / 2 + shift[0], y = (innerHeight - W * k) / 2 + shift[1];
+    scr.style.transform = draai === "linksom"
+      ? `translate(${x}px,${y + W * k}px) rotate(-90deg) scale(${k})`
+      : `translate(${x + H * k}px,${y}px) rotate(90deg) scale(${k})`;
   }
   addEventListener("resize", fit); fit();
   if (!VOORBEELD) setInterval(() => { shift = [Math.round(Math.random() * 10 - 5), Math.round(Math.random() * 10 - 5)]; fit(); }, 600000);
@@ -456,7 +496,8 @@ body.verberg{cursor:none}
     opruimen(); klokken.length = 0;
     huidig = s; scr.innerHTML = "";
     const th = VS.THEMAS[s.thema] || VS.THEMAS.licht;
-    scr.className = "thema-" + (s.thema || "licht") + (s.balk && s.balk.aan ? "" : " geen-balk");
+    staand = VS.isStaand(s); draai = s.draai === "linksom" ? "linksom" : "rechtsom"; fit();
+    scr.className = "thema-" + (s.thema || "licht") + (s.balk && s.balk.aan ? "" : " geen-balk") + (staand ? " staand" : "");
     const st = document.documentElement.style;
     st.setProperty("--bg", th.bg); st.setProperty("--kaart", th.kaart); st.setProperty("--ink", th.ink); st.setProperty("--zacht", th.zacht); st.setProperty("--lijn", th.lijn);
     scr.style.background = th.bg;
@@ -471,7 +512,7 @@ body.verberg{cursor:none}
         klokken.push(k);
       }
     }
-    const sj = VS.SJABLONEN[s.sjabloon] || VS.SJABLONEN.zijbalk;
+    const sj = VS.sjabloon(s.sjabloon, staand);
     const grid = h("div", "vlakken", scr);
     grid.style.gridTemplateColumns = sj.cols; grid.style.gridTemplateRows = sj.rows;
     grid.style.gridTemplateAreas = sj.areas.map(a => `"${a}"`).join(" ");
@@ -523,6 +564,7 @@ body.verberg{cursor:none}
 
   function melding(tekst) {
     scr.innerHTML = ""; scr.style.background = "#eef8fc";
+    if (!huidig) scr.className = staand ? "staand" : "";
     h("div", "melding", scr, `<img src="/img/logo.png" alt="Vanerum"><div>${esc(tekst)}</div>`);
   }
 

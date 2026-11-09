@@ -9,6 +9,23 @@
     vier: { naam: "Vier vlakken", cols: "1fr 1fr", rows: "1fr 1fr", areas: ["a b", "c d"] },
     welkom: { naam: "Welkomstscherm", cols: "1fr", rows: "1fr", areas: ["a"], speciaal: true }
   };
+  /* Staande versies (1080 × 1920) van dezelfde sjablonen; de vakletters zijn gelijk,
+     zodat wisselen tussen liggend en staand geen inhoud kwijtraakt. */
+  const STAAND = {
+    volledig: { naam: "Eén groot vlak", cols: "1fr", rows: "1fr", areas: ["a"] },
+    twee: { naam: "Twee onder elkaar", cols: "1fr", rows: "1fr 1fr", areas: ["a", "b"] },
+    zijbalk: { naam: "Groot + twee onder", cols: "1fr 1fr", rows: "1.7fr 1fr", areas: ["a a", "b c"] },
+    boven: { naam: "Groot boven, twee onder elkaar", cols: "1fr", rows: "1.6fr 1fr 1fr", areas: ["a", "b", "c"] },
+    drie: { naam: "Drie onder elkaar", cols: "1fr", rows: "1fr 1fr 1fr", areas: ["a", "b", "c"] },
+    vier: { naam: "Vier vlakken", cols: "1fr 1fr", rows: "1fr 1fr", areas: ["a b", "c d"] },
+    welkom: { naam: "Welkomstscherm", cols: "1fr", rows: "1fr", areas: ["a"], speciaal: true }
+  };
+  const isStaand = s => !!s && s.stand === "staand";
+  /* het raster van een sjabloon in de juiste stand */
+  const sjabloon = (sj, staand) => {
+    const k = sj in SJABLONEN ? sj : "zijbalk";
+    return staand ? STAAND[k] : SJABLONEN[k];
+  };
   const vakkenVan = sj => [...new Set(SJABLONEN[sj].areas.join(" ").split(" "))];
 
   const THEMAS = {
@@ -98,5 +115,5 @@
     return m ? m[1] : "";
   }
 
-  window.VS = { WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId };
+  window.VS = { WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, STAAND, isStaand, sjabloon, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId };
 })();

@@ -71,6 +71,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .sjabloon .mini b{background:#e6f4fa;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--grijs);text-transform:uppercase}
 .sjabloon .mini.mini-welkom{grid-template-columns:1fr}
 .sjabloon .mini.mini-welkom b{background:linear-gradient(180deg,#dcf1f9,#f7fbfc);color:var(--zwart);text-transform:none;font-weight:700;line-height:1.15}
+.sjablonen.staand .sjabloon .mini{aspect-ratio:9/16;width:46%;margin:0 auto 6px}
+.standen{display:flex;gap:10px;flex-wrap:wrap}
+.stand{display:flex;align-items:center;gap:10px;border:2px solid var(--lijn);border-radius:12px;padding:8px 14px 8px 10px;background:#fff;cursor:pointer;font-weight:700}
+.stand i{display:block;border:2px solid var(--zwart);border-radius:3px;background:#e6f4fa}
+.stand-liggend i{width:26px;height:15px}
+.stand-staand i{width:15px;height:26px}
+.stand.aan{border-color:var(--zwart);box-shadow:0 0 0 3px var(--geel)}
 .themas{display:flex;gap:10px;flex-wrap:wrap}
 .thema{display:flex;align-items:center;gap:8px;border:2px solid var(--lijn);border-radius:12px;padding:7px 12px 7px 8px;background:#fff;cursor:pointer}
 .thema i{width:22px;height:22px;border-radius:7px;border:1px solid rgba(0,0,0,.12)}
@@ -104,6 +111,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .voorbeeld{padding:20px 24px;position:relative}
 .plak{position:sticky;top:77px}
 .voorbeeld .scherm{aspect-ratio:16/9;width:100%;background:#111;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(30,30,30,.15)}
+.voorbeeld .scherm.staand{aspect-ratio:9/16;width:min(100%,calc(72vh * 9 / 16));margin:0 auto}
 .voorbeeld iframe{width:100%;height:100%;border:0;display:block}
 .adres{margin-top:16px;background:#fff;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
 .adres code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;background:var(--bg);padding:9px 12px;border-radius:9px;word-break:break-all;letter-spacing:0}
@@ -242,7 +250,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   /* ===== schermenlijst ===== */
   async function laadLijst() {
     lijst = await api("/api/schermen");
-    $("lijst").innerHTML = lijst.length ? lijst.map(s => `<button class="scherm${huidig && huidig.id === s.id ? " aan" : ""}" data-id="${esc(s.id)}">${esc(s.naam || s.id)}<small>${esc((VS.SJABLONEN[s.sjabloon] || {}).naam || "")}</small></button>`).join("")
+    $("lijst").innerHTML = lijst.length ? lijst.map(s => `<button class="scherm${huidig && huidig.id === s.id ? " aan" : ""}" data-id="${esc(s.id)}">${esc(s.naam || s.id)}<small>${s.stand === "staand" ? "Staand · " : ""}${esc((VS.sjabloon(s.sjabloon, s.stand === "staand") || {}).naam || "")}</small></button>`).join("")
       : `<p class="hulp" style="padding:0 8px">Nog geen schermen.</p>`;
   }
   $("lijst").addEventListener("click", e => { const b = e.target.closest("button.scherm"); if (b) open(b.dataset.id); });
@@ -315,6 +323,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   function stuur() {
     clearTimeout(histTimer); histTimer = setTimeout(legVast, 700); knoppenHistorie();
     clearTimeout(stuurTimer);
+    document.querySelector(".voorbeeld .scherm").classList.toggle("staand", VS.isStaand(huidig));
     stuurTimer = setTimeout(() => { if (voorbeeldKlaar && huidig) $("voorbeeld").contentWindow.postMessage({ type: "indeling", scherm: JSON.parse(JSON.stringify(huidig)), ww }, location.origin); }, 250);
     status();
   }
@@ -370,9 +379,21 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 
     const alg = blok(f, "Scherm");
     veld(alg, "Naam", invoer(s, "naam", "text", { maxLength: 40 }));
-    alg.insertAdjacentHTML("beforeend", `<div class="veld"><span class="lab">Indeling</span><div class="sjablonen" id="sjablonen"></div></div><div class="veld"><span class="lab">Achtergrond</span><div class="themas" id="themas"></div></div>`);
+    const staand = VS.isStaand(s);
+    alg.insertAdjacentHTML("beforeend", `<div class="veld"><span class="lab">Stand van het scherm</span><div class="standen" id="standen"></div></div>`);
+    const st = alg.querySelector("#standen");
+    for (const [k, t] of [["liggend", "Liggend"], ["staand", "Staand (gekanteld)"]]) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "stand stand-" + k + ((staand ? "staand" : "liggend") === k ? " aan" : "");
+      b.innerHTML = `<i></i>${esc(t)}`;
+      b.addEventListener("click", () => { if ((s.stand || "liggend") === k) return; s.stand = k; if (k === "staand" && !s.draai) s.draai = "rechtsom"; tekenFormulier(); stuur(); });
+      st.appendChild(b);
+    }
+    if (staand) veld(alg, "Draairichting", keuze(s, "draai", [["rechtsom", "Beeld een kwartslag rechtsom draaien"], ["linksom", "Beeld een kwartslag linksom draaien"]]),
+      "Alleen nodig als het apparaat het beeld zelf niet draait; draait AbleSign of de tv het beeld al, dan merkt het scherm dat vanzelf. Staat de tekst op het scherm op zijn kop, kies dan de andere richting.");
+    alg.insertAdjacentHTML("beforeend", `<div class="veld"><span class="lab">Indeling</span><div class="sjablonen${staand ? " staand" : ""}" id="sjablonen"></div></div><div class="veld"><span class="lab">Achtergrond</span><div class="themas" id="themas"></div></div>`);
     const sj = alg.querySelector("#sjablonen");
-    for (const [k, t] of Object.entries(VS.SJABLONEN)) {
+    for (const k of Object.keys(VS.SJABLONEN)) {
+      const t = VS.sjabloon(k, staand);
       const b = document.createElement("button"); b.type = "button"; b.className = "sjabloon" + (s.sjabloon === k ? " aan" : "");
       b.innerHTML = t.speciaal ? `<div class="mini mini-welkom"><b>Welkom<br>+ Vimo</b></div>${esc(t.naam)}`
         : `<div class="mini" style="grid-template-columns:${t.cols};grid-template-rows:${t.rows};grid-template-areas:${t.areas.map(a => `'${a}'`).join(" ")}">${VS.vakkenVan(k).map(v => `<b style="grid-area:${v}">${v}</b>`).join("")}</div>${esc(t.naam)}`;
