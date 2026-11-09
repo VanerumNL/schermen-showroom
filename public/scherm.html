@@ -404,7 +404,11 @@ body.verberg{cursor:none}
       const naam = h("div", "demonaam", b);
       const sec = Math.max(15, +v.seconden || 45);
       let huidig = null, i = 0;
-      const schaal = f => { const k = Math.min(b.clientWidth / 1600, b.clientHeight / 900); f.style.transform = `translate(-50%,-50%) scale(${k})`; };
+      const schaal = f => {
+        /* filmpjes vullen het hele vak (ook staande films in een smal vak); demo's houden 16:9 */
+        if (f.dataset.film) { const bw = b.clientWidth || 1600, bh = b.clientHeight || 900; f.style.width = "1600px"; f.style.height = Math.round(1600 * bh / bw) + "px"; f.style.transform = `translate(-50%,-50%) scale(${bw / 1600})`; return; }
+        const k = Math.min(b.clientWidth / 1600, b.clientHeight / 900); f.style.transform = `translate(-50%,-50%) scale(${k})`;
+      };
       const ro = new ResizeObserver(() => b.querySelectorAll("iframe").forEach(schaal)); ro.observe(b);
       spelers.push({ destroy: () => ro.disconnect() });
       const toon = () => {
@@ -412,6 +416,7 @@ body.verberg{cursor:none}
         const info = (window.VS_DEMOS || []).find(d => d.pad === pad) || { naam: "", soort: "pagina" };
         const f = document.createElement("iframe");
         f.setAttribute("tabindex", "-1"); f.setAttribute("aria-hidden", "true"); f.allow = "autoplay";
+        if (info.soort === "film") f.dataset.film = "1";
         schaal(f); b.appendChild(f);
         let geladen = false;
         /* volgende demo; een filmpje mag altijd eerst helemaal uitspelen */
