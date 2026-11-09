@@ -415,8 +415,9 @@ body.verberg{cursor:none}
   /* ===== band onderaan ===== */
   function band(ouder, s) {
     const bd = h("div", "band", ouder);
-    const nieuws = s.band.bron !== "mededelingen";
-    h("div", "naam", bd, nieuws ? "Nieuws" : "Mededelingen");
+    const weetjes = s.band.bron === "weetjes";
+    const nieuws = !weetjes && s.band.bron !== "mededelingen";
+    h("div", "naam", bd, weetjes ? "Wist u dat…" : nieuws ? "Nieuws" : "Mededelingen");
     const loop = h("div", "loop", bd), rol = h("div", "rol", loop);
     let x = 0, breedte = 0, last = 0, raf = 0;
     const zet = teksten => {
@@ -433,7 +434,10 @@ body.verberg{cursor:none}
       rol.style.transform = `translateX(${x}px)`;
       raf = requestAnimationFrame(stap);
     }
-    if (nieuws) {
+    if (weetjes) {
+      const lijst = Array.isArray(s.band.weetjes) ? s.band.weetjes : VS.WELKOM_STD().weetjes;
+      zet(lijst.filter(Boolean));
+    } else if (nieuws) {
       const laad = async () => {
         try { const d = await haal(`/api/nieuws?scherm=${encodeURIComponent(s.id || ID)}&feed=${encodeURIComponent(s.band.feed || "")}`, true); zet(d.items.slice(0, 12).map(i => i.titel)); }
         catch (e) { zet(["Nieuws niet beschikbaar"]); }

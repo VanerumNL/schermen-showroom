@@ -404,15 +404,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       vinkje(bd, s.band, "aan", "Lopende band tonen", () => { bdDelen.hidden = s.band.aan === false; });
       bd.appendChild(bdDelen); bdDelen.hidden = s.band.aan === false;
       const bandBron = () => {
-        bdDelen.querySelectorAll(".bron-nieuws").forEach(x => x.hidden = s.band.bron === "mededelingen");
+        bdDelen.querySelectorAll(".bron-nieuws").forEach(x => x.hidden = s.band.bron === "mededelingen" || s.band.bron === "weetjes");
         bdDelen.querySelectorAll(".bron-med").forEach(x => x.hidden = s.band.bron !== "mededelingen");
+        bdDelen.querySelectorAll(".bron-weetjes").forEach(x => x.hidden = s.band.bron !== "weetjes");
       };
-      veld(bdDelen, "Wat loopt er door de band?", keuze(s.band, "bron", [["nieuws", "Nieuwskoppen"], ["mededelingen", "Mededelingen en eigen teksten"]], bandBron));
+      veld(bdDelen, "Wat loopt er door de band?", keuze(s.band, "bron", [["nieuws", "Nieuwskoppen"], ["weetjes", "Wist u dat…"], ["mededelingen", "Mededelingen en eigen teksten"]], bandBron));
       const fv = feedVeld(bdDelen, s.band); fv.classList.add("bron-nieuws");
       if (!Array.isArray(s.band.teksten)) s.band.teksten = [];
       const ta = document.createElement("textarea"); ta.value = s.band.teksten.join("\n");
       ta.addEventListener("input", () => { s.band.teksten = ta.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); });
       veld(bdDelen, "Eigen teksten (één per regel)", ta, "De berichten uit de mededelingen-vakken lopen er automatisch achteraan.").parentNode.classList.add("bron-med");
+      if (!Array.isArray(s.band.weetjes)) s.band.weetjes = VS.WELKOM_STD().weetjes;
+      const tw = document.createElement("textarea"); tw.style.minHeight = "190px"; tw.value = s.band.weetjes.join("\n");
+      tw.addEventListener("input", () => { s.band.weetjes = tw.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); });
+      veld(bdDelen, "Weetjes (één per regel)", tw, "Dit zijn de weetjes van het welkomstscherm; pas ze gerust aan.").parentNode.classList.add("bron-weetjes");
       bandBron();
 
       VS.vakkenVan(s.sjabloon in VS.SJABLONEN ? s.sjabloon : "zijbalk").forEach(k => vakFormulier(f, k));
