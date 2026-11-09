@@ -50,7 +50,7 @@ aside.lijst .nieuw{margin-top:12px;width:100%;justify-content:center}
 .nieuwform{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .nieuwform input{padding:9px 12px;border:1.5px solid var(--lijn);border-radius:10px}
 
-.formulier{padding:20px 22px 120px;border-right:1px solid var(--lijn);overflow:auto}
+.formulier{padding:20px 22px 0;border-right:1px solid var(--lijn);min-width:0}
 .blok{background:#fff;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 0 rgba(30,30,30,.04)}
 .blok>h3{margin:0 0 12px;font-size:16px;display:flex;align-items:center;gap:10px}
 .blok>h3 i{width:10px;height:10px;border-radius:50%;background:var(--c,var(--geel))}
@@ -116,7 +116,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .adres{margin-top:16px;background:#fff;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
 .adres code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;background:var(--bg);padding:9px 12px;border-radius:9px;word-break:break-all;letter-spacing:0}
 .adres .knoppen{display:flex;gap:8px;flex-wrap:wrap}
-.opslaanbalk{position:sticky;bottom:0;margin:0 -22px -120px;padding:14px 22px;background:rgba(244,243,240,.94);backdrop-filter:blur(6px);border-top:1px solid var(--lijn);display:flex;align-items:center;gap:10px}
+.opslaanbalk{position:sticky;bottom:0;z-index:4;margin:20px -22px 0;padding:14px 22px;background:rgba(244,243,240,.94);backdrop-filter:blur(6px);border-top:1px solid var(--lijn);display:flex;align-items:center;gap:10px}
 .opslaanbalk .status{flex:1;font-size:13px;color:var(--grijs)}
 .opslaanbalk .status.vuil{color:#a66f00;font-weight:700}
 .leegstaat{padding:60px 30px;text-align:center;color:var(--grijs)}
@@ -135,8 +135,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   aside.lijst{border-right:0;border-bottom:1px solid var(--lijn)}
   .sjablonen{grid-template-columns:repeat(2,1fr)}
   .voorbeeld{order:1;padding:16px}
-  .formulier{order:2;padding:16px 16px 120px}
-  .opslaanbalk{margin:0 -16px -120px;padding:12px 16px}
+  .formulier{order:2;padding:16px 16px 0}
+  .opslaanbalk{margin:16px -16px 0;padding:12px 16px;flex-wrap:wrap}
   header.top{padding:12px 16px;gap:10px}
   header.top img.logo{height:16px}
   header.top img.str{display:none}

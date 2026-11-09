@@ -435,7 +435,7 @@ body.verberg{cursor:none}
               const d = f.contentDocument, w = f.contentWindow;
               if (info.soort === "film") {
                 /* geen geluidsknop op een tv, en na afloop opnieuw beginnen */
-                const st = d.createElement("style"); st.textContent = "#sound{display:none!important}body{padding:0!important}.stage{border-radius:0!important}"; d.head.appendChild(st);
+                const st = d.createElement("style"); st.textContent = "#sound,.cover{display:none!important}body{padding:0!important}.stage{border-radius:0!important}"; d.head.appendChild(st);
                 const api = w.__vanerum || w.__anim;
                 const lengte = api ? (api.duration ? api.duration() : api.tl && api.tl.duration ? api.tl.duration() : 0) : 0;
                 duur = lengte ? lengte * 1000 + 1500 : 0;
@@ -443,7 +443,7 @@ body.verberg{cursor:none}
                 let wacht = 0;
                 elke(() => {
                   if (!f.isConnected || !cover || !knop) return;
-                  if (!cover.hidden) { if (++wacht >= 2) { wacht = 0; knop.click(); } } else wacht = 0;
+                  if (!cover.hidden) { if (++wacht >= 1) { wacht = 0; knop.click(); } } else wacht = 0;
                 }, 1500);
               } else {
                 const knop = d.querySelector("#play");
