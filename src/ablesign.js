@@ -11,7 +11,7 @@
 const STANDAARD_API = "https://api.ablesign.tv/api/v1";
 const ONLINE_MINUTEN = 10;      /* in de editor: groen als het scherm zich de laatste 10 minuten meldde */
 const OFFLINE_MINUTEN = 20;     /* melding pas na 20 minuten stilte, zodat een herstart geen melding geeft */
-const KANTOOR = { dagen: [1, 2, 3, 4, 5], van: "08:00", tot: "18:00", zone: "Europe/Amsterdam" };
+const KANTOOR = { dagen: [1, 2, 3, 4, 5], van: "08:30", tot: "17:00", zone: "Europe/Amsterdam" };
 
 export class AbleSignFout extends Error {
   constructor(msg, status, code) { super(msg); this.status = status; this.code = code; }

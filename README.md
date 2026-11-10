@@ -27,7 +27,7 @@ Instellen in Cloudflare, bij deze Worker onder **Settings → Variables and Secr
 
 ### Melding als een tv offline gaat
 
-Elk kwartier kijkt de Worker in AbleSign wanneer elke tv zich voor het laatst meldde. Is een tv 20 minuten stil, dan komt er een bericht in Teams; komt hij terug, dan ook. Meldingen gaan alleen op werkdagen tussen 8.00 en 18.00 uur; gaat een tv 's nachts uit, dan komt de melding de volgende ochtend als hij dan nog uit staat.
+Elk kwartier kijkt de Worker in AbleSign wanneer elke tv zich voor het laatst meldde. Is een tv 20 minuten stil, dan komt er een bericht in Teams; komt hij terug, dan ook. Meldingen gaan alleen op werkdagen tussen 8.30 en 17.00 uur (tussen 17.00 en 8.30 uur geen meldingen); gaat een tv 's nachts uit, dan komt de melding de volgende ochtend als hij dan nog uit staat.
 
 Teams-webhook maken: in het kanaal **⋯ → Workflows → "Post to a channel when a webhook request is received"**, en het adres dat u krijgt als secret `MELDING_WEBHOOK` zetten. In de editor staat daarna een link **Stuur een testmelding**.
 
