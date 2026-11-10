@@ -224,6 +224,16 @@ body.verberg{cursor:none}
   .tproduct .uitleg{font-size:min(5cqw,3.2cqh)} .tproduct ul{font-size:min(4.4cqw,2.8cqh)}
 }
 .staand .tussen .balk{padding-top:42px}
+/* countdown */
+.tcount .in{justify-content:center}
+.tcount .telrij{display:flex;align-items:baseline;gap:.25em;line-height:.9;margin:0 0 min(3cqw,4cqh)}
+.tcount .getal{font-size:min(34cqw,52cqh);font-weight:700;letter-spacing:0;font-variant-numeric:tabular-nums;background:linear-gradient(transparent 70%,var(--geel) 70% 90%,transparent 90%);padding-inline:.03em}
+.tcount .getal.tekst{font-size:min(17cqw,26cqh)}
+.tcount .eenheid{font-size:min(9cqw,14cqh);font-weight:700;color:var(--zacht)}
+.tcount .titel2{margin:0;font-size:min(5.2cqw,9cqh);font-weight:700;letter-spacing:0;line-height:1.1;text-wrap:balance}
+.tcount .sub{margin:.4em 0 0;font-size:min(3.2cqw,5.6cqh);color:var(--zacht);line-height:1.25}
+.tcount .extra2{margin-top:min(3cqw,4cqh);display:flex;align-items:center;gap:.8em;font-size:min(3.2cqw,5.6cqh);font-weight:700}
+.tcount .extra2 img{height:.9em}
 /* wifi-qr linksonder, over de band heen */
 .band.metwifi{padding-left:290px}
 .band.metwifi .naam{padding-left:36px}
@@ -591,6 +601,19 @@ body.verberg{cursor:none}
       const punten = (k.punten || []).filter(Boolean);
       bin.innerHTML = `<div class="prod"><div class="tekstkant"><div class="chip"><i style="--c:#bda8bd"></i>Uit ons assortiment</div><h2>${markeer(k.titel || "")}</h2>${k.tekst ? `<p class="uitleg">${markeer(k.tekst)}</p>` : ""}${punten.length ? `<ul>${punten.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}</div><div class="fotokant">${k.foto ? `<img src="${esc(k.foto)}" alt="">` : ""}</div></div>`;
     },
+    countdown(o, k) {
+      const dag = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+      const nu = new Date(); nu.setHours(0, 0, 0, 0);
+      const start = dag(k.datum), eind = dag(k.eind) || start;
+      if (!start) return;
+      const n = Math.round((start - nu) / 864e5);
+      let getal, eenheid = "", chip = "Nog even geduld…";
+      if (n > 0) { getal = n; eenheid = n === 1 ? "dag" : "dagen"; }
+      else if (nu <= eind) { getal = n === 0 ? "Vandaag" : "Nu bezig"; chip = n === 0 ? "Het is zover!" : "Kom langs!"; }
+      else return;
+      const bin = h("div", "tinhoud tcount", o);
+      bin.innerHTML = `<div class="in"><div class="chip"><i></i>${esc(chip)}</div><div class="telrij"><span class="getal${typeof getal === "string" ? " tekst" : ""}">${esc(getal)}</span>${eenheid ? `<span class="eenheid">${eenheid}</span>` : ""}</div>${k.titel ? `<p class="titel2">${n > 0 ? "tot de " : ""}${markeer(k.titel)}</p>` : ""}${k.ondertitel ? `<p class="sub">${markeer(k.ondertitel)}</p>` : ""}${k.tekst ? `<div class="extra2"><img src="/img/streepjes.png" alt="">${markeer(k.tekst)}</div>` : ""}</div>`;
+    },
     tekst(o, k) {
       const t = (k.tekst || "").trim();
       const bin = h("div", "tinhoud tweetje " + (k.kop && k.kop.length > 50 ? "t-m" : "t-s"), o);
@@ -621,7 +644,13 @@ body.verberg{cursor:none}
     if (!kaarten.length) return;
     const ms = Math.max(1, +t.elke || 5) * 60000, sec = Math.min(Math.max(5, +t.duur || 20), Math.floor(ms / 1000) - 12);
     let i = 0;
-    elke(() => toonTussendoor(kaarten[i++ % kaarten.length], sec), ms);
+    const geldig = k => {
+      if (k.type !== "countdown") return true;
+      const eind = new Date((k.eind || k.datum || "") + "T23:59:59"); return !isNaN(eind) && eind >= new Date();
+    };
+    elke(() => {
+      for (let p = 0; p < kaarten.length; p++) { const k = kaarten[i++ % kaarten.length]; if (geldig(k)) { toonTussendoor(k, sec); return; } }
+    }, ms);
   }
 
   /* ===== het hele scherm tekenen ===== */

@@ -114,6 +114,7 @@
     quote: { naam: "Quote over onderwijs", std: () => ({ bron: "bibliotheek", tekst: "", wie: "" }) },
     weetje: { naam: "Wist u dat…", std: () => ({ weetjes: WELKOM_STD().weetjes }) },
     product: { naam: "Product", std: () => ({ titel: "Motion Cube", tekst: "Kruk, tafeltje en dobbelsteen in één.", punten: ["Samen met het digibord te gebruiken", "Even bewegen in de les"], foto: "" }) },
+    countdown: { naam: "Countdown (bijv. naar de NOT)", std: () => ({ titel: "Nationale Onderwijs Tentoonstelling", ondertitel: "Jaarbeurs Utrecht · 19 t/m 23 januari 2027", datum: "2027-01-19", eind: "2027-01-23", tekst: "" }) },
     tekst: { naam: "Eigen bericht", std: () => ({ kop: "Welkom bij *Vanerum!*", tekst: "" }) }
   };
   const TUSSENDOOR_STD = () => ({

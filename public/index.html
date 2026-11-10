@@ -594,6 +594,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       veld(o, "Nieuwe foto uploaden", bestand, "Het liefst een product op een witte of lichte achtergrond.");
       o.appendChild(st);
     },
+    countdown(o, k) {
+      veld(o, "Naam van het evenement", invoer(k, "titel", "text", { maxLength: 70 }), "Komt op het scherm na 'tot de …', bijv. 'tot de Nationale Onderwijs Tentoonstelling'.");
+      veld(o, "Regel eronder (plaats en data)", invoer(k, "ondertitel", "text", { maxLength: 90 }));
+      const r = document.createElement("div"); r.className = "rij2"; o.appendChild(r);
+      veld(r, "Eerste dag", invoer(k, "datum", "date"));
+      veld(r, "Laatste dag", invoer(k, "eind", "date"), "Daarna verdwijnt de kaart vanzelf.");
+      veld(o, "Extra regel (mag leeg)", invoer(k, "tekst", "text", { maxLength: 70, placeholder: "Bijv. Kom langs bij onze stand!" }));
+    },
     tekst(o, k) {
       veld(o, "Kop", invoer(k, "kop", "text", { maxLength: 90 }), "Zet *sterretjes* om een woord voor een gele markering.");
       veld(o, "Tekst (mag leeg)", invoer(k, "tekst", "textarea", { maxLength: 240 }));
