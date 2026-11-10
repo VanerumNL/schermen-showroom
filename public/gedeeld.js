@@ -95,11 +95,38 @@
   });
   const WELKOM_BEWEGINGEN = ["hoi", "wijzen", "kubus", "springen", "hoi", "balans", "knieen", "draaien"];
 
+
+  /* onderwijsquotes voor het tussendoor-scherm (de bronvermelding is zoals de quote meestal wordt toegeschreven) */
+  const QUOTES = [
+    { tekst: "Onderwijs is het krachtigste wapen dat je kunt gebruiken om de wereld te veranderen.", wie: "Nelson Mandela" },
+    { tekst: "Help mij het zelf te doen.", wie: "Maria Montessori" },
+    { tekst: "Ik heb geen speciaal talent. Ik ben alleen hartstochtelijk nieuwsgierig.", wie: "Albert Einstein" },
+    { tekst: "Onderwijs is het paspoort naar de toekomst, want morgen is van hen die zich er vandaag op voorbereiden.", wie: "Malcolm X" },
+    { tekst: "Vertel het mij en ik vergeet het. Leer het mij en ik onthoud het misschien. Laat mij meedoen en ik leer het.", wie: "Chinees gezegde" },
+    { tekst: "Een goede leerkracht geeft hoop, ontsteekt de verbeelding en wekt de liefde voor leren.", wie: "Brad Henry" },
+    { tekst: "Wie stopt met leren, is oud. Wie blijft leren, blijft jong.", wie: "Henry Ford" },
+    { tekst: "Onderwijs is niet het vullen van een emmer, maar het ontsteken van een vuur.", wie: "Naar Plutarchus" }
+  ];
+
+  /* tussendoor: na een tijdje een paar seconden een volledig scherm */
+  const TUSSEN_TYPEN = {
+    weer: { naam: "Weer", std: () => ({ plaats: "IJsselstein", lat: 52.02, lon: 5.04 }) },
+    quote: { naam: "Quote over onderwijs", std: () => ({ bron: "bibliotheek", tekst: "", wie: "" }) },
+    weetje: { naam: "Wist u dat…", std: () => ({ weetjes: WELKOM_STD().weetjes }) },
+    product: { naam: "Product", std: () => ({ titel: "Motion Cube", tekst: "Kruk, tafeltje en dobbelsteen in één.", punten: ["Samen met het digibord te gebruiken", "Even bewegen in de les"], foto: "" }) },
+    tekst: { naam: "Eigen bericht", std: () => ({ kop: "Welkom bij *Vanerum!*", tekst: "" }) }
+  };
+  const TUSSENDOOR_STD = () => ({
+    aan: false, elke: 5, duur: 20,
+    kaarten: [Object.assign({ type: "weer" }, TUSSEN_TYPEN.weer.std()), Object.assign({ type: "quote" }, TUSSEN_TYPEN.quote.std()), Object.assign({ type: "weetje" }, TUSSEN_TYPEN.weetje.std())]
+  });
+
   function nieuwScherm(id, naam) {
     return {
       id, naam, sjabloon: "zijbalk", thema: "licht",
       balk: { aan: true, logo: true, klok: true, titel: "" },
       band: { aan: true, bron: "nieuws", feed: FEEDS[0].url },
+      tussendoor: TUSSENDOOR_STD(),
       vakken: {
         a: Object.assign({ type: "mededelingen" }, BLOKKEN.mededelingen.std()),
         b: Object.assign({ type: "weer" }, BLOKKEN.weer.std()),
@@ -115,5 +142,5 @@
     return m ? m[1] : "";
   }
 
-  window.VS = { WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, STAAND, isStaand, sjabloon, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId };
+  window.VS = { WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, STAAND, isStaand, sjabloon, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId, QUOTES, TUSSEN_TYPEN, TUSSENDOOR_STD };
 })();

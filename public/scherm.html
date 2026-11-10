@@ -187,6 +187,50 @@ body.verberg{cursor:none}
 .staand .wk .vloer{top:1446px}
 .staand .wk .tip{left:80px;top:1500px;width:920px;min-height:240px}
 .staand .wk .voet{left:80px;bottom:40px}
+
+/* tussendoor: volledig scherm dat even voorbijkomt */
+.tussen{position:absolute;inset:0;z-index:60;background:var(--bg);color:var(--ink);opacity:0;transition:opacity .8s;overflow:hidden;display:flex;flex-direction:column}
+.tussen.aan{opacity:1}
+.tussen .balk{position:relative;z-index:2}
+.tussen .vlakken{flex:1;grid-template-columns:1fr;grid-template-rows:1fr}
+.tussen .voortgang{position:absolute;left:0;right:0;bottom:0;height:8px;border-radius:0;margin:0;z-index:3}
+.tinhoud{flex:1;min-height:0;container-type:size;position:relative;display:flex;box-sizing:border-box;padding:0 6cqw 7cqh}
+.tinhoud .in{flex:1;display:flex;flex-direction:column;justify-content:center;min-width:0;animation:opkomen .9s ease-out both}
+@keyframes opkomen{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.chip{align-self:flex-start;display:inline-flex;align-items:center;gap:.6em;background:var(--kaart);border-radius:999px;padding:.5em 1.1em;font-weight:700;font-size:clamp(22px,min(2.4cqw,4.4cqh),36px);margin-bottom:min(4cqw,5cqh);box-shadow:0 2px 0 rgba(30,30,30,.05)}
+.chip i{width:.62em;height:.62em;border-radius:50%;background:var(--c,var(--geel))}
+.groot{font-weight:700;letter-spacing:0;line-height:1.1;text-wrap:balance;margin:0}
+.t-s .groot{font-size:min(7.4cqw,13cqh)} .t-m .groot{font-size:min(5.8cqw,10.5cqh)} .t-l .groot{font-size:min(4.6cqw,8.4cqh)}
+.tquote .aanhaal{font-size:min(30cqw,46cqh);line-height:.55;height:.42em;font-weight:700;color:var(--geel);letter-spacing:0;margin:0 0 min(1cqw,2cqh) -.04em}
+.thema-geel .tquote .aanhaal{color:#fff}
+.tquote .wie{display:flex;align-items:center;gap:1em;margin-top:min(4cqw,5cqh);font-size:min(3.2cqw,6cqh);font-weight:700}
+.tquote .wie img{height:.9em}
+.tweetje .groot{font-weight:400}
+.tproduct .prod{flex:1;display:flex;gap:5cqw;align-items:center;min-width:0;min-height:0}
+.tproduct .tekstkant{flex:1.05;display:flex;flex-direction:column;justify-content:center;min-width:0;animation:opkomen .9s ease-out both}
+.tproduct h2{margin:0;font-size:min(9cqw,16cqh);line-height:1;letter-spacing:0;font-weight:700;text-wrap:balance}
+.tproduct .uitleg{margin:min(2.4cqw,3.5cqh) 0 0;font-size:min(3.2cqw,6cqh);line-height:1.3;color:var(--zacht);text-wrap:pretty}
+.tproduct ul{margin:min(3cqw,4cqh) 0 0;padding:0;list-style:none;font-size:min(2.8cqw,5.2cqh);display:grid;gap:.5em}
+.tproduct li{display:flex;gap:.7em;align-items:center}
+.tproduct li::before{content:"";width:.6em;height:.6em;border-radius:50%;background:var(--geel);flex:0 0 auto}
+.tproduct .fotokant{flex:1;align-self:stretch;margin:0 0 0;background:#fff;border-radius:28px;overflow:hidden;box-shadow:0 2px 0 rgba(30,30,30,.05);display:flex;align-items:center;justify-content:center;animation:opkomen 1s .15s ease-out both}
+.tproduct .fotokant img{width:100%;height:100%;object-fit:contain;display:block}
+.tproduct.zonderfoto .fotokant{display:none}
+@container (max-aspect-ratio: 1/1){
+  .tproduct .prod{flex-direction:column-reverse;align-items:stretch;gap:4cqh}
+  .tproduct .fotokant{flex:1.1}
+  .tproduct .tekstkant{flex:1}
+  .tproduct h2{font-size:min(14cqw,9cqh)}
+  .tproduct .uitleg{font-size:min(5cqw,3.2cqh)} .tproduct ul{font-size:min(4.4cqw,2.8cqh)}
+}
+.staand .tussen .balk{padding-top:42px}
+/* wifi-qr linksonder, over de band heen */
+.band.metwifi{padding-left:290px}
+.band.metwifi .naam{padding-left:36px}
+.wifi{position:absolute;left:50px;bottom:0;width:216px;z-index:5;box-sizing:border-box;background:#fff;border-radius:24px 24px 0 0;padding:14px;box-shadow:0 -6px 24px rgba(30,30,30,.16)}
+.wifi img{display:block;width:100%;height:auto}
+.staand .band.metwifi{padding-left:270px}
+.staand .wifi{left:30px}
 /* foutmelding */
 .melding{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-size:40px;color:var(--ink);background:var(--bg)}
 .melding img{height:60px}
@@ -516,6 +560,70 @@ body.verberg{cursor:none}
     }
   }
 
+
+  /* ===== tussendoor: even een volledig scherm ===== */
+  const tellers = {};
+  const TUSSEN = {
+    weer(o, k, s) {
+      const grid = h("div", "vlakken", o);
+      const vak = h("div", "vak kaart", grid);
+      const w = ((s.vakken && Object.values(s.vakken).find(v => v && v.type === "weer")) || {});
+      MAAK.weer(vak, { plaats: k.plaats || w.plaats || "IJsselstein", lat: k.lat != null ? k.lat : (w.lat || 52.02), lon: k.lon != null ? k.lon : (w.lon || 5.04) });
+      return 1500;
+    },
+    quote(o, k) {
+      let q = k;
+      if (k.bron !== "eigen") { const l = VS.QUOTES; tellers.q = ((tellers.q == null ? Math.floor(Math.random() * l.length) : tellers.q + 1)) % l.length; q = l[tellers.q]; if (+k.bron >= 0 && VS.QUOTES[+k.bron]) q = VS.QUOTES[+k.bron]; }
+      const t = (q.tekst || "").trim() || "Leren begint met nieuwsgierigheid.";
+      const bin = h("div", "tinhoud tquote " + (t.length < 70 ? "t-s" : t.length < 130 ? "t-m" : "t-l"), o);
+      bin.innerHTML = `<div class="in"><div class="aanhaal">“</div><p class="groot">${markeer(t)}</p>${q.wie ? `<div class="wie"><img src="/img/streepjes.png" alt="">${esc(q.wie)}</div>` : ""}</div>`;
+    },
+    weetje(o, k) {
+      const l = (k.weetjes || []).filter(Boolean); if (!l.length) return;
+      const kl = "w" + (k.weetjes || []).length; tellers[kl] = tellers[kl] == null ? Math.floor(Math.random() * l.length) : tellers[kl] + 1;
+      const t = l[tellers[kl] % l.length];
+      const bin = h("div", "tinhoud tweetje " + (t.length < 70 ? "t-s" : t.length < 130 ? "t-m" : "t-l"), o);
+      bin.innerHTML = `<div class="in"><div class="chip"><i style="--c:${KLEUREN[tellers[kl] % 4]}"></i>Wist u dat…</div><p class="groot">${markeer(t)}</p></div>`;
+    },
+    product(o, k) {
+      o.classList.add("tproduct"); if (!k.foto) o.classList.add("zonderfoto");
+      const bin = h("div", "tinhoud", o);
+      const punten = (k.punten || []).filter(Boolean);
+      bin.innerHTML = `<div class="prod"><div class="tekstkant"><div class="chip"><i style="--c:#bda8bd"></i>Uit ons assortiment</div><h2>${markeer(k.titel || "")}</h2>${k.tekst ? `<p class="uitleg">${markeer(k.tekst)}</p>` : ""}${punten.length ? `<ul>${punten.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}</div><div class="fotokant">${k.foto ? `<img src="${esc(k.foto)}" alt="">` : ""}</div></div>`;
+    },
+    tekst(o, k) {
+      const t = (k.tekst || "").trim();
+      const bin = h("div", "tinhoud tweetje " + (k.kop && k.kop.length > 50 ? "t-m" : "t-s"), o);
+      bin.innerHTML = `<div class="in"><p class="groot" style="font-weight:700">${markeer(k.kop || "")}</p>${t ? `<p class="groot" style="font-weight:400;margin-top:.5em;font-size:.55em;color:var(--zacht)">${markeer(t).replace(/\n/g, "<br>")}</p>` : ""}</div>`;
+    }
+  };
+  function toonTussendoor(k, sec) {
+    if (!k || !TUSSEN[k.type]) return;
+    sec = Math.max(5, Math.min(120, +sec || 20));
+    const o = h("div", "tussen", scr), n0 = timers.length;
+    const balk = h("div", "balk", o, `<img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt=""><div class="ruimte"></div>`);
+    const mk = h("div", "miniklok", balk, `<div class="dag"><b data-t="wd"></b><span data-t="dm"></span></div><img src="/img/streepjes.png" alt=""><span class="tijd" data-t="tijd"></span><span class="sec" data-t="sec"></span>`);
+    klokken.push(mk);
+    let wacht = 0;
+    try { wacht = TUSSEN[k.type](o, k, huidig || {}) || 0; } catch (e) { console.error(e); o.remove(); return; }
+    const mijn = timers.slice(n0);
+    const start = voortgang(o, sec);
+    later(() => { o.classList.add("aan"); start(); }, wacht + 50);
+    later(() => {
+      o.classList.remove("aan");
+      later(() => { o.remove(); mijn.forEach(t => { clearTimeout(t); clearInterval(t); const i = timers.indexOf(t); if (i >= 0) timers.splice(i, 1); }); }, 900);
+    }, wacht + 50 + sec * 1000);
+  }
+  function tussendoor(s) {
+    const t = s.tussendoor;
+    if (VOORBEELD || !t || !t.aan) return;
+    const kaarten = (t.kaarten || []).filter(k => k && k.aan !== false);
+    if (!kaarten.length) return;
+    const ms = Math.max(1, +t.elke || 5) * 60000, sec = Math.min(Math.max(5, +t.duur || 20), Math.floor(ms / 1000) - 12);
+    let i = 0;
+    elke(() => toonTussendoor(kaarten[i++ % kaarten.length], sec), ms);
+  }
+
   /* ===== het hele scherm tekenen ===== */
   let huidig = null;
   function teken(s) {
@@ -528,7 +636,7 @@ body.verberg{cursor:none}
     st.setProperty("--bg", th.bg); st.setProperty("--kaart", th.kaart); st.setProperty("--ink", th.ink); st.setProperty("--zacht", th.zacht); st.setProperty("--lijn", th.lijn);
     scr.style.background = th.bg;
 
-    if (s.sjabloon === "welkom") { tekenWelkom(s); return; }
+    if (s.sjabloon === "welkom") { tekenWelkom(s); tussendoor(s); return; }
     if (s.balk && s.balk.aan) {
       const bk = h("div", "balk", scr);
       if (s.balk.logo !== false) bk.innerHTML = `<img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">`;
@@ -551,6 +659,11 @@ body.verberg{cursor:none}
       if (v.type === "fotos" || v.type === "video") b.classList.remove("kaart");
     });
     if (s.band && s.band.aan) band(scr, s);
+    if (s.wifi) {
+      const b = scr.querySelector(".band"); if (b) b.classList.add("metwifi");
+      h("div", "wifi", scr, `<img src="/img/wifi-qr.png" alt="Wifi: scan de QR-code om te verbinden">`);
+    }
+    tussendoor(s);
   }
 
   function tekenWelkom(s) {
@@ -613,6 +726,10 @@ body.verberg{cursor:none}
     addEventListener("message", e => {
       if (e.origin !== location.origin || !e.data || e.data.type !== "indeling") return;
       ww = e.data.ww || ""; teken(e.data.scherm);
+    });
+    addEventListener("message", e => {
+      if (e.origin !== location.origin || !e.data || e.data.type !== "toonTussendoor") return;
+      toonTussendoor(e.data.kaart, e.data.duur);
     });
     parent.postMessage({ type: "klaar" }, location.origin);
   } else if (!ID) {

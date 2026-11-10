@@ -421,6 +421,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       veld(bkDelen, "Titel in het midden (mag leeg)", invoer(s.balk, "titel", "text", { maxLength: 60, placeholder: "Bijv. Welkom in de *showroom*" }), "Zet *sterretjes* om een woord voor een gele markering.");
 
       const bd = blok(f, "Band onderaan", "var(--lila)");
+      vinkje(bd, s, "wifi", "Wifi-QR-code linksonder (staat over de band heen)");
+      if (s.wifi === undefined) bd.querySelector("input").checked = false;
       const bdDelen = document.createElement("div");
       vinkje(bd, s.band, "aan", "Lopende band tonen", () => { bdDelen.hidden = s.band.aan === false; });
       bd.appendChild(bdDelen); bdDelen.hidden = s.band.aan === false;
@@ -443,6 +445,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 
       VS.vakkenVan(s.sjabloon in VS.SJABLONEN ? s.sjabloon : "zijbalk").forEach(k => vakFormulier(f, k));
     }
+
+    tussenFormulier(f, s);
 
     const ob = document.createElement("div"); ob.className = "opslaanbalk";
     ob.innerHTML = `<button class="knop licht klein" type="button" id="terug" title="Laatste wijziging terugdraaien (Ctrl+Z)">↶ Terug</button><button class="knop licht klein" type="button" id="opnieuw" title="Opnieuw doen (Ctrl+Y)">↷</button><span class="status"></span><button class="knop gevaar klein" type="button" id="verwijder">Verwijderen</button><button class="knop geel" type="button" id="opslaan">Opslaan</button>`;
@@ -498,6 +502,103 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     tz.addEventListener("input", () => { w.zinnen = tz.value.split("\n").map(x => x.trim()); stuur(); });
     veld(b3, "Wat zegt Vimo? (één zin per regel)", tz, "Vimo doet steeds een andere beweging: zwaaien, wijzen, op de kubus springen, balanceren… Een lege regel betekent: even niets zeggen.");
   }
+
+
+  /* ===== Tussendoor: af en toe een volledig scherm ===== */
+  function tussenFormulier(f, s) {
+    if (!s.tussendoor) s.tussendoor = VS.TUSSENDOOR_STD();
+    const t = s.tussendoor; if (!Array.isArray(t.kaarten)) t.kaarten = [];
+    const b = blok(f, "Tussendoor: even volledig scherm", "var(--groen)");
+    b.insertAdjacentHTML("beforeend", `<div class="hulp" style="margin-bottom:8px">Na een tijdje komt er een paar seconden een scherm vol beeld voorbij (bijv. het weer of een quote) en daarna keert de indeling terug. De kaarten komen om de beurt aan bod.</div>`);
+    const delen = document.createElement("div");
+    vinkje(b, t, "aan", "Tussendoor-schermen tonen", () => { delen.hidden = !t.aan; });
+    b.appendChild(delen); delen.hidden = !t.aan;
+    const r = document.createElement("div"); r.className = "rij2"; delen.appendChild(r);
+    veld(r, "Elke … minuten", invoer(t, "elke", "number", { min: 1, max: 120 }));
+    veld(r, "Hoelang in beeld (seconden)", invoer(t, "duur", "number", { min: 5, max: 120 }));
+    const lijst = document.createElement("div"); delen.appendChild(lijst);
+    const teken = () => {
+      lijst.innerHTML = "";
+      t.kaarten.forEach((k, i) => {
+        const d = document.createElement("div"); d.className = "blok"; d.style.marginTop = "10px"; lijst.appendChild(d);
+        const kop = document.createElement("div"); kop.className = "vakkop"; d.appendChild(kop);
+        kop.innerHTML = `<span class="letter">${i + 1}</span><b style="flex:1">${esc((VS.TUSSEN_TYPEN[k.type] || {}).naam || k.type)}</b>`;
+        const knop = (tekst, titel, fn) => { const x = document.createElement("button"); x.type = "button"; x.className = "knop licht klein"; x.textContent = tekst; x.title = titel; x.addEventListener("click", fn); kop.appendChild(x); };
+        knop("Bekijk", "Laat deze kaart nu in het voorbeeld zien", () => {
+          const w = $("voorbeeld").contentWindow; if (w && voorbeeldKlaar) w.postMessage({ type: "toonTussendoor", kaart: JSON.parse(JSON.stringify(k)), duur: Math.min(+t.duur || 20, 12) }, location.origin);
+        });
+        if (i > 0) knop("▲", "Eerder tonen", () => { t.kaarten.splice(i - 1, 0, t.kaarten.splice(i, 1)[0]); teken(); stuur(); });
+        if (i < t.kaarten.length - 1) knop("▼", "Later tonen", () => { t.kaarten.splice(i + 1, 0, t.kaarten.splice(i, 1)[0]); teken(); stuur(); });
+        knop("✕", "Deze kaart weghalen", () => { t.kaarten.splice(i, 1); teken(); stuur(); });
+        const inh = document.createElement("div"); d.appendChild(inh);
+        (TUSSENVELDEN[k.type] || (() => {}))(inh, k);
+      });
+      if (!t.kaarten.length) lijst.innerHTML = `<p class="hulp">Nog geen kaarten. Voeg er hieronder een toe.</p>`;
+    };
+    const toe = document.createElement("div"); toe.className = "rij2"; toe.style.marginTop = "10px"; delen.appendChild(toe);
+    const sel = document.createElement("select");
+    sel.innerHTML = Object.entries(VS.TUSSEN_TYPEN).map(([k, d]) => `<option value="${k}">${esc(d.naam)}</option>`).join("");
+    const plus = document.createElement("button"); plus.type = "button"; plus.className = "knop klein"; plus.textContent = "+ Kaart toevoegen";
+    plus.addEventListener("click", () => { t.kaarten.push(Object.assign({ type: sel.value }, VS.TUSSEN_TYPEN[sel.value].std())); teken(); stuur(); });
+    toe.appendChild(sel); toe.appendChild(plus);
+    teken();
+  }
+
+  const TUSSENVELDEN = {
+    weer(o, k) { VELDEN.weer(o, k); },
+    quote(o, k) {
+      const sel = document.createElement("select");
+      sel.innerHTML = `<option value="bibliotheek">Steeds een andere uit de bibliotheek</option>` + VS.QUOTES.map((q, i) => `<option value="${i}">${esc(q.wie)}: ${esc(q.tekst.slice(0, 48))}…</option>`).join("") + `<option value="eigen">Eigen quote…</option>`;
+      sel.value = String(k.bron == null ? "bibliotheek" : k.bron);
+      const eigen = document.createElement("div"); eigen.hidden = k.bron !== "eigen";
+      sel.addEventListener("change", () => { k.bron = sel.value; eigen.hidden = sel.value !== "eigen"; stuur(); });
+      veld(o, "Welke quote?", sel, "De bibliotheek bevat bekende uitspraken over onderwijs en leren.");
+      o.appendChild(eigen);
+      veld(eigen, "Quote", invoer(k, "tekst", "textarea", { maxLength: 220 }));
+      veld(eigen, "Van wie?", invoer(k, "wie", "text", { maxLength: 60 }));
+    },
+    weetje(o, k) {
+      const ta = document.createElement("textarea"); ta.style.minHeight = "150px"; ta.value = (k.weetjes || []).join("\n");
+      ta.addEventListener("input", () => { k.weetjes = ta.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); });
+      veld(o, "Weetjes (één per regel)", ta, "Bij elke keer komt er een ander weetje voorbij.");
+    },
+    product(o, k) {
+      veld(o, "Productnaam", invoer(k, "titel", "text", { maxLength: 50 }));
+      veld(o, "Korte uitleg", invoer(k, "tekst", "textarea", { maxLength: 160 }));
+      const ta = document.createElement("textarea"); ta.value = (k.punten || []).join("\n");
+      ta.addEventListener("input", () => { k.punten = ta.value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, 5); stuur(); });
+      veld(o, "Kenmerken (één per regel, max. 5)", ta);
+      const bieb = document.createElement("div"); bieb.className = "fotolijst bieb";
+      const kopB = document.createElement("div"); kopB.className = "veld"; kopB.innerHTML = `<span class="lab">Foto van het product <span class="hulp" style="display:inline;font-weight:400">— klik er een aan; nogmaals klikken haalt hem weg</span></span>`; kopB.appendChild(bieb); o.appendChild(kopB);
+      const teken = () => {
+        bieb.innerHTML = fotoBieb === null ? `<p class="hulp" style="grid-column:1/-1;margin:0">Bibliotheek laden…</p>`
+          : fotoBieb.length ? fotoBieb.map(x => `<div class="${k.foto === x.url ? "aan" : ""}" data-url="${esc(x.url)}" title="${esc(x.naam)}"><img src="${esc(x.url)}" alt="" loading="lazy"></div>`).join("")
+          : `<p class="hulp" style="grid-column:1/-1;margin:0">Nog geen foto's geüpload.</p>`;
+      };
+      bieb.addEventListener("click", e => { const g = e.target.closest("[data-url]"); if (!g) return; k.foto = k.foto === g.dataset.url ? "" : g.dataset.url; teken(); stuur(); });
+      if (fotoBieb === null) laadBieb().then(teken);
+      teken();
+      const bestand = document.createElement("input"); bestand.type = "file"; bestand.accept = "image/*";
+      const st = document.createElement("div"); st.className = "hulp";
+      bestand.addEventListener("change", async () => {
+        const fl = bestand.files[0]; if (!fl) return;
+        st.textContent = "Uploaden…";
+        try {
+          const blob = await verklein(fl);
+          const d = await api("/api/media", { method: "POST", body: blob, headers: { "content-type": blob.type, "x-naam": encodeURIComponent(fl.name) } });
+          (fotoBieb || (fotoBieb = [])).unshift({ id: d.id, url: d.url, naam: d.naam });
+          k.foto = d.url; teken(); stuur(); st.textContent = "Klaar. De foto staat ook in de bibliotheek.";
+        } catch (err) { st.textContent = ""; toast(fl.name + ": " + err.message); }
+        bestand.value = "";
+      });
+      veld(o, "Nieuwe foto uploaden", bestand, "Het liefst een product op een witte of lichte achtergrond.");
+      o.appendChild(st);
+    },
+    tekst(o, k) {
+      veld(o, "Kop", invoer(k, "kop", "text", { maxLength: 90 }), "Zet *sterretjes* om een woord voor een gele markering.");
+      veld(o, "Tekst (mag leeg)", invoer(k, "tekst", "textarea", { maxLength: 240 }));
+    }
+  };
 
   const KLEUR = ["var(--geel)", "var(--lichtblauw)", "var(--lila)", "var(--groen)"];
   function vakFormulier(f, k) {
