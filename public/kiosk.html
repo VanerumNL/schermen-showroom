@@ -40,13 +40,13 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .onderschrift p{margin:12px 0 0;font-size:28px;line-height:1.3;color:var(--antraciet)}
 .onderschrift .str{height:30px;display:block;margin-bottom:16px}
 
-.dia.vimo .tekst{position:absolute;left:110px;top:260px;width:860px}
-.dia h1{margin:0;font-weight:700;font-size:128px;line-height:1;letter-spacing:0;text-wrap:balance}
-.dia .sub{margin:34px 0 0;font-size:44px;line-height:1.25;opacity:.85;text-wrap:pretty}
-.dia.vimo svg{position:absolute;left:880px;top:90px;width:1000px;height:880px;overflow:visible}
-.dia.tekstdia{display:grid;place-items:center;text-align:center;padding:0 180px}
-.dia.tekstdia .str{height:56px;display:block;margin:0 auto 40px}
-.dia.tekstdia h1{font-size:120px}
+.vimo .tekst{position:absolute;left:110px;top:260px;width:860px}
+.dia h1,.schaal h1{margin:0;font-weight:700;font-size:128px;line-height:1;letter-spacing:0;text-wrap:balance}
+.dia .sub,.schaal .sub{margin:34px 0 0;font-size:44px;line-height:1.25;opacity:.85;text-wrap:pretty}
+.vimo svg{position:absolute;left:880px;top:90px;width:1000px;height:880px;overflow:visible}
+
+.tekstdia .str{height:56px;display:block;margin:0 auto 40px}
+.tekstdia h1{font-size:120px}
 
 .kopje{position:absolute;left:56px;top:48px;z-index:5;display:flex;align-items:center;gap:22px;background:#fff;border-radius:999px;padding:18px 32px 18px 30px;box-shadow:0 8px 30px rgba(30,30,30,.12);color:var(--zwart)}
 .kopje img.logo{height:38px;display:block}
@@ -66,6 +66,36 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 @keyframes rimpel{0%{transform:scale(.35);opacity:.9}100%{transform:scale(1.15);opacity:0}}
 @keyframes zweef{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .puntjes.links{right:auto;left:60px}
+
+/* slide-vak tussen balk en band */
+.diavak{position:absolute;left:0;right:0;top:0;bottom:0;overflow:hidden}
+.schaal{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:50% 50%}
+.schaal.tekstdia{display:grid;place-items:center;text-align:center;padding:0 180px;box-sizing:border-box}
+
+/* balk bovenaan, zoals op de gewone schermen */
+.pbalk{position:absolute;left:0;right:0;top:0;height:150px;display:flex;align-items:center;gap:30px;padding:0 70px;box-sizing:border-box;background:var(--pbalk-bg);color:var(--pbalk-ink);z-index:4}
+.pbalk .logo{height:56px;display:block}
+.pbalk .str{height:46px;display:block}
+.pbalk .titel{flex:1;text-align:center;font-size:44px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbalk .ruimte{flex:1}
+.miniklok{display:flex;align-items:center;background:#fff;color:var(--zwart);border-radius:22px;padding:14px 32px;box-shadow:0 2px 0 rgba(30,30,30,.05)}
+.miniklok .dag{display:flex;flex-direction:column;line-height:1.05;text-align:right}
+.miniklok .dag b{font-size:22px;font-weight:700;text-transform:capitalize}
+.miniklok .dag span{font-size:20px;color:#5f5d58}
+.miniklok img{height:30px;margin:0 30px}
+.miniklok .tijd{font-size:40px;font-weight:700;letter-spacing:.02em;font-variant-numeric:tabular-nums;line-height:1;background:linear-gradient(transparent 72%,var(--geel) 72% 92%,transparent 92%);padding-inline:.04em}
+.miniklok .sec{font-size:24px;font-weight:700;color:#5f5d58;font-variant-numeric:tabular-nums;margin-left:12px;align-self:flex-end;padding-bottom:4px;min-width:2.4ch}
+
+/* lopende band onderaan, zoals op de gewone schermen */
+.pband{position:absolute;left:0;right:0;bottom:0;height:96px;background:var(--pband-bg);color:var(--pband-ink);display:flex;align-items:center;overflow:hidden;z-index:4}
+.pband .naam{flex:0 0 auto;height:100%;display:flex;align-items:center;gap:16px;padding:0 40px 0 70px;background:var(--plabel-bg);color:var(--plabel-ink);font-size:32px;font-weight:700;position:relative;z-index:1}
+.pband .naam::after{content:"";position:absolute;right:-29px;top:0;bottom:0;width:30px;background:var(--plabel-bg);clip-path:polygon(0 0,100% 0,0 100%)}
+.pband .loop{flex:1;overflow:hidden;white-space:nowrap;position:relative;height:100%;display:flex;align-items:center}
+.pband .rol{display:inline-flex;font-size:36px;padding-left:60px;will-change:transform}
+.pband .rol span{padding-right:44px}
+.pband .rol span::after{content:"";display:inline-block;width:42px;height:22px;margin-left:44px;vertical-align:middle;background:url(/img/streepjes.png) center/contain no-repeat}
+.pband.metwifi{height:124px}
+.pband .naam .qr{height:104px;width:auto;display:block;background:#fff;border-radius:12px;padding:5px;box-sizing:content-box}
 .leeg{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;color:var(--antraciet);text-align:center;padding:100px}
 
 /* ===== productoverzicht ===== */
@@ -157,32 +187,108 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     r.setProperty("--knop", knop); r.setProperty("--knop-ink", KS.donker(knop) ? "#fff" : "#1e1e1e");
     r.setProperty("--hint", hint); r.setProperty("--hint-ink", KS.donker(hint) ? "#fff" : "#1e1e1e");
     $("presVlak").classList.toggle("donkerebg", pb.ink === "#ffffff");
+    const bk = cfg.balk || {}, bd = cfg.band || {};
+    const bkBg = /^#[0-9a-f]{6}$/i.test(bk.kleur || "") ? bk.kleur : "transparent";
+    r.setProperty("--pbalk-bg", bkBg); r.setProperty("--pbalk-ink", bkBg === "transparent" ? pb.ink : (KS.donker(bkBg) ? "#fff" : "#1e1e1e"));
+    const bdBg = bd.kleur || "#2e3033", lbBg = bd.labelKleur || "#fbb900";
+    r.setProperty("--pband-bg", bdBg); r.setProperty("--pband-ink", KS.donker(bdBg) ? "#fff" : "#1e1e1e");
+    r.setProperty("--plabel-bg", lbBg); r.setProperty("--plabel-ink", KS.donker(lbBg) ? "#fff" : "#1e1e1e");
   }
   const logoVoor = bg => KS.donker(bg) ? "/img/logo-wit.png" : "/img/logo.png";
 
   /* =====================================================================
      Presentatie
      ===================================================================== */
-  let diaI = 0, huidigeDia = null;
+  let diaI = 0, huidigeDia = null, diavakH = 1080;
+  function h(tag, cls, ouder, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (ouder) ouder.appendChild(e); return e; }
+
+  /* klok in de balk */
+  const klokken = [];
+  const twee = n => String(n).padStart(2, "0");
+  (function tik() {
+    const n = new Date();
+    const w = { tijd: twee(n.getHours()) + ":" + twee(n.getMinutes()), sec: twee(n.getSeconds()), wd: n.toLocaleDateString("nl-NL", { weekday: "long" }), dm: n.toLocaleDateString("nl-NL", { day: "numeric", month: "long" }) };
+    klokken.forEach(k => { if (k.isConnected) k.querySelectorAll("[data-t]").forEach(e => { if (e.textContent !== w[e.dataset.t]) e.textContent = w[e.dataset.t]; }); });
+    setTimeout(tik, 1000 - n.getMilliseconds() + 5);
+  })();
+
+  /* lopende band; geeft de hoogte terug */
+  function band(ouder, bd) {
+    const el = h("div", "pband", ouder);
+    const bron = bd.bron || "weetjes";
+    const naam = h("div", "naam", el, esc(bd.label || (bron === "nieuws" ? "Nieuws" : bron === "teksten" ? "Vanerum" : "Wist u dat…")));
+    if (bd.wifi) { el.classList.add("metwifi"); naam.insertAdjacentHTML("afterbegin", `<img class="qr" src="/img/wifi-qr-klein.png" alt="Wifi">`); }
+    const loop = h("div", "loop", el), rol = h("div", "rol", loop);
+    let x = 0, breedte = 0, last = 0, raf = 0;
+    const zet = t => {
+      if (!t.length) { rol.innerHTML = ""; return; }
+      rol.innerHTML = t.map(z => `<span>${esc(z)}</span>`).join(""); rol.innerHTML += rol.innerHTML;
+      breedte = rol.scrollWidth / 2; if (!raf) raf = requestAnimationFrame(stap);
+    };
+    function stap(t) {
+      if (!el.isConnected) return;
+      const dt = last ? Math.min(100, t - last) : 0; last = t;
+      x -= dt * .11; if (breedte && -x > breedte) x += breedte;
+      rol.style.transform = `translateX(${x}px)`; raf = requestAnimationFrame(stap);
+    }
+    if (bron === "nieuws") {
+      const laad = async () => {
+        try {
+          const r = await fetch(`/api/nieuws?kiosk=${encodeURIComponent(cfg.id || ID)}&feed=${encodeURIComponent(bd.feed || "")}`);
+          const d = await r.json(); if (!r.ok) throw new Error(d.fout);
+          zet(d.items.slice(0, 12).map(i => i.titel));
+        } catch (e) { zet((bd.teksten || []).filter(Boolean)); }
+      };
+      laad(); const t = setInterval(() => { if (!el.isConnected) clearInterval(t); else laad(); }, 10 * 60000);
+    } else zet(((bron === "teksten" ? bd.teksten : bd.weetjes) || []).filter(Boolean));
+    return bd.wifi ? 124 : 96;
+  }
   function startPresentatie() {
-    ruimOp();
+    ruimOp(); klokken.length = 0;
     const v = $("presVlak"), p = cfg.presentatie || {};
     v.innerHTML = "";
-    if (p.kopbalk !== false) v.insertAdjacentHTML("beforeend", `<div class="kopje"><img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">${p.titel ? `<span>${esc(p.titel)}</span>` : ""}</div>`);
+    const bk = cfg.balk, bd = cfg.band || {};
+    const balkH = bk && bk.aan ? 150 : 0;
+    let bandH = 0;
+    if (balkH) {
+      const ink = getComputedStyle(document.documentElement).getPropertyValue("--pbalk-ink").trim();
+      const b = h("div", "pbalk", v);
+      if (bk.logo !== false) b.innerHTML = `<img class="logo" src="${ink === "#fff" || ink === "#ffffff" ? "/img/logo-wit.png" : "/img/logo.png"}" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">`;
+      h("div", bk.titel ? "titel" : "ruimte", b, bk.titel ? markeer(bk.titel) : "");
+      if (bk.klok !== false) klokken.push(h("div", "miniklok", b, `<div class="dag"><b data-t="wd"></b><span data-t="dm"></span></div><img src="/img/streepjes.png" alt=""><span class="tijd" data-t="tijd"></span><span class="sec" data-t="sec"></span>`));
+    }
+    if (bd.aan) bandH = band(v, bd);
+    const vak = h("div", "diavak", v); vak.id = "diavak"; vak.style.top = balkH + "px"; vak.style.bottom = bandH + "px";
+    diavakH = 1080 - balkH - bandH;
+    if (!bk && p.kopbalk !== false) v.insertAdjacentHTML("beforeend", `<div class="kopje"><img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">${p.titel ? `<span>${esc(p.titel)}</span>` : ""}</div>`);
     const hoek = ["ro", "lo", "rb", "mo"].includes(p.hintPlek) ? p.hintPlek : "ro";
-    if (p.hint) v.insertAdjacentHTML("beforeend", `<div class="hint ${hoek}"><span class="tik"><b></b><b></b><i></i></span>${esc(p.hint)}</div>`);
+    if (p.hint) {
+      v.insertAdjacentHTML("beforeend", `<div class="hint ${hoek}"><span class="tik"><b></b><b></b><i></i></span>${esc(p.hint)}</div>`);
+      const hi = v.querySelector(".hint");
+      if (hoek === "rb") { if (balkH) hi.style.top = (balkH + 30) + "px"; } else if (bandH) hi.style.bottom = (bandH + 30) + "px";
+    }
     const dias = (cfg.dias || []).filter(diaGeldig);
     if (!dias.length) { v.insertAdjacentHTML("beforeend", `<div class="leeg">Nog geen dia's. Voeg foto's, producten of Vimo toe in de instellingen.</div>`); return; }
-    if (dias.length > 1) v.insertAdjacentHTML("beforeend", `<div class="puntjes${p.hint && hoek === "ro" ? " links" : ""}">${dias.map(() => "<i></i>").join("")}</div>`);
+    if (dias.length > 1) {
+      v.insertAdjacentHTML("beforeend", `<div class="puntjes${p.hint && hoek === "ro" ? " links" : ""}">${dias.map(() => "<i></i>").join("")}</div>`);
+      if (bandH) v.querySelector(".puntjes").style.bottom = (bandH + 44) + "px";
+    }
     huidigeDia = null; diaI = diaI % dias.length;
     toonDia(dias);
+  }
+  /* tekst- en Vimo-dia's zijn ontworpen op 1920 × 1080; ze schalen mee als er een balk of band is */
+  function schaalVak(el, cls) {
+    const sc = h("div", "schaal " + cls, el);
+    sc.style.transform = `translate(-50%,-50%) scale(${Math.min(1, diavakH / 1080)})`;
+    return sc;
   }
   const diaGeldig = d => d && (d.type === "foto" ? !!d.src : d.type === "demo" ? !!d.pad : true);
 
   function toonDia(dias) {
-    const d = dias[diaI % dias.length], v = $("presVlak"), i = diaI % dias.length;
+    const d = dias[diaI % dias.length], v = $("diavak"), i = diaI % dias.length;
+    if (!v) return;
     diaI++;
-    v.querySelectorAll(".puntjes i").forEach((el, n) => el.classList.toggle("aan", n === i));
+    $("presVlak").querySelectorAll(".puntjes i").forEach((el, n) => el.classList.toggle("aan", n === i));
     const el = document.createElement("div");
     el.className = "dia";
     const p = cfg.presentatie || {};
@@ -202,7 +308,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
       if (info.soort === "film") el.classList.add("film");
       const f = document.createElement("iframe");
       f.tabIndex = -1; f.setAttribute("aria-hidden", "true"); f.allow = "autoplay";
-      const k = Math.min(1920 / 1600, 1080 / 900);
+      const k = Math.min(1920 / 1600, diavakH / 900);
       f.style.transform = `translate(-50%,-50%) scale(${k})`;
       el.appendChild(f);
       let geladen = false;
@@ -230,13 +336,13 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
         });
         f.src = d.pad;
       };
-      v.insertBefore(el, v.querySelector(".kopje, .hint, .puntjes")); klaar(); return;
+      v.appendChild(el); klaar(); return;
     } else if (d.type === "vimo") {
-      el.classList.add("vimo");
-      el.innerHTML = `<div class="tekst"><h1>${markeer(d.titel || "")}</h1>${d.ondertitel ? `<p class="sub">${markeer(d.ondertitel)}</p>` : ""}</div>`;
+      const sc = schaalVak(el, "vimo");
+      sc.innerHTML = `<div class="tekst"><h1>${markeer(d.titel || "")}</h1>${d.ondertitel ? `<p class="sub">${markeer(d.ondertitel)}</p>` : ""}</div>`;
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Vimo, de mascotte van Vanerum, naast een Motion Cube");
-      el.appendChild(svg);
+      sc.appendChild(svg);
       klaar = () => {
         const speler = new Vimo2D.Player(svg, { width: 1000, height: 880, home: { x: 330, g: 812 }, scale: 1.6, cube: { cx: 790, ground: 812, s: 210 }, fontSize: 40 });
         spelers.push(speler); el._speler = speler;
@@ -248,11 +354,10 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
       };
       if (!d.seconden) sec = 20;
     } else {
-      el.classList.add("tekstdia");
-      el.innerHTML = `<div><img class="str" src="/img/streepjes.png" alt=""><h1>${markeer(d.kop || "")}</h1>${d.tekst ? `<p class="sub">${markeer(d.tekst)}</p>` : ""}</div>`;
+      schaalVak(el, "tekstdia").innerHTML = `<div><img class="str" src="/img/streepjes.png" alt=""><h1>${markeer(d.kop || "")}</h1>${d.tekst ? `<p class="sub">${markeer(d.tekst)}</p>` : ""}</div>`;
       klaar = wissel;
     }
-    v.insertBefore(el, v.querySelector(".kopje, .hint, .puntjes"));
+    v.appendChild(el);
     klaar();
     volgende(sec * 1000);
 
