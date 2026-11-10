@@ -22,6 +22,8 @@ window.VS_DEMOS = [
   { groep: "Productpagina's", naam: "Solifiber", pad: "/demos/solifiber/", soort: "product" },
   { groep: "Productpagina's", naam: "Opti+ Move stoel", pad: "/demos/opti-move-stoel/", soort: "product" },
   { groep: "Productpagina's", naam: "Opti+ Move tafel", pad: "/demos/opti-move-tafel/", soort: "product" },
+  { groep: "Productpagina's", naam: "Agili tafel", pad: "/demos/agili-tafel/", soort: "product" },
+  { groep: "Productpagina's", naam: "Motion Cubes", pad: "/demos/motion-cubes/", soort: "product" },
   { groep: "Productpagina's", naam: "Plantentafel", pad: "/demos/plantentafel/", soort: "product" },
   { groep: "Productpagina's", naam: "Werkhuisjes", pad: "/demos/werkhuisjes/", soort: "product" },
   { groep: "Productpagina's", naam: "Instructieplek", pad: "/demos/instructieplek/", soort: "product" },

@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Vanerum aanraakscherm</title>
+<link rel="icon" href="/img/kiosk-icoon.png">
+<style>
+/* Aanraakscherm voor de beurs (NOT): presentatie die vanzelf loopt; aantikken opent het productoverzicht,
+   daarna de productpagina en het lab. Na een tijd zonder aanraking gaat het scherm terug naar de presentatie. */
+@font-face{font-family:"Neue Montreal";src:url(/fonts/NeueMontreal-Regular.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Neue Montreal";src:url(/fonts/NeueMontreal-Bold.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{--geel:#fbb900;--blauw:#b8e7f9;--lila:#bda8bd;--groen:#a8cb67;--zwart:#1e1e1e;--antraciet:#2e3033;--grijs:#f4f4f2;
+  --font:"Neue Montreal",Arial,sans-serif;--pres-bg:linear-gradient(180deg,#dcf1f9 0%,#eef8fc 55%,#f7fbfc 100%);--pres-ink:#1e1e1e;
+  --ov-bg:#f4f4f2;--ov-ink:#1e1e1e;--balk:#1e1e1e;--balk-ink:#fff;--knop:#fbb900;--knop-ink:#1e1e1e;--hint:#fbb900;--hint-ink:#1e1e1e}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:var(--font);letter-spacing:.03em;color:var(--zwart);
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+body.geenmuis,body.geenmuis *{cursor:none!important}
+mark{color:inherit;background:linear-gradient(transparent 62%,var(--geel) 62% 92%,transparent 92%);padding-inline:.04em}
+button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+
+/* vaste 1920 × 1080 die naar elk scherm schaalt */
+.laag{position:fixed;inset:0;overflow:hidden}
+.vlak{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform:translate(-50%,-50%);transform-origin:50% 50%;overflow:hidden}
+
+/* ===== presentatie ===== */
+#pres{background:var(--pres-bg);cursor:pointer}
+#pres .vlak{background:var(--pres-bg);color:var(--pres-ink)}
+.dia{position:absolute;inset:0;opacity:0;transition:opacity .9s ease}
+.dia.aan{opacity:1}
+.dia iframe{position:absolute;left:50%;top:50%;width:1600px;height:900px;border:0;pointer-events:none;background:#fff;transform-origin:50% 50%}
+.dia.film iframe{background:transparent}
+.foto{overflow:hidden;background:#111}
+.foto .vaag{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(40px) brightness(.75);transform:scale(1.1)}
+.foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:kenburns 14s ease-out both}
+.foto.passen img{object-fit:contain;animation:none}
+@keyframes kenburns{from{transform:scale(1.0)}to{transform:scale(1.06)}}
+.onderschrift{position:absolute;left:80px;bottom:150px;max-width:900px;background:#fff;color:var(--zwart);border-radius:28px;padding:30px 38px 32px;box-shadow:0 20px 50px rgba(0,0,0,.18)}
+.onderschrift b{display:block;font-size:52px;line-height:1.08}
+.onderschrift p{margin:12px 0 0;font-size:28px;line-height:1.3;color:var(--antraciet)}
+.onderschrift .str{height:30px;display:block;margin-bottom:16px}
+
+.dia.vimo .tekst{position:absolute;left:110px;top:260px;width:860px}
+.dia h1{margin:0;font-weight:700;font-size:128px;line-height:1;letter-spacing:0;text-wrap:balance}
+.dia .sub{margin:34px 0 0;font-size:44px;line-height:1.25;opacity:.85;text-wrap:pretty}
+.dia.vimo svg{position:absolute;left:880px;top:90px;width:1000px;height:880px;overflow:visible}
+.dia.tekstdia{display:grid;place-items:center;text-align:center;padding:0 180px}
+.dia.tekstdia .str{height:56px;display:block;margin:0 auto 40px}
+.dia.tekstdia h1{font-size:120px}
+
+.kopje{position:absolute;left:56px;top:48px;z-index:5;display:flex;align-items:center;gap:22px;background:#fff;border-radius:999px;padding:18px 32px 18px 30px;box-shadow:0 8px 30px rgba(30,30,30,.12);color:var(--zwart)}
+.kopje img.logo{height:38px;display:block}
+.kopje img.str{height:32px;display:block}
+.kopje span{font-weight:700;font-size:28px;padding-left:20px;border-left:2px solid #e3e1dc}
+.puntjes{position:absolute;right:60px;bottom:58px;z-index:5;display:flex;gap:12px}
+.puntjes i{width:14px;height:14px;border-radius:50%;background:rgba(30,30,30,.25);transition:all .4s}
+.puntjes i.aan{width:44px;border-radius:8px;background:var(--zwart)}
+.donkerebg .puntjes i{background:rgba(255,255,255,.35)}.donkerebg .puntjes i.aan{background:#fff}
+.hint{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:22px;background:var(--hint);color:var(--hint-ink);
+  font-weight:700;font-size:34px;padding:20px 40px 20px 22px;border-radius:999px;box-shadow:0 14px 40px rgba(30,30,30,.25);white-space:nowrap;animation:zweef 3s ease-in-out infinite}
+.hint .tik{position:relative;width:58px;height:58px;flex:none}
+.hint .tik i{position:absolute;inset:14px;border-radius:50%;background:currentColor}
+.hint .tik b{position:absolute;inset:0;border-radius:50%;border:4px solid currentColor;opacity:0;animation:rimpel 2s ease-out infinite}
+.hint .tik b+b{animation-delay:1s}
+@keyframes rimpel{0%{transform:scale(.35);opacity:.9}100%{transform:scale(1.15);opacity:0}}
+@keyframes zweef{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,-8px)}}
+.leeg{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;color:var(--antraciet);text-align:center;padding:100px}
+
+/* ===== productoverzicht ===== */
+#overzicht .vlak{background:var(--ov-bg);color:var(--ov-ink);display:grid;grid-template-rows:auto auto 1fr auto}
+.balk{display:flex;align-items:center;gap:30px;background:var(--balk);color:var(--balk-ink);padding:0 56px;height:128px}
+.balk img.logo{height:46px;display:block}
+.balk img.str{height:40px;display:block}
+.balk .scheid{width:2px;height:60px;background:currentColor;opacity:.25}
+.balk h2{margin:0;font-size:52px;line-height:1;font-weight:700;letter-spacing:0}
+.balk .ruimte{flex:1}
+.balk .sluit{display:flex;align-items:center;gap:14px;font-weight:700;font-size:26px;border:3px solid currentColor;border-radius:999px;padding:14px 28px;opacity:.9}
+.intro{margin:0;padding:44px 64px 0;font-size:32px;line-height:1.3;max-width:1500px;opacity:.85}
+.tegels{display:grid;gap:36px;padding:40px 64px 30px;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);min-height:0}
+.tegel{position:relative;display:grid;grid-template-rows:1fr auto;background:#fff;color:var(--zwart);border-radius:34px;overflow:hidden;text-align:left;box-shadow:0 2px 0 rgba(30,30,30,.05),0 18px 40px rgba(30,30,30,.08);
+  transition:transform .2s ease,box-shadow .2s ease;min-height:0}
+.tegel:active{transform:scale(.975)}
+.tegel .beeld{position:relative;background:linear-gradient(180deg,#dcf1f9 0%,#eef8fc 55%,#f7fbfc 100%);min-height:0;overflow:hidden}
+.tegel .beeld img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tegel .beeld .kleur{position:absolute;left:0;right:0;bottom:0;height:12px;background:var(--c)}
+.tegel .info{padding:26px 30px 30px;display:grid;gap:10px;grid-template-rows:auto 1fr auto;height:270px}
+.tegel h3{margin:0;font-size:44px;line-height:1.05;letter-spacing:0}
+.tegel p{margin:0;font-size:24px;line-height:1.3;color:#5f5d58}
+.tegel .knoppen{display:flex;gap:10px;flex-wrap:nowrap}
+.pil{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:22px;border-radius:999px;padding:13px 20px;white-space:nowrap;background:var(--knop);color:var(--knop-ink)}
+.pil.rand{background:#fff;color:var(--zwart);box-shadow:inset 0 0 0 3px var(--zwart)}
+.voet{display:flex;align-items:center;justify-content:space-between;padding:0 64px 34px;font-size:22px;opacity:.75}
+.voet span{display:flex;align-items:center;gap:14px}
+.voet img{height:22px}
+
+/* ===== productpagina en lab ===== */
+#product{display:grid;grid-template-rows:minmax(0,1fr) auto;place-items:stretch;background:#fff}
+#product iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+.nav{display:flex;align-items:center;gap:1.4vh;background:var(--balk);color:var(--balk-ink);padding:1.2vh 2.4vh;font-size:2.3vh}
+.nav .titel{flex:1;text-align:center;font-weight:700;font-size:2.6vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav button{display:inline-flex;align-items:center;gap:1vh;font-weight:700;border-radius:999px;padding:1.3vh 2.6vh;white-space:nowrap}
+.nav .terug{box-shadow:inset 0 0 0 .3vh currentColor}
+.nav .verder{background:var(--knop);color:var(--knop-ink)}
+.nav .verder.leeg{visibility:hidden}
+.laden{position:absolute;inset:0;display:grid;place-items:center;background:#fff;font-weight:700;font-size:3vh;color:#5f5d58;transition:opacity .4s}
+.laden.weg{opacity:0;pointer-events:none}
+.melding{position:fixed;inset:0;display:grid;place-items:center;background:#eef8fc;font-size:3vh;color:var(--antraciet);text-align:center;gap:3vh;align-content:center}
+.melding img{height:5vh;margin:0 auto}
+</style>
+</head>
+<body>
+<section class="laag" id="pres" aria-label="Presentatie; tik om de producten te bekijken"><div class="vlak" id="presVlak"></div></section>
+<section class="laag" id="overzicht" hidden><div class="vlak" id="ovVlak"></div></section>
+<section id="product" class="laag" hidden>
+  <div style="position:relative;min-height:0"><iframe id="pframe" title="Productpagina" allow="autoplay; fullscreen"></iframe><div class="laden" id="laden">Laden…</div></div>
+  <nav class="nav">
+    <button class="terug" id="navTerug" type="button"></button>
+    <div class="titel" id="navTitel"></div>
+    <button class="verder" id="navVerder" type="button"></button>
+  </nav>
+</section>
+
+<script src="/vimo2d.js"></script>
+<script src="/demos.js"></script>
+<script src="/kiosk-gedeeld.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const { esc, markeer } = KS;
+  const params = new URLSearchParams(location.search);
+  const VOORBEELD = params.has("voorbeeld");
+  const ID = (location.pathname.match(/^\/k\/([a-z0-9-]+)/) || [])[1] || params.get("k") || "";
+  let cfg = null, modus = "pres", laatsteAanraking = Date.now();
+
+  /* ---------- timers die bij elke wissel opgeruimd worden ---------- */
+  let timers = [], spelers = [];
+  const later = (f, ms) => { const t = setTimeout(f, ms); timers.push(t); return t; };
+  function ruimOp() { timers.forEach(clearTimeout); timers = []; spelers.forEach(s => { try { s.destroy ? s.destroy() : s.stop && s.stop(); } catch (e) {} }); spelers = []; }
+
+  /* ---------- schalen naar het scherm ---------- */
+  function schaal() {
+    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+    document.querySelectorAll(".vlak").forEach(v => { v.style.transform = `translate(-50%,-50%) scale(${k})`; });
+  }
+  addEventListener("resize", schaal);
+
+  /* ---------- kleuren uit de instellingen ---------- */
+  function kleuren() {
+    const r = document.documentElement.style, p = cfg.presentatie || {}, o = cfg.overzicht || {};
+    const pb = KS.achtergrond(p.achtergrond), ob = KS.achtergrond(o.achtergrond);
+    r.setProperty("--pres-bg", pb.bg); r.setProperty("--pres-ink", pb.ink);
+    r.setProperty("--ov-bg", ob.bg); r.setProperty("--ov-ink", ob.ink);
+    const balk = o.balk || "#1e1e1e", knop = o.knop || "#fbb900", hint = p.hintKleur || "#fbb900";
+    r.setProperty("--balk", balk); r.setProperty("--balk-ink", KS.donker(balk) ? "#fff" : "#1e1e1e");
+    r.setProperty("--knop", knop); r.setProperty("--knop-ink", KS.donker(knop) ? "#fff" : "#1e1e1e");
+    r.setProperty("--hint", hint); r.setProperty("--hint-ink", KS.donker(hint) ? "#fff" : "#1e1e1e");
+    $("presVlak").classList.toggle("donkerebg", pb.ink === "#ffffff");
+  }
+  const logoVoor = bg => KS.donker(bg) ? "/img/logo-wit.png" : "/img/logo.png";
+
+  /* =====================================================================
+     Presentatie
+     ===================================================================== */
+  let diaI = 0, huidigeDia = null;
+  function startPresentatie() {
+    ruimOp();
+    const v = $("presVlak"), p = cfg.presentatie || {};
+    v.innerHTML = "";
+    if (p.kopbalk !== false) v.insertAdjacentHTML("beforeend", `<div class="kopje"><img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">${p.titel ? `<span>${esc(p.titel)}</span>` : ""}</div>`);
+    if (p.hint) v.insertAdjacentHTML("beforeend", `<div class="hint"><span class="tik"><b></b><b></b><i></i></span>${esc(p.hint)}</div>`);
+    const dias = (cfg.dias || []).filter(diaGeldig);
+    if (!dias.length) { v.insertAdjacentHTML("beforeend", `<div class="leeg">Nog geen dia's. Voeg foto's, producten of Vimo toe in de instellingen.</div>`); return; }
+    if (dias.length > 1) v.insertAdjacentHTML("beforeend", `<div class="puntjes">${dias.map(() => "<i></i>").join("")}</div>`);
+    huidigeDia = null; diaI = diaI % dias.length;
+    toonDia(dias);
+  }
+  const diaGeldig = d => d && (d.type === "foto" ? !!d.src : d.type === "demo" ? !!d.pad : true);
+
+  function toonDia(dias) {
+    const d = dias[diaI % dias.length], v = $("presVlak"), i = diaI % dias.length;
+    diaI++;
+    v.querySelectorAll(".puntjes i").forEach((el, n) => el.classList.toggle("aan", n === i));
+    const el = document.createElement("div");
+    el.className = "dia";
+    const p = cfg.presentatie || {};
+    let sec = Math.max(4, +d.seconden || +p.seconden || 10);
+    let klaar = () => {};
+    const volgende = ms => { if (dias.length > 1) later(() => toonDia(dias), ms); };
+
+    if (d.type === "foto") {
+      el.classList.add("foto"); if (d.passend === "passen") el.classList.add("passen");
+      const src = esc(d.src);
+      el.innerHTML = (d.passend === "passen" ? `<div class="vaag" style="background-image:url('${src}')"></div>` : "") + `<img src="${src}" alt="">` +
+        (d.kop || d.tekst ? `<div class="onderschrift"><img class="str" src="/img/streepjes.png" alt="">${d.kop ? `<b>${markeer(d.kop)}</b>` : ""}${d.tekst ? `<p>${markeer(d.tekst)}</p>` : ""}</div>` : "");
+      const img = el.querySelector("img:not(.str)");
+      klaar = () => { img.decode ? img.decode().catch(() => {}).then(wissel) : wissel(); };
+    } else if (d.type === "demo") {
+      const info = (window.VS_DEMOS || []).find(x => x.pad === d.pad) || { soort: "pagina" };
+      if (info.soort === "film") el.classList.add("film");
+      const f = document.createElement("iframe");
+      f.tabIndex = -1; f.setAttribute("aria-hidden", "true"); f.allow = "autoplay";
+      const k = Math.min(1920 / 1600, 1080 / 900);
+      f.style.transform = `translate(-50%,-50%) scale(${k})`;
+      el.appendChild(f);
+      let geladen = false;
+      klaar = () => {
+        later(() => { if (!geladen) { geladen = true; wissel(); volgende(sec * 1000); } }, 15000);
+        f.addEventListener("load", () => {
+          if (geladen) return; geladen = true;
+          let extra = 0;
+          try {
+            const doc = f.contentDocument, w = f.contentWindow;
+            if (info.soort === "film") {
+              const st = doc.createElement("style"); st.textContent = "#sound,.cover{display:none!important}body{padding:0!important}.stage{border-radius:0!important}"; doc.head.appendChild(st);
+              const api = w.__vanerum || w.__anim;
+              const lengte = api ? (api.duration ? api.duration() : api.tl && api.tl.duration ? api.tl.duration() : 0) : 0;
+              extra = lengte ? lengte * 1000 + 1500 : 0;
+              const cover = doc.getElementById("cover"), knop = doc.getElementById("play");
+              const tik = () => { if (!f.isConnected) return; if (cover && knop && !cover.hidden) knop.click(); later(tik, 1500); };
+              later(tik, 300);
+            } else {
+              const knop = doc.querySelector("#play"); if (knop && /afspelen/i.test(knop.textContent)) knop.click();
+            }
+          } catch (e) {}
+          later(wissel, 400);
+          volgende(Math.max(sec * 1000, extra));
+        });
+        f.src = d.pad;
+      };
+      v.insertBefore(el, v.querySelector(".kopje, .hint, .puntjes")); klaar(); return;
+    } else if (d.type === "vimo") {
+      el.classList.add("vimo");
+      el.innerHTML = `<div class="tekst"><h1>${markeer(d.titel || "")}</h1>${d.ondertitel ? `<p class="sub">${markeer(d.ondertitel)}</p>` : ""}</div>`;
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Vimo, de mascotte van Vanerum, naast een Motion Cube");
+      el.appendChild(svg);
+      klaar = () => {
+        const speler = new Vimo2D.Player(svg, { width: 1000, height: 880, home: { x: 330, g: 812 }, scale: 1.6, cube: { cx: 790, ground: 812, s: 210 }, fontSize: 40 });
+        spelers.push(speler); el._speler = speler;
+        const zinnen = (d.zinnen || []).filter(Boolean), bew = ["hoi", "wijzen", "kubus", "springen", "balans", "knieen", "draaien"];
+        let j = 0;
+        const stap = () => { if (!svg.isConnected) return; const st = { move: bew[j % bew.length] }; if (zinnen.length) st.text = zinnen[j % zinnen.length]; j++; speler.sequence([st], () => later(stap, 2200)); };
+        later(stap, 900);
+        wissel();
+      };
+      if (!d.seconden) sec = 20;
+    } else {
+      el.classList.add("tekstdia");
+      el.innerHTML = `<div><img class="str" src="/img/streepjes.png" alt=""><h1>${markeer(d.kop || "")}</h1>${d.tekst ? `<p class="sub">${markeer(d.tekst)}</p>` : ""}</div>`;
+      klaar = wissel;
+    }
+    v.insertBefore(el, v.querySelector(".kopje, .hint, .puntjes"));
+    klaar();
+    volgende(sec * 1000);
+
+    function wissel() {
+      requestAnimationFrame(() => el.classList.add("aan"));
+      const oud = huidigeDia; huidigeDia = el;
+      if (oud && oud !== el) setTimeout(() => {
+        oud.remove();
+        if (oud._speler) { oud._speler.destroy(); spelers = spelers.filter(x => x !== oud._speler); }
+      }, 1000);
+    }
+  }
+
+  /* =====================================================================
+     Productoverzicht
+     ===================================================================== */
+  function tekenOverzicht() {
+    const o = cfg.overzicht || {}, v = $("ovVlak");
+    const tegels = (cfg.tegels || []).filter(t => t && t.titel);
+    v.innerHTML = `
+      <header class="balk"><img class="logo" src="${logoVoor(o.balk || "#1e1e1e")}" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt=""><span class="scheid"></span>
+        <h2>${esc(o.titel || "Ontdek onze producten")}</h2><span class="ruimte"></span>
+        <button class="sluit" type="button" data-actie="pres">✕ Sluiten</button></header>
+      ${o.intro ? `<p class="intro">${markeer(o.intro)}</p>` : "<div></div>"}
+      <div class="tegels">${tegels.map((t, n) => `
+        <div class="tegel" role="button" tabindex="0" data-tegel="${n}" style="--c:${esc(t.kleur || "#fbb900")}">
+          <div class="beeld">${t.foto ? `<img src="${esc(t.foto)}" alt="">` : ""}<i class="kleur"></i></div>
+          <div class="info"><h3>${esc(t.titel)}</h3>${t.tekst ? `<p>${esc(t.tekst)}</p>` : "<p></p>"}
+            <div class="knoppen"><span class="pil">Bekijk →</span>${t.lab ? `<button class="pil rand" type="button" data-lab="${n}">${esc(o.labTekst || "Naar het lab")}</button>` : ""}</div></div>
+        </div>`).join("")}</div>
+      <div class="voet"><span><img src="/img/streepjes.png" alt="">vanerum.nl</span><span>${esc(o.voet || "")}</span></div>`;
+    v.querySelectorAll(".tegel img").forEach(img => img.addEventListener("error", () => img.remove()));
+  }
+  $("ovVlak").addEventListener("click", e => {
+    const tegels = (cfg.tegels || []).filter(t => t && t.titel);
+    const lab = e.target.closest("[data-lab]");
+    if (lab) { e.stopPropagation(); return openPagina(tegels[+lab.dataset.lab], "lab"); }
+    const t = e.target.closest("[data-tegel]");
+    if (t) return openPagina(tegels[+t.dataset.tegel], "product");
+    if (e.target.closest('[data-actie="pres"]')) toonPresentatie();
+  });
+
+  /* =====================================================================
+     Productpagina / lab
+     ===================================================================== */
+  let tegel = null, waar = "product";
+  function openPagina(t, soort) {
+    if (!t) return;
+    tegel = t; waar = soort;
+    const pad = soort === "lab" ? t.lab : t.product;
+    if (!pad) return;
+    zetModus("product");
+    $("laden").classList.remove("weg");
+    $("pframe").src = pad;
+    const labNaam = (cfg.overzicht && cfg.overzicht.labTekst) || "Naar het lab";
+    $("navTitel").textContent = soort === "lab" ? `${t.titel} · lab` : t.titel;
+    $("navTerug").textContent = soort === "lab" && t.product ? "← Terug naar product" : "← Alle producten";
+    const verder = $("navVerder");
+    if (soort === "product" && t.lab) { verder.textContent = labNaam + " →"; verder.classList.remove("leeg"); }
+    else if (soort === "lab") { verder.textContent = "Alle producten"; verder.classList.remove("leeg"); }
+    else { verder.textContent = ""; verder.classList.add("leeg"); }
+  }
+  $("navTerug").addEventListener("click", () => { if (waar === "lab" && tegel.product) openPagina(tegel, "product"); else toonOverzicht(); });
+  $("navVerder").addEventListener("click", () => { if (waar === "product" && tegel.lab) openPagina(tegel, "lab"); else toonOverzicht(); });
+  $("pframe").addEventListener("load", () => {
+    $("laden").classList.add("weg");
+    /* aanrakingen in de pagina tellen ook mee voor de terug-naar-presentatie-timer */
+    try { const d = $("pframe").contentDocument; ["pointerdown", "keydown", "wheel"].forEach(t => d.addEventListener(t, aangeraakt, { passive: true, capture: true })); } catch (e) {}
+  });
+
+  /* =====================================================================
+     Wisselen tussen presentatie, overzicht en pagina
+     ===================================================================== */
+  function zetModus(m) {
+    modus = m; laatsteAanraking = Date.now();
+    $("pres").hidden = m !== "pres"; $("overzicht").hidden = m !== "overzicht"; $("product").hidden = m !== "product";
+    if (m !== "product") { $("pframe").src = "about:blank"; }
+  }
+  function toonPresentatie() { zetModus("pres"); startPresentatie(); }
+  function toonOverzicht() { if (modus === "pres") ruimOp(); $("presVlak").innerHTML = ""; tekenOverzicht(); zetModus("overzicht"); schaal(); }
+  $("pres").addEventListener("click", () => { if (modus === "pres") toonOverzicht(); });
+
+  function aangeraakt() { laatsteAanraking = Date.now(); }
+  ["pointerdown", "keydown", "wheel"].forEach(t => addEventListener(t, aangeraakt, { passive: true, capture: true }));
+  setInterval(() => {
+    if (modus === "pres" || !cfg) return;
+    const wacht = Math.max(15, +((cfg.overzicht || {}).terugNa) || 90) * 1000;
+    if (Date.now() - laatsteAanraking > wacht) toonPresentatie();
+  }, 1000);
+
+  /* muispijl weg als hij stilstaat (op een touchscreen ziet u hem dan nooit) */
+  let muisT = null;
+  addEventListener("pointermove", e => { if (e.pointerType !== "mouse") return; document.body.classList.remove("geenmuis"); clearTimeout(muisT); muisT = setTimeout(() => document.body.classList.add("geenmuis"), 3000); });
+  document.body.classList.add("geenmuis");
+  /* geen rechtermuis-menu of lang-drukken-menu op het touchscreen */
+  addEventListener("contextmenu", e => e.preventDefault());
+
+  /* =====================================================================
+     Laden, bijwerken en offline
+     ===================================================================== */
+  function teken(nieuw) {
+    const eerste = !cfg;
+    cfg = nieuw; kleuren(); schaal();
+    if (eerste || modus === "pres") toonPresentatie();
+    else if (modus === "overzicht") tekenOverzicht();
+    if (!VOORBEELD) bewaarOffline();
+  }
+  function melding(t) {
+    document.body.insertAdjacentHTML("beforeend", `<div class="melding"><img src="/img/logo.png" alt="Vanerum"><div>${esc(t)}</div></div>`);
+  }
+
+  /* alles wat het scherm nodig heeft alvast op de pc bewaren, zodat het ook zonder internet werkt */
+  const CDN = ["https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/loaders/GLTFLoader.js",
+    "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/controls/OrbitControls.js",
+    "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/environments/RoomEnvironment.js",
+    "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/utils/BufferGeometryUtils.js"];
+  function bewaarOffline() {
+    if (!("serviceWorker" in navigator)) return;
+    const urls = new Set(["/kiosk", location.pathname, "/vimo2d.js", "/demos.js", "/kiosk-gedeeld.js", "/fonts/NeueMontreal-Regular.woff2", "/fonts/NeueMontreal-Bold.woff2",
+      "/img/logo.png", "/img/logo-wit.png", "/img/streepjes.png", "/img/kiosk-icoon.png", "/api/kiosk/" + ID, ...CDN]);
+    (cfg.dias || []).forEach(d => { if (d.type === "foto" && d.src) urls.add(d.src); if (d.type === "demo" && d.pad) urls.add(d.pad); });
+    (cfg.tegels || []).forEach(t => { if (t.foto) urls.add(t.foto); if (t.product) urls.add(t.product); if (t.lab) urls.add(t.lab); });
+    navigator.serviceWorker.ready.then(reg => reg.active && reg.active.postMessage({ type: "bewaar", urls: [...urls] })).catch(() => {});
+  }
+
+  const opslag = "ks-kiosk-" + ID;
+  async function controleer() {
+    try {
+      const r = await fetch(`/api/kiosk/${encodeURIComponent(ID)}`, { cache: "no-store" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.fout || "Fout " + r.status);
+      try { localStorage.setItem(opslag, JSON.stringify(d)); } catch (e) {}
+      if (!cfg || cfg.bijgewerkt !== d.bijgewerkt) teken(d);
+    } catch (e) {
+      if (!cfg) {
+        let bewaard = null; try { bewaard = JSON.parse(localStorage.getItem(opslag)); } catch (x) {}
+        if (bewaard) teken(bewaard);
+        else melding(/bestaat niet/.test(e.message) ? `Scherm "${ID}" bestaat (nog) niet. Maak het aan in de instellingen.` : "Geen verbinding; nieuwe poging over een minuut");
+      }
+    }
+  }
+
+  if (VOORBEELD) {
+    addEventListener("message", e => {
+      if (e.origin !== location.origin || !e.data) return;
+      if (e.data.type === "kiosk") { const vorige = modus; cfg = null; teken(e.data.kiosk); if (vorige === "overzicht") toonOverzicht(); }
+      if (e.data.type === "modus") { if (e.data.modus === "overzicht") toonOverzicht(); else toonPresentatie(); }
+    });
+    parent.postMessage({ type: "klaar" }, location.origin);
+  } else if (!ID) {
+    melding("Geen scherm gekozen. Gebruik het adres uit de instellingen, bijvoorbeeld /k/not.");
+  } else {
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/kiosk-sw.js", { scope: "/" }).catch(() => {});
+    controleer(); setInterval(controleer, 60000);
+    /* nieuwe versie van de site: herladen zodra het scherm weer in de presentatie staat */
+    let versie = null, herladen = false;
+    setInterval(async () => {
+      try {
+        const v = (await (await fetch("/api/versie", { cache: "no-store" })).json()).versie;
+        if (!v) return; if (versie === null) versie = v; else if (v !== versie) herladen = true;
+      } catch (e) {}
+    }, 5 * 60000);
+    setInterval(() => { if (herladen && modus === "pres") location.reload(); }, 5000);
+  }
+  schaal();
+})();
+</script>
+</body></html>
