@@ -94,7 +94,16 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .pband .rol{display:inline-flex;font-size:36px;padding-left:60px;will-change:transform}
 .pband .rol span{padding-right:44px}
 .pband .rol span::after{content:"";display:inline-block;width:42px;height:22px;margin-left:44px;vertical-align:middle;background:url(/img/streepjes.png) center/contain no-repeat}
-.pband.metwifi{height:124px}
+.pband.metqr{height:124px}
+.pband.metqr .naam{gap:24px}
+/* tabje boven de QR in de band, licht af en toe op (zoals "Wifi" op de gewone schermen) */
+.qrtab{position:absolute;left:70px;z-index:5;min-width:114px;padding:0 18px;height:38px;box-sizing:border-box;background:var(--plabel-bg);color:var(--plabel-ink);border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:23px;font-weight:700;white-space:nowrap;animation:qrpuls 9s ease-in-out infinite}
+.qrtab svg{width:24px;height:24px;flex:0 0 auto}
+@keyframes qrpuls{0%,82%{transform:none}88%{transform:translateY(-6px) scale(1.07)}94%,100%{transform:none}}
+/* zonder band: kaartje in de hoek */
+.qrhoek{position:absolute;left:50px;bottom:40px;z-index:5;background:var(--plabel-bg);color:var(--plabel-ink);border-radius:18px;padding:10px 10px 8px;text-align:center;font-size:22px;font-weight:700}
+.qrhoek img{display:block;height:150px;width:auto;background:#fff;border-radius:10px;padding:5px;margin-top:6px}
+.puntjes.midden{right:auto;left:50%;translate:-50% 0}
 .pband .naam .qr{height:104px;width:auto;display:block;background:#fff;border-radius:12px;padding:5px;box-sizing:content-box}
 .leeg{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;color:var(--antraciet);text-align:center;padding:100px}
 
@@ -152,6 +161,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   </nav>
 </section>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="/vimo2d.js"></script>
 <script src="/demos.js"></script>
 <script src="/kiosk-gedeeld.js"></script>
@@ -217,7 +227,11 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const el = h("div", "pband", ouder);
     const bron = bd.bron || "weetjes";
     const naam = h("div", "naam", el, esc(bd.label || (bron === "nieuws" ? "Nieuws" : bron === "teksten" ? "Vanerum" : "Wist u dat…")));
-    if (bd.wifi) { el.classList.add("metwifi"); naam.insertAdjacentHTML("afterbegin", `<img class="qr" src="/img/wifi-qr-klein.png" alt="Wifi">`); }
+    const qr = qrBeeld();
+    if (qr) {
+      el.classList.add("metqr"); naam.insertAdjacentHTML("afterbegin", `<img class="qr" src="${qr.src}" alt="QR-code: ${esc(qr.tekst)}">`);
+      const tab = h("div", "qrtab", ouder, (qr.wifi ? WIFI_ICOON : "") + esc(qr.tekst)); tab.style.bottom = "124px";
+    }
     const loop = h("div", "loop", el), rol = h("div", "rol", loop);
     let x = 0, breedte = 0, last = 0, raf = 0;
     const zet = t => {
@@ -241,7 +255,20 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
       };
       laad(); const t = setInterval(() => { if (!el.isConnected) clearInterval(t); else laad(); }, 10 * 60000);
     } else zet(((bron === "teksten" ? bd.teksten : bd.weetjes) || []).filter(Boolean));
-    return bd.wifi ? 124 : 96;
+    return qr ? 124 : 96;
+  }
+
+  /* QR-code in de hoek: wifi of een link (bijv. naar de site over Motion Cubes en Agili) */
+  const WIFI_ICOON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0"/><path d="M6 12.8a9 9 0 0 1 12 0"/><path d="M9.4 16.4a4 4 0 0 1 5.2 0"/><circle cx="12" cy="19.6" r="1.2" fill="currentColor" stroke="none"/></svg>`;
+  const qrCache = {};
+  function qrBeeld() {
+    const q = cfg.qr || (cfg.band && cfg.band.wifi ? { soort: "wifi" } : null);
+    if (!q || !q.soort) return null;
+    if (q.soort === "wifi") return { src: "/img/wifi-qr-klein.png", tekst: q.tekst || "Wifi", wifi: true };
+    const url = (q.url || "").trim();
+    if (!/^https?:\/\//.test(url) || typeof qrcode !== "function") return null;
+    if (!qrCache[url]) { const c = qrcode(0, "M"); c.addData(url); c.make(); qrCache[url] = c.createDataURL(8, 2); }
+    return { src: qrCache[url], tekst: q.tekst || "Meer info" };
   }
   function startPresentatie() {
     ruimOp(); klokken.length = 0;
@@ -258,6 +285,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
       if (bk.klok !== false) klokken.push(h("div", "miniklok", b, `<div class="dag"><b data-t="wd"></b><span data-t="dm"></span></div><img src="/img/streepjes.png" alt=""><span class="tijd" data-t="tijd"></span><span class="sec" data-t="sec"></span>`));
     }
     if (bd.aan) bandH = band(v, bd);
+    let qrHoek = false;
+    if (!bd.aan) { const qr = qrBeeld(); if (qr) { qrHoek = true; h("div", "qrhoek", v, (qr.wifi ? WIFI_ICOON.replace("<svg", '<svg style="width:22px;height:22px;vertical-align:-4px;margin-right:6px"') : "") + `${esc(qr.tekst)}<img src="${qr.src}" alt="QR-code">`); } }
     const vak = h("div", "diavak", v); vak.id = "diavak"; vak.style.top = balkH + "px"; vak.style.bottom = bandH + "px";
     diavakH = 1080 - balkH - bandH;
     if (!bk && p.kopbalk !== false) v.insertAdjacentHTML("beforeend", `<div class="kopje"><img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">${p.titel ? `<span>${esc(p.titel)}</span>` : ""}</div>`);
@@ -270,7 +299,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const dias = (cfg.dias || []).filter(diaGeldig);
     if (!dias.length) { v.insertAdjacentHTML("beforeend", `<div class="leeg">Nog geen dia's. Voeg foto's, producten of Vimo toe in de instellingen.</div>`); return; }
     if (dias.length > 1) {
-      v.insertAdjacentHTML("beforeend", `<div class="puntjes${p.hint && hoek === "ro" ? " links" : ""}">${dias.map(() => "<i></i>").join("")}</div>`);
+      v.insertAdjacentHTML("beforeend", `<div class="puntjes${p.hint && hoek === "ro" ? (qrHoek ? " midden" : " links") : ""}">${dias.map(() => "<i></i>").join("")}</div>`);
       if (bandH) v.querySelector(".puntjes").style.bottom = (bandH + 44) + "px";
     }
     huidigeDia = null; diaI = diaI % dias.length;
@@ -470,7 +499,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   }
 
   /* alles wat het scherm nodig heeft alvast op de pc bewaren, zodat het ook zonder internet werkt */
-  const CDN = ["https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+  const CDN = ["https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js","https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
     "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/loaders/GLTFLoader.js",
     "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/controls/OrbitControls.js",
     "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/environments/RoomEnvironment.js",

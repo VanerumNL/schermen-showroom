@@ -274,6 +274,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     if (!k.balk) k.balk = Object.assign(std.balk, { aan: k.presentatie.kopbalk !== false, titel: k.presentatie.titel || "" });
     else k.balk = Object.assign(std.balk, k.balk);
     k.band = Object.assign(std.band, k.band || {});
+    if (!k.qr) k.qr = k.band.wifi ? Object.assign(std.qr, { soort: "wifi", tekst: "Wifi" }) : std.qr;
+    delete k.band.wifi;
     delete k.presentatie.kopbalk; delete k.presentatie.titel;
   }
 
@@ -423,7 +425,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     bronZicht();
     veld(bdDelen, "Kleur van de band", kleurKeuze(bd, "kleur", false));
     veld(bdDelen, "Kleur van het vak met de tekst", kleurKeuze(bd, "labelKleur", false));
-    vinkje(bdDelen, bd, "wifi", "Wifi-QR-code in het vak");
+
+    /* QR-code */
+    const q = k.qr;
+    const qB = blok(f, "QR-code in de hoek", "#fbb900", "Linksonder in de band (met een tabje erboven), of als kaartje in de hoek als de band uit staat.");
+    const qDelen = h("div", "");
+    const qZicht = () => { qDelen.hidden = !q.soort; qDelen.querySelectorAll(".qr-link").forEach(x => x.hidden = q.soort !== "link"); };
+    veld(qB, "Wat doet de QR-code?", keuze(q, "soort", [["link", "Link naar een website (bijv. Motion Cubes en Agili)"], ["wifi", "Wifi (dezelfde code als op de gewone schermen)"], ["", "Geen QR-code"]], () => { if (q.soort === "wifi" && (!q.tekst || q.tekst === "Meer info")) q.tekst = "Wifi"; if (q.soort === "link" && (!q.tekst || q.tekst === "Wifi")) q.tekst = "Meer info"; const y = scrollY; tekenFormulier(); scrollTo(0, y); stuur(); }));
+    qB.appendChild(qDelen);
+    veld(qDelen, "Websiteadres", invoer(q, "url", "text", { placeholder: "https://…" }), "Bezoekers scannen de code met hun telefoon en komen op deze pagina.").classList.add("qr-link");
+    veld(qDelen, "Tekst erboven", invoer(q, "tekst", "text", { maxLength: 24, placeholder: "Meer info" }));
+    qZicht();
 
     /* dia's */
     const b2 = blok(f, "Dia's", "#fbb900", "In deze volgorde, daarna begint de presentatie opnieuw.");

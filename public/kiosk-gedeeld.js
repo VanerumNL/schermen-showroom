@@ -11,7 +11,7 @@
   };
   const KLEUREN = [
     ["#fbb900", "Geel"], ["#b8e7f9", "Lichtblauw"], ["#bda8bd", "Lila"], ["#a8cb67", "Groen"],
-    ["#1e1e1e", "Zwart"], ["#ffffff", "Wit"], ["#f4f4f2", "Lichtgrijs"]
+    ["#1e1e1e", "Zwart"], ["#2e3033", "Antraciet"], ["#ffffff", "Wit"], ["#f4f4f2", "Lichtgrijs"]
   ];
 
   /* is een kleur donker? (voor witte of zwarte letters erop) */
@@ -51,12 +51,13 @@
     "Onze meubels gaan lang mee en losse onderdelen zijn te vervangen."
   ];
   const BALK_STD = () => ({ aan: true, logo: true, klok: true, titel: "", kleur: "" });
-  const BAND_STD = () => ({ aan: true, bron: "weetjes", label: "", weetjes: WEETJES.slice(), teksten: [], feed: "https://vanerum.nl/nl/rss.xml", kleur: "#2e3033", labelKleur: "#fbb900", wifi: false });
+  const BAND_STD = () => ({ aan: true, bron: "weetjes", label: "", weetjes: WEETJES.slice(), teksten: [], feed: "https://vanerum.nl/nl/rss.xml", kleur: "#2e3033", labelKleur: "#fbb900" });
+  const QR_STD = () => ({ soort: "link", url: "https://vanerum-bewegend-leren.paul-westerhout.workers.dev/", tekst: "Meer info" });
 
   function nieuweKiosk(id, naam) {
     return {
       id, naam,
-      balk: BALK_STD(), band: BAND_STD(),
+      balk: BALK_STD(), band: BAND_STD(), qr: QR_STD(),
       presentatie: {
         achtergrond: "licht", seconden: 10,
         hint: "Tik voor onze producten", hintKleur: "#fbb900", hintPlek: "ro"
@@ -79,5 +80,5 @@
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const markeer = t => esc(t).replace(/\*([^*]+)\*/g, "<mark>$1</mark>").replace(/\n/g, "<br>");
 
-  window.KS = { WEETJES, BALK_STD, BAND_STD, ACHTERGRONDEN, KLEUREN, DIA_TYPEN, TEGELS_STD, nieuweKiosk, achtergrond, donker, esc, markeer };
+  window.KS = { WEETJES, BALK_STD, BAND_STD, QR_STD, ACHTERGRONDEN, KLEUREN, DIA_TYPEN, TEGELS_STD, nieuweKiosk, achtergrond, donker, esc, markeer };
 })();
