@@ -116,6 +116,19 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .adres{margin-top:16px;background:#fff;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
 .adres code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;background:var(--bg);padding:9px 12px;border-radius:9px;word-break:break-all;letter-spacing:0}
 .adres .knoppen{display:flex;gap:8px;flex-wrap:wrap}
+.tvkop{display:flex;align-items:center;justify-content:space-between}
+.tvlijst{display:flex;flex-direction:column;gap:6px}
+.tvrij{display:flex;align-items:center;gap:10px;border:1.5px solid var(--lijn);border-radius:10px;padding:8px 10px;cursor:pointer}
+.tvrij.aan{border-color:var(--zwart);background:#fffaeb}
+.tvrij input{width:18px;height:18px;accent-color:var(--zwart);flex:none}
+.tvrij .wat{flex:1;min-width:0}
+.tvrij .wat b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tvrij small{display:block;color:var(--grijs);font-size:12px}
+.tvrij small.toont{color:#3d6b12;font-weight:700}
+.lampje{width:10px;height:10px;border-radius:50%;flex:none;background:var(--fout);box-shadow:0 0 0 3px #fbe3e0}
+.lampje.online{background:#5a9a1c;box-shadow:0 0 0 3px #e3f0d2}
+.tv .veld input[type=number]{width:120px;padding:8px 10px;border:1.5px solid var(--lijn);border-radius:10px}
+.tv .vink input[type=radio]{width:16px;height:16px;accent-color:var(--zwart)}
 .opslaanbalk{position:sticky;bottom:0;z-index:4;margin:20px -22px 0;padding:14px 22px;background:rgba(244,243,240,.94);backdrop-filter:blur(6px);border-top:1px solid var(--lijn);display:flex;align-items:center;gap:10px}
 .opslaanbalk .status{flex:1;font-size:13px;color:var(--grijs)}
 .opslaanbalk .status.vuil{color:#a66f00;font-weight:700}
@@ -181,7 +194,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       <b>Adres voor AbleSign</b>
       <code id="adresTekst"></code>
       <div class="knoppen"><button class="knop klein" id="kopieer">Kopieer adres</button><a class="knop licht klein" id="openScherm" target="_blank" rel="noopener">Open scherm</a></div>
-      <div class="hulp">In AbleSign: <b>Websites → Add website</b>, plak het adres en zet de website in de playlist. Wijzigingen die u opslaat, verschijnen binnen een minuut op het scherm.</div>
+      <div class="hulp" id="adresHulp">In AbleSign: <b>Websites → Add website</b>, plak het adres en zet de website in de playlist. Wijzigingen die u opslaat, verschijnen binnen een minuut op het scherm.</div>
+    </div>
+    <div class="adres tv" id="tvBlok" hidden>
+      <div class="tvkop"><b>Op de tv</b><button class="icoon" type="button" id="tvVervers" title="Opnieuw ophalen uit AbleSign" aria-label="Opnieuw ophalen">⟳</button></div>
+      <div id="tvLijst" class="tvlijst"><p class="hulp">Tv's ophalen uit AbleSign…</p></div>
+      <div id="tvActies" hidden>
+        <div class="veld"><span class="lab">Hoe?</span>
+          <label class="vink"><input type="radio" name="tvHoe" value="erbij" checked> Erbij zetten, vooraan in de playlist</label>
+          <label class="vink"><input type="radio" name="tvHoe" value="alleen"> Alleen deze indeling tonen <span class="hulp" style="margin:0">(de rest van de playlist gaat eraf)</span></label>
+        </div>
+        <div class="veld" id="tvDuurVeld"><label for="tvDuur">Seconden in beeld per ronde</label><input type="number" id="tvDuur" min="10" max="86400" value="60"></div>
+        <button class="knop geel klein" type="button" id="tvZet" disabled>Zet op de aangevinkte tv's</button>
+      </div>
+      <div class="hulp" id="tvMelding"></div>
     </div>
   </div></section>
 </main>
@@ -283,8 +309,102 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       const url = location.origin + "/s/" + id;
       $("adres").hidden = false; $("adresTekst").textContent = url; $("openScherm").href = url;
       tekenFormulier(); opgeslagen = JSON.stringify(huidig); startHistorie(); stuur();
+      tvLaden();
     } catch (err) { toast(err.message); }
   }
+
+  /* ===== Op de tv: koppeling met AbleSign ===== */
+  let tvStatus = null, tvSchermen = [], tvKeuze = new Set();
+  const tijdKort = t => t ? new Date(t).toLocaleString("nl-NL", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "nooit";
+  async function tvLaden(stil) {
+    if (!huidig) return;
+    $("tvBlok").hidden = false;
+    try { if (!tvStatus) tvStatus = await api("/api/ablesign/status"); }
+    catch (e) { $("tvBlok").hidden = true; return; }
+    if (!tvStatus.gekoppeld) {
+      $("tvLijst").innerHTML = `<p class="hulp" style="margin:0">Nog niet gekoppeld met AbleSign. Maak in AbleSign een API-sleutel (<b>Account → API Keys</b>) en zet die in Cloudflare bij deze Worker onder <b>Settings → Variables and Secrets</b> als secret <b>ABLESIGN_KEY</b>. Daarna zet u indelingen hier met één klik op de tv.</p>`;
+      $("tvActies").hidden = true; $("tvMelding").textContent = ""; return;
+    }
+    $("adresHulp").innerHTML = "Hieronder zet u deze indeling direct op een tv. Wijzigingen die u opslaat, verschijnen binnen een minuut op het scherm.";
+    if (!stil) $("tvLijst").innerHTML = `<p class="hulp" style="margin:0">Tv's ophalen uit AbleSign…</p>`;
+    try { tvSchermen = await api("/api/ablesign/schermen"); }
+    catch (e) { $("tvLijst").innerHTML = `<p class="hulp" style="margin:0;color:var(--fout)">${esc(e.message)}</p>`; $("tvActies").hidden = true; return; }
+    tvKeuze = new Set([...tvKeuze].filter(id => tvSchermen.some(s => s.id === id)));
+    tvTeken();
+  }
+  function tvTeken() {
+    const namen = Object.fromEntries(lijst.map(s => [s.id, s.naam || s.id]));
+    $("tvLijst").innerHTML = tvSchermen.length ? tvSchermen.map(s => {
+      const toont = s.indelingen.includes(huidig.id);
+      const anders = s.indelingen.filter(i => i !== huidig.id).map(i => namen[i] || i);
+      const regels = [
+        s.online ? "Online" : "Offline · laatst gezien " + esc(tijdKort(s.gezien)),
+        s.groep ? "In groep " + esc(s.groep.titel) + " (de hele groep krijgt dezelfde playlist)" : "",
+        anders.length ? "Toont ook: " + anders.map(esc).join(", ") : "",
+        s.playlistOnbekend ? "Playlist kon niet worden gelezen" : (() => { const n = s.aantal - s.indelingen.length; return n > 0 ? (n === 1 ? "1 ander onderdeel" : n + " andere onderdelen") + " in de playlist" : ""; })()
+      ].filter(Boolean);
+      const standFout = (VS.isStaand(huidig) ? "staand" : "liggend") !== s.stand ? `<small>Let op: deze tv staat ${s.stand}, de indeling is ${VS.isStaand(huidig) ? "staand" : "liggend"}.</small>` : "";
+      return `<label class="tvrij${tvKeuze.has(s.id) ? " aan" : ""}" data-id="${s.id}">
+        <input type="checkbox"${tvKeuze.has(s.id) ? " checked" : ""}${toont ? "" : ""}>
+        <span class="lampje${s.online ? " online" : ""}" title="${s.online ? "Online" : "Offline"}"></span>
+        <span class="wat"><b>${esc(s.titel)}</b>${toont ? `<small class="toont">✓ Toont deze indeling</small>` : ""}${regels.map(r => `<small>${r}</small>`).join("")}${standFout}</span>
+        ${toont ? `<button class="knop licht klein" type="button" data-weg="${s.id}" title="Deze indeling van deze tv halen">Haal eraf</button>` : ""}
+      </label>`;
+    }).join("") : `<p class="hulp" style="margin:0">Er staan nog geen tv's in AbleSign.</p>`;
+    $("tvActies").hidden = !tvSchermen.length;
+    tvKnop();
+    $("tvMelding").innerHTML = tvStatus.melding
+      ? `Meldingen over tv's die offline gaan komen in Teams binnen. <a href="#" id="tvTest">Stuur een testmelding</a>`
+      : `Tip: wilt u een bericht als een tv offline gaat? Zet het webhook-adres van een Teams-kanaal als secret <b>MELDING_WEBHOOK</b> in Cloudflare.`;
+  }
+  function tvKnop() {
+    const n = tvKeuze.size;
+    $("tvZet").disabled = !n;
+    $("tvZet").textContent = n ? `Zet op ${n === 1 ? "de aangevinkte tv" : n + " tv's"}` : "Vink een tv aan";
+    $("tvDuurVeld").hidden = document.querySelector("input[name=tvHoe]:checked").value === "alleen";
+  }
+  $("tvLijst").addEventListener("change", e => {
+    const r = e.target.closest(".tvrij"); if (!r) return;
+    const id = +r.dataset.id; e.target.checked ? tvKeuze.add(id) : tvKeuze.delete(id);
+    r.classList.toggle("aan", e.target.checked); tvKnop();
+  });
+  $("tvLijst").addEventListener("click", async e => {
+    const b = e.target.closest("[data-weg]"); if (!b) return;
+    e.preventDefault();
+    const s = tvSchermen.find(x => x.id === +b.dataset.weg);
+    if (!confirm(`Deze indeling van "${s.titel}" halen?${s.groep ? " Dat geldt voor alle tv's in groep " + s.groep.titel + "." : ""} De rest van de playlist blijft staan.`)) return;
+    b.disabled = true; b.textContent = "Bezig…";
+    try {
+      const d = await api("/api/ablesign/haalweg", { method: "POST", body: JSON.stringify({ id: huidig.id, scherm: s.id }) });
+      toast(d.leeg ? "Eraf gehaald; de playlist van deze tv is nu leeg" : "Eraf gehaald");
+      await tvLaden(true);
+    } catch (err) { toast(err.message); b.disabled = false; b.textContent = "Haal eraf"; }
+  });
+  document.querySelectorAll("input[name=tvHoe]").forEach(r => r.addEventListener("change", tvKnop));
+  $("tvVervers").addEventListener("click", () => tvLaden());
+  $("tvMelding").addEventListener("click", async e => {
+    if (e.target.id !== "tvTest") return;
+    e.preventDefault();
+    try { await api("/api/ablesign/testmelding", { method: "POST" }); toast("Testmelding verstuurd"); } catch (err) { toast(err.message); }
+  });
+  $("tvZet").addEventListener("click", async () => {
+    const alleen = document.querySelector("input[name=tvHoe]:checked").value === "alleen";
+    const gekozen = tvSchermen.filter(s => tvKeuze.has(s.id));
+    if (alleen && !confirm(`Op ${gekozen.map(s => s.titel).join(", ")} komt alleen deze indeling te staan. Alles wat nu in de playlist staat, gaat eraf. Doorgaan?`)) return;
+    if (isVuil()) {
+      if (!confirm("Er zijn wijzigingen die nog niet zijn opgeslagen. Eerst opslaan en dan op de tv zetten?")) return;
+      await opslaan(); if (isVuil()) return;
+    }
+    const knop = $("tvZet"); knop.disabled = true; knop.textContent = "Bezig…";
+    try {
+      const d = await api("/api/ablesign/zet", { method: "POST", body: JSON.stringify({ id: huidig.id, schermen: [...tvKeuze], alleen, seconden: +$("tvDuur").value || 60 }) });
+      const mis = d.resultaat.filter(r => !r.ok);
+      if (mis.length) toast(mis.map(r => (r.titel || "Tv " + r.id) + ": " + r.fout).join(" · "));
+      else toast(d.resultaat.every(r => r.al) ? "Stond er al op" : "Staat op de tv; binnen een minuut in beeld");
+      tvKeuze.clear();
+      await tvLaden(true);
+    } catch (err) { toast(err.message); tvKnop(); }
+  });
 
   /* ===== voorbeeld ===== */
   let voorbeeldKlaar = false, stuurTimer = 0;
@@ -840,7 +960,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     if (!confirm(`Scherm "${huidig.naam || huidig.id}" verwijderen? Op een tv met dit adres verschijnt dan een melding.`)) return;
     try {
       await api("/api/scherm/" + huidig.id, { method: "DELETE" });
-      huidig = null; opgeslagen = ""; $("adres").hidden = true;
+      huidig = null; opgeslagen = ""; $("adres").hidden = true; $("tvBlok").hidden = true;
       $("formulier").innerHTML = `<div class="leegstaat"><h2>Scherm verwijderd</h2><p>Kies links een ander scherm of maak een nieuw scherm.</p></div>`;
       await laadLijst();
     } catch (e) { toast(e.message); }
