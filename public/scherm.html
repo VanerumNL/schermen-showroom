@@ -234,13 +234,18 @@ body.verberg{cursor:none}
 .tcount .sub{margin:.4em 0 0;font-size:min(3.2cqw,5.6cqh);color:var(--zacht);line-height:1.25}
 .tcount .extra2{margin-top:min(3cqw,4cqh);display:flex;align-items:center;gap:.8em;font-size:min(3.2cqw,5.6cqh);font-weight:700}
 .tcount .extra2 img{height:.9em}
-/* wifi-qr linksonder, over de band heen */
-.band.metwifi{padding-left:290px}
-.band.metwifi .naam{padding-left:36px}
-.wifi{position:absolute;left:50px;bottom:0;width:216px;z-index:5;box-sizing:border-box;background:#fff;border-radius:24px 24px 0 0;padding:14px;box-shadow:0 -6px 24px rgba(30,30,30,.16)}
-.wifi img{display:block;width:100%;height:auto}
-.staand .band.metwifi{padding-left:270px}
-.staand .wifi{left:30px}
+/* wifi-qr in de gele band, met een klein "Wifi"-tabje erboven dat af en toe oplicht */
+.band.metwifi{height:124px}
+.band.metwifi .naam{gap:24px}
+.band .naam .qr{height:104px;width:auto;display:block;background:#fff;border-radius:12px;padding:5px;box-sizing:content-box;flex:0 0 auto}
+.wifitab{position:absolute;left:70px;bottom:124px;z-index:5;width:114px;height:38px;box-sizing:content-box;background:var(--geel);color:var(--zwart);border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:23px;font-weight:700;animation:wifipuls 9s ease-in-out infinite}
+.wifitab svg{width:24px;height:24px;flex:0 0 auto}
+@keyframes wifipuls{0%,82%{box-shadow:0 0 0 0 rgba(251,185,0,0);transform:none}88%{box-shadow:0 0 0 14px rgba(251,185,0,.4);transform:translateY(-6px) scale(1.07)}94%{box-shadow:0 0 0 0 rgba(251,185,0,0);transform:none}100%{box-shadow:0 0 0 0 rgba(251,185,0,0)}}
+.staand .wifitab{left:50px}
+/* zonder band: klein kaartje in de hoek */
+.wifihoek{position:absolute;left:50px;bottom:40px;z-index:5;background:var(--geel);border-radius:18px;padding:10px 10px 8px;text-align:center;font-size:22px;font-weight:700;color:var(--zwart)}
+.wifihoek img{display:block;height:130px;width:auto;background:#fff;border-radius:10px;padding:5px;margin-top:6px}
+@media (prefers-reduced-motion: reduce){.wifitab{animation:none}}
 /* foutmelding */
 .melding{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-size:40px;color:var(--ink);background:var(--bg)}
 .melding img{height:60px}
@@ -689,8 +694,14 @@ body.verberg{cursor:none}
     });
     if (s.band && s.band.aan) band(scr, s);
     if (s.wifi) {
-      const b = scr.querySelector(".band"); if (b) b.classList.add("metwifi");
-      h("div", "wifi", scr, `<img src="/img/wifi-qr.png" alt="Wifi: scan de QR-code om te verbinden">`);
+      const b = scr.querySelector(".band"), naam = b && b.querySelector(".naam");
+      const icoon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0"/><path d="M6 12.8a9 9 0 0 1 12 0"/><path d="M9.4 16.4a4 4 0 0 1 5.2 0"/><circle cx="12" cy="20" r="1.2" fill="currentColor"/></svg>`;
+      if (naam) {
+        b.classList.add("metwifi");
+        const q = document.createElement("img"); q.className = "qr"; q.src = "/img/wifi-qr-klein.png"; q.alt = "Wifi: scan de QR-code om te verbinden";
+        naam.insertBefore(q, naam.firstChild);
+        h("div", "wifitab", scr, icoon + "Wifi");
+      } else h("div", "wifihoek", scr, `Wifi<img src="/img/wifi-qr-klein.png" alt="Wifi: scan de QR-code om te verbinden">`);
     }
     tussendoor(s);
   }

@@ -421,7 +421,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       veld(bkDelen, "Titel in het midden (mag leeg)", invoer(s.balk, "titel", "text", { maxLength: 60, placeholder: "Bijv. Welkom in de *showroom*" }), "Zet *sterretjes* om een woord voor een gele markering.");
 
       const bd = blok(f, "Band onderaan", "var(--lila)");
-      vinkje(bd, s, "wifi", "Wifi-QR-code linksonder (staat over de band heen)");
+      vinkje(bd, s, "wifi", "Wifi-QR-code in de gele band (met kleine “Wifi” erboven)");
       if (s.wifi === undefined) bd.querySelector("input").checked = false;
       const bdDelen = document.createElement("div");
       vinkje(bd, s.band, "aan", "Lopende band tonen", () => { bdDelen.hidden = s.band.aan === false; });
