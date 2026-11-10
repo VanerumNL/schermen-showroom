@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vanerum Aanraakscherm</title>
+<link rel="icon" href="/img/kiosk-icoon.png">
+<style>
+@font-face{font-family:"Neue Montreal";src:url(/fonts/NeueMontreal-Regular.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Neue Montreal";src:url(/fonts/NeueMontreal-Bold.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{--geel:#fbb900;--zwart:#1e1e1e;--grijs:#5f5d58;--lijn:#e3e1dc;--bg:#f4f3f0;--fout:#c0392b;--font:"Neue Montreal",Arial,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font);letter-spacing:.03em;color:var(--zwart);background:var(--bg);font-size:15px;line-height:1.4}
+button,input,select,textarea{font:inherit;letter-spacing:inherit;color:inherit}
+[hidden]{display:none!important}
+header.top{display:flex;align-items:center;gap:16px;padding:14px 24px;background:#fff;border-bottom:1px solid var(--lijn);position:sticky;top:0;z-index:5}
+header.top img.logo{height:22px}
+header.top img.str{height:18px}
+header.top h1{font-size:18px;margin:0 0 0 6px;font-weight:700}
+header.top .ruimte{flex:1}
+header.top a.terug{color:var(--grijs);text-decoration:none;font-weight:700;font-size:14px}
+header.top a.terug:hover{color:var(--zwart)}
+.knop{border:0;border-radius:10px;padding:10px 16px;background:var(--zwart);color:#fff;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.knop:hover{background:#000}
+.knop.geel{background:var(--geel);color:var(--zwart)}
+.knop.geel:hover{background:#e8ab00}
+.knop.licht{background:#fff;color:var(--zwart);border:1.5px solid var(--lijn)}
+.knop.licht:hover{border-color:var(--zwart)}
+.knop.klein{padding:6px 10px;font-size:13px;border-radius:8px}
+.knop.gevaar{background:#fff;color:var(--fout);border:1.5px solid #f0c9c4}
+.knop:disabled{opacity:.45;cursor:default}
+.icoon{background:none;border:0;cursor:pointer;padding:4px 7px;border-radius:6px;color:var(--grijs);font-size:15px}
+.icoon:hover{background:var(--bg);color:var(--zwart)}
+.icoon:disabled{opacity:.3;cursor:default}
+
+.login{max-width:420px;margin:12vh auto;background:#fff;border-radius:22px;padding:36px}
+.login img{height:30px;display:block}
+.login h2{font-size:28px;margin:24px 0 6px}
+.login p{color:var(--grijs);margin:0 0 20px}
+.login label{display:block;margin:12px 0 6px;font-weight:700}
+.login input[type=password]{width:100%;padding:12px 14px;border:1.5px solid var(--lijn);border-radius:10px;background:#fff}
+.login .rij{display:flex;align-items:center;gap:8px;margin:14px 0 20px;color:var(--grijs)}
+.melding{color:var(--fout);min-height:1.4em;margin-top:10px}
+
+.werk{display:grid;grid-template-columns:220px 520px 1fr;min-height:calc(100vh - 57px)}
+aside.lijst{background:#fff;border-right:1px solid var(--lijn);padding:18px 14px}
+aside.lijst h3{font-size:13px;text-transform:uppercase;color:var(--grijs);margin:0 8px 10px;letter-spacing:.08em}
+aside.lijst button.scherm{display:block;width:100%;text-align:left;border:0;background:none;padding:10px 12px;border-radius:10px;cursor:pointer}
+aside.lijst button.scherm small{display:block;color:var(--grijs);font-size:12px}
+aside.lijst button.scherm:hover{background:var(--bg)}
+aside.lijst button.scherm.aan{background:#fff5d6;box-shadow:inset 3px 0 0 var(--geel)}
+aside.lijst .nieuw{margin-top:12px;width:100%;justify-content:center}
+.nieuwform{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.nieuwform input{padding:9px 12px;border:1.5px solid var(--lijn);border-radius:10px}
+
+.formulier{padding:20px 22px 0;border-right:1px solid var(--lijn);min-width:0}
+.blok{background:#fff;border-radius:16px;padding:18px;margin-bottom:14px}
+.blok>h3{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:10px}
+.blok>h3 i{width:10px;height:10px;border-radius:50%;background:var(--c,var(--geel))}
+.blok>.uitleg{color:var(--grijs);font-size:13px;margin:0 0 10px}
+.veld{margin:10px 0}
+.veld>label,.veld>span.lab{display:block;font-weight:700;font-size:13px;margin-bottom:5px}
+.veld input[type=text],.veld input[type=number],.veld select,.veld textarea{width:100%;padding:9px 11px;border:1.5px solid var(--lijn);border-radius:10px;background:#fff}
+.veld textarea{min-height:64px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-offset:0;border-color:var(--geel)}
+.hulp{font-size:12.5px;color:var(--grijs);margin-top:4px}
+.rij2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vink{display:flex;align-items:center;gap:8px;margin:8px 0;cursor:pointer}
+.vink input{width:18px;height:18px;accent-color:var(--zwart)}
+
+.kleuren{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.kleur{display:flex;align-items:center;gap:7px;border:2px solid var(--lijn);border-radius:11px;padding:5px 10px 5px 6px;background:#fff;cursor:pointer;font-size:13px}
+.kleur i{width:22px;height:22px;border-radius:7px;border:1px solid rgba(0,0,0,.14);display:block}
+.kleur.aan{border-color:var(--zwart);box-shadow:0 0 0 3px var(--geel)}
+.kleur input[type=color]{width:26px;height:24px;border:0;padding:0;background:none;cursor:pointer}
+
+.items{display:flex;flex-direction:column;gap:10px}
+.item{border:1.5px solid var(--lijn);border-radius:12px;padding:10px 12px;background:#fcfcfb}
+.item .kop{display:flex;align-items:center;gap:4px;margin-bottom:4px;font-weight:700;font-size:13px}
+.item .kop .soort{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border-radius:7px;padding:3px 8px}
+.item .kop .soort i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.item .kop span.ruimte{flex:1}
+.item .veld{margin:6px 0}
+.item .duim{width:100%;aspect-ratio:16/9;border-radius:9px;background:#e6f4fa center/cover no-repeat;margin:4px 0 6px}
+.toevoegen{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.fotovak{display:flex;gap:10px;align-items:center}
+.fotovak .duim{width:120px;flex:none;margin:0}
+
+.voorbeeld{padding:20px 24px;position:relative}
+.plak{position:sticky;top:77px}
+.voorbeeld .scherm{aspect-ratio:16/9;width:100%;background:#111;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(30,30,30,.15)}
+.voorbeeld iframe{width:100%;height:100%;border:0;display:block}
+.schakel{display:flex;gap:8px;margin:12px 0 0}
+.schakel button{flex:1;justify-content:center}
+.schakel button.aan{background:var(--zwart);color:#fff;border-color:var(--zwart)}
+.adres{margin-top:16px;background:#fff;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.adres code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;background:var(--bg);padding:9px 12px;border-radius:9px;word-break:break-all;letter-spacing:0}
+.adres .knoppen{display:flex;gap:8px;flex-wrap:wrap}
+.adres ol{margin:0;padding-left:20px;color:var(--grijs);font-size:13px}
+.adres ol li{margin:3px 0}
+.opslaanbalk{position:sticky;bottom:0;z-index:4;margin:20px -22px 0;padding:14px 22px;background:rgba(244,243,240,.94);backdrop-filter:blur(6px);border-top:1px solid var(--lijn);display:flex;align-items:center;gap:10px}
+.opslaanbalk .status{flex:1;font-size:13px;color:var(--grijs)}
+.opslaanbalk .status.vuil{color:#a66f00;font-weight:700}
+.leegstaat{padding:60px 30px;text-align:center;color:var(--grijs)}
+.leegstaat h2{color:var(--zwart)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--zwart);color:#fff;padding:12px 18px;border-radius:12px;z-index:30;font-weight:700}
+
+.dialoog{position:fixed;inset:0;background:rgba(30,30,30,.45);z-index:20;display:grid;place-items:center;padding:20px}
+.dialoog>div{background:#fff;border-radius:18px;padding:20px;width:min(760px,100%);max-height:86vh;display:flex;flex-direction:column;gap:12px}
+.dialoog h3{margin:0;font-size:18px;display:flex;align-items:center}
+.dialoog h3 span{flex:1}
+.bieb{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;overflow:auto;padding:3px}
+.bieb button{aspect-ratio:16/10;border:0;border-radius:8px;background:var(--bg) center/cover no-repeat;cursor:pointer;outline:2px solid transparent;outline-offset:1px}
+.bieb button:hover{outline-color:var(--zwart)}
+
+@media (max-width:1250px){
+  .werk{grid-template-columns:200px 1fr}
+  .voorbeeld{grid-column:2;grid-row:1}
+  .formulier{grid-column:2;border-right:0}
+  .plak{position:static}
+}
+@media (max-width:760px){
+  .werk{grid-template-columns:1fr}
+  aside.lijst,.voorbeeld,.formulier{grid-column:1}
+  aside.lijst{border-right:0;border-bottom:1px solid var(--lijn)}
+  .voorbeeld{order:1;padding:16px}
+  .formulier{order:2;padding:16px 16px 0}
+  .opslaanbalk{margin:16px -16px 0;padding:12px 16px;flex-wrap:wrap}
+  header.top{padding:12px 16px;gap:10px}
+  header.top img.str{display:none}
+  .bieb{grid-template-columns:repeat(3,1fr)}
+}
+</style></head>
+<body>
+<header class="top">
+  <img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">
+  <h1>Aanraakscherm</h1><span class="ruimte"></span>
+  <a class="terug" href="/">Naar de gewone schermen</a>
+  <button class="knop licht klein" id="uitlog" hidden>Uitloggen</button>
+</header>
+
+<section class="login" id="login" hidden>
+  <img src="/img/logo.png" alt="Vanerum">
+  <h2 id="loginKop">Inloggen</h2>
+  <p id="loginUitleg">Gebruik hetzelfde wachtwoord als voor de schermen.</p>
+  <form id="loginForm">
+    <label for="ww1">Wachtwoord</label><input type="password" id="ww1" autocomplete="current-password" required>
+    <label class="rij"><input type="checkbox" id="onthoud" checked> Onthoud op dit apparaat</label>
+    <button class="knop geel" type="submit">Inloggen</button>
+    <div class="melding" id="loginFout"></div>
+  </form>
+</section>
+
+<main class="werk" id="werk" hidden>
+  <aside class="lijst">
+    <h3>Aanraakschermen</h3>
+    <div id="lijst"></div>
+    <button class="knop licht nieuw" id="nieuwKnop">+ Nieuw aanraakscherm</button>
+    <form class="nieuwform" id="nieuwForm" hidden>
+      <input type="text" id="nieuwNaam" placeholder="Naam, bijv. NOT" maxlength="40" required>
+      <div style="display:flex;gap:8px"><button class="knop geel klein" type="submit">Maken</button><button class="knop licht klein" type="button" id="nieuwAnnuleer">Annuleren</button></div>
+    </form>
+  </aside>
+  <section class="formulier" id="formulier"><div class="leegstaat"><h2>Kies of maak een aanraakscherm</h2><p>Met <b>+ Nieuw aanraakscherm</b> begint u met een kant-en-klare NOT-indeling: Vimo, filmpjes en de vier producten.</p></div></section>
+  <section class="voorbeeld"><div class="plak">
+    <div class="scherm"><iframe id="voorbeeld" src="/kiosk.html?voorbeeld=1" title="Voorbeeld van het aanraakscherm"></iframe></div>
+    <div class="schakel"><button class="knop licht klein aan" id="toonPres" type="button">Presentatie</button><button class="knop licht klein" id="toonOv" type="button">Na aantikken: overzicht</button></div>
+    <div class="adres" id="adres" hidden>
+      <b>Adres voor de pc bij het scherm</b>
+      <code id="adresTekst"></code>
+      <div class="knoppen"><button class="knop klein" id="kopieer">Kopieer adres</button><a class="knop licht klein" id="openScherm" target="_blank" rel="noopener">Open scherm</a></div>
+      <ol>
+        <li>Open het adres één keer met internet: het scherm bewaart dan alles op de pc en werkt daarna ook als de wifi wegvalt.</li>
+        <li>Volledig scherm op Windows: maak een snelkoppeling met<br><code id="edgeTekst" style="display:block;margin-top:4px;font-size:12px"></code></li>
+        <li>Wijzigingen die u hier opslaat, staan binnen een minuut op het scherm.</li>
+      </ol>
+    </div>
+  </div></section>
+</main>
+
+<div class="dialoog" id="biebDialoog" hidden><div>
+  <h3><span>Kies een foto</span><button class="icoon" id="biebSluit" aria-label="Sluiten">✕</button></h3>
+  <div class="bieb" id="bieb"></div>
+  <p class="hulp" id="biebLeeg" hidden>Nog geen foto's geüpload.</p>
+</div></div>
+<input type="file" id="bestand" accept="image/*" multiple hidden>
+
+<script src="/demos.js"></script>
+<script src="/kiosk-gedeeld.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const esc = KS.esc;
+  const lees = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (e) { return null; } };
+  const bewaar = (k, v, lang) => { try { (lang ? localStorage : sessionStorage).setItem(k, v); } catch (e) {} };
+  const wis = k => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} };
+  let ww = lees("vs-ww") || "", lijst = [], huidig = null, opgeslagen = "", voorbeeldModus = "pres";
+  const DEMOS = window.VS_DEMOS || [];
+
+  function toast(t) { const d = document.createElement("div"); d.className = "toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2400); }
+  async function api(pad, opties = {}) {
+    const r = await fetch(pad, Object.assign({}, opties, { headers: Object.assign({ "x-wachtwoord": ww }, opties.body && typeof opties.body === "string" ? { "content-type": "application/json" } : {}, opties.headers || {}) }));
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401 && pad !== "/api/login") { toonLogin("Uw sessie is verlopen; log opnieuw in."); throw new Error("Niet ingelogd"); }
+    if (!r.ok) throw new Error(d.fout || ("Fout " + r.status));
+    return d;
+  }
+
+  /* ===== inloggen (zelfde wachtwoord als de schermen-editor) ===== */
+  async function start() {
+    const st = await fetch("/api/status").then(r => r.json()).catch(() => ({ ingesteld: true }));
+    if (!st.ingesteld) { location.href = "/"; return; }
+    if (ww) { try { await api("/api/login", { method: "POST" }); return binnen(); } catch (e) {} }
+    toonLogin();
+  }
+  function toonLogin(fout) { $("werk").hidden = true; $("uitlog").hidden = true; $("login").hidden = false; $("loginFout").textContent = fout || ""; $("ww1").focus(); }
+  $("loginForm").addEventListener("submit", async e => {
+    e.preventDefault(); $("loginFout").textContent = "";
+    try { ww = $("ww1").value; await api("/api/login", { method: "POST" }); bewaar("vs-ww", ww, $("onthoud").checked); $("ww1").value = ""; binnen(); }
+    catch (err) { $("loginFout").textContent = err.message; }
+  });
+  $("uitlog").addEventListener("click", () => { wis("vs-ww"); ww = ""; huidig = null; toonLogin(); });
+
+  async function binnen() {
+    $("login").hidden = true; $("werk").hidden = false; $("uitlog").hidden = false;
+    await laadLijst();
+    const kies = lijst.find(s => s.id === lees("ks-laatste")) || lijst[0];
+    if (kies) open(kies.id);
+  }
+
+  /* ===== lijst ===== */
+  async function laadLijst() {
+    lijst = await api("/api/kiosks");
+    $("lijst").innerHTML = lijst.length ? lijst.map(s => `<button class="scherm${huidig && huidig.id === s.id ? " aan" : ""}" data-id="${esc(s.id)}">${esc(s.naam || s.id)}<small>/k/${esc(s.id)}</small></button>`).join("")
+      : `<p class="hulp" style="padding:0 8px">Nog geen aanraakschermen.</p>`;
+  }
+  $("lijst").addEventListener("click", e => { const b = e.target.closest("button.scherm"); if (b) open(b.dataset.id); });
+  $("nieuwKnop").addEventListener("click", () => { $("nieuwForm").hidden = false; $("nieuwKnop").hidden = true; $("nieuwNaam").focus(); });
+  $("nieuwAnnuleer").addEventListener("click", () => { $("nieuwForm").hidden = true; $("nieuwKnop").hidden = false; });
+  $("nieuwForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!verlaatOk()) return;
+    const naam = $("nieuwNaam").value.trim();
+    const basis = naam.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30) || "scherm";
+    let id = basis, n = 2;
+    while (lijst.some(s => s.id === id)) id = basis + "-" + n++;
+    try {
+      await api("/api/kiosk/" + id, { method: "PUT", body: JSON.stringify(KS.nieuweKiosk(id, naam)) });
+      $("nieuwNaam").value = ""; $("nieuwForm").hidden = true; $("nieuwKnop").hidden = false;
+      await laadLijst(); open(id, true);
+    } catch (err) { toast(err.message); }
+  });
+
+  const isVuil = () => huidig && JSON.stringify(huidig) !== opgeslagen;
+  function verlaatOk() { return !isVuil() || confirm("Er zijn wijzigingen die nog niet zijn opgeslagen. Toch doorgaan?"); }
+  addEventListener("beforeunload", e => { if (isVuil()) { e.preventDefault(); e.returnValue = ""; } });
+
+  async function open(id, zonderVraag) {
+    if (!zonderVraag && huidig && huidig.id !== id && !verlaatOk()) return;
+    try {
+      huidig = await api("/api/kiosk/" + id);
+      opgeslagen = JSON.stringify(huidig); bewaar("ks-laatste", id, true);
+      vulAan(huidig);
+      document.querySelectorAll("#lijst button.scherm").forEach(b => b.classList.toggle("aan", b.dataset.id === id));
+      tekenFormulier(); stuur(); toonAdres();
+    } catch (e) { toast(e.message); }
+  }
+  /* ontbrekende onderdelen aanvullen met de standaard */
+  function vulAan(k) {
+    const std = KS.nieuweKiosk(k.id, k.naam);
+    k.presentatie = Object.assign(std.presentatie, k.presentatie || {});
+    k.overzicht = Object.assign(std.overzicht, k.overzicht || {});
+    if (!Array.isArray(k.dias)) k.dias = std.dias;
+    if (!Array.isArray(k.tegels)) k.tegels = std.tegels;
+  }
+
+  function toonAdres() {
+    const url = location.origin + "/k/" + huidig.id;
+    $("adres").hidden = false; $("adresTekst").textContent = url; $("openScherm").href = url;
+    $("edgeTekst").textContent = `msedge --kiosk ${url} --edge-kiosk-type=fullscreen --no-first-run`;
+  }
+  $("kopieer").addEventListener("click", () => { navigator.clipboard.writeText($("adresTekst").textContent).then(() => toast("Adres gekopieerd")); });
+
+  /* ===== voorbeeld ===== */
+  let klaar = false;
+  addEventListener("message", e => { if (e.origin === location.origin && e.data && e.data.type === "klaar") { klaar = true; stuur(); } });
+  let stuurT = null;
+  function stuur() {
+    status();
+    if (!klaar || !huidig) return;
+    clearTimeout(stuurT);
+    stuurT = setTimeout(() => {
+      const w = $("voorbeeld").contentWindow;
+      w.postMessage({ type: "kiosk", kiosk: JSON.parse(JSON.stringify(huidig)) }, location.origin);
+      if (voorbeeldModus === "overzicht") w.postMessage({ type: "modus", modus: "overzicht" }, location.origin);
+    }, 250);
+  }
+  function zetVoorbeeld(m) {
+    voorbeeldModus = m;
+    $("toonPres").classList.toggle("aan", m === "pres"); $("toonOv").classList.toggle("aan", m === "overzicht");
+    if (klaar) $("voorbeeld").contentWindow.postMessage({ type: "modus", modus: m }, location.origin);
+  }
+  $("toonPres").addEventListener("click", () => zetVoorbeeld("pres"));
+  $("toonOv").addEventListener("click", () => zetVoorbeeld("overzicht"));
+
+  function status() {
+    const s = document.querySelector(".opslaanbalk .status");
+    if (!s) return;
+    const vuil = isVuil();
+    s.classList.toggle("vuil", vuil);
+    s.textContent = vuil ? "Niet opgeslagen wijzigingen" : (huidig && huidig.bijgewerkt ? "Opgeslagen " + new Date(huidig.bijgewerkt).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" }) : "");
+  }
+
+  /* ===== formulier-hulpjes ===== */
+  function h(tag, cls, ouder, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (ouder) ouder.appendChild(e); return e; }
+  function veld(ouder, label, el, hulp) {
+    const v = h("div", "veld", ouder); h("span", "lab", v).textContent = label; v.appendChild(el);
+    if (hulp) h("div", "hulp", v).textContent = hulp;
+    return v;
+  }
+  function invoer(obj, key, type = "text", attrs = {}) {
+    const el = document.createElement(type === "textarea" ? "textarea" : "input");
+    if (type !== "textarea") el.type = type;
+    Object.assign(el, attrs);
+    el.value = obj[key] == null ? "" : obj[key];
+    el.addEventListener("input", () => { obj[key] = type === "number" ? (el.value === "" ? "" : +el.value) : el.value; stuur(); });
+    return el;
+  }
+  function keuze(obj, key, opties, na) {
+    const s = document.createElement("select");
+    s.innerHTML = opties.map(([w, t]) => `<option value="${esc(w)}"${String(obj[key] == null ? "" : obj[key]) === String(w) ? " selected" : ""}>${esc(t)}</option>`).join("");
+    s.addEventListener("change", () => { obj[key] = s.value; stuur(); if (na) na(); });
+    return s;
+  }
+  function vinkje(ouder, obj, key, tekst) {
+    const l = h("label", "vink", ouder, `<input type="checkbox"${obj[key] !== false ? " checked" : ""}> ${esc(tekst)}`);
+    l.querySelector("input").addEventListener("change", e => { obj[key] = e.target.checked; stuur(); });
+  }
+  function blok(ouder, titel, kleur, uitleg) {
+    const b = h("div", "blok", ouder); const t = h("h3", "", b, `<i></i>${esc(titel)}`); t.style.setProperty("--c", kleur);
+    if (uitleg) h("p", "uitleg", b).textContent = uitleg;
+    return b;
+  }
+  /* kleurkiezer: vaste Vanerum-kleuren (+ achtergronden) en een eigen kleur */
+  function kleurKeuze(obj, key, metAchtergronden) {
+    const box = h("div", "kleuren");
+    const opties = metAchtergronden ? Object.entries(KS.ACHTERGRONDEN).map(([k, a]) => [k, a.naam, a.bg]) : KS.KLEUREN.map(([hex, naam]) => [hex, naam, hex]);
+    const teken = () => {
+      box.innerHTML = "";
+      const isVast = opties.some(o => o[0] === obj[key]);
+      opties.forEach(([w, naam, bg]) => {
+        const b = h("button", "kleur" + (obj[key] === w ? " aan" : ""), box, `<i style="background:${esc(bg)}"></i>${esc(naam)}`); b.type = "button";
+        b.addEventListener("click", () => { obj[key] = w; teken(); stuur(); });
+      });
+      const eigen = h("label", "kleur" + (!isVast && obj[key] ? " aan" : ""), box);
+      const inp = h("input", "", eigen); inp.type = "color"; inp.value = /^#[0-9a-f]{6}$/i.test(obj[key] || "") ? obj[key] : "#b8e7f9";
+      eigen.appendChild(document.createTextNode("Eigen kleur"));
+      inp.addEventListener("input", () => { obj[key] = inp.value; stuur(); });
+      inp.addEventListener("change", teken);
+    };
+    teken();
+    return box;
+  }
+  const demoOpties = (metLeeg, leegTekst) => (metLeeg ? [["", leegTekst || "Geen"]] : []).concat(DEMOS.map(d => [d.pad, d.groep + ": " + d.naam]));
+  function lijstKnoppen(kop, arr, i, opnieuw) {
+    const op = h("button", "icoon", kop, "↑"); op.type = "button"; op.title = "Omhoog"; op.disabled = i === 0;
+    const neer = h("button", "icoon", kop, "↓"); neer.type = "button"; neer.title = "Omlaag"; neer.disabled = i === arr.length - 1;
+    const weg = h("button", "icoon", kop, "✕"); weg.type = "button"; weg.title = "Verwijderen";
+    op.addEventListener("click", () => { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; opnieuw(); stuur(); });
+    neer.addEventListener("click", () => { [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]]; opnieuw(); stuur(); });
+    weg.addEventListener("click", () => { arr.splice(i, 1); opnieuw(); stuur(); });
+  }
+
+  /* ===== het formulier ===== */
+  function tekenFormulier() {
+    const f = $("formulier"); f.innerHTML = "";
+    const k = huidig;
+
+    const b0 = blok(f, "Naam", "#1e1e1e");
+    veld(b0, "Naam van dit aanraakscherm", invoer(k, "naam", "text", { maxLength: 40 }));
+
+    /* presentatie */
+    const p = k.presentatie;
+    const b1 = blok(f, "Presentatie", "#b8e7f9", "Loopt vanzelf zolang niemand het scherm aanraakt.");
+    veld(b1, "Achtergrond", kleurKeuze(p, "achtergrond", true));
+    vinkje(b1, p, "kopbalk", "Logo en streepjes linksboven");
+    veld(b1, "Tekst naast het logo (mag leeg)", invoer(p, "titel", "text", { maxLength: 40, placeholder: "bijv. NOT 2027 · Stand 12.B045" }));
+    veld(b1, "Uitnodiging onderaan (leeg = niet tonen)", invoer(p, "hint", "text", { maxLength: 70 }));
+    veld(b1, "Kleur van de uitnodiging", kleurKeuze(p, "hintKleur", false));
+    veld(b1, "Seconden per dia (standaard)", invoer(p, "seconden", "number", { min: 4, max: 300 }));
+
+    /* dia's */
+    const b2 = blok(f, "Dia's", "#fbb900", "In deze volgorde, daarna begint de presentatie opnieuw.");
+    const items = h("div", "items", b2);
+    const tekenDias = () => {
+      items.innerHTML = "";
+      if (!k.dias.length) h("p", "hulp", items, "Nog geen dia's.");
+      k.dias.forEach((d, i) => {
+        const it = h("div", "item", items);
+        const kleur = { foto: "#a8cb67", demo: "#b8e7f9", vimo: "#fbb900", tekst: "#bda8bd" }[d.type] || "#ccc";
+        const kop = h("div", "kop", it, `<span class="soort" style="--c:${kleur}"><i></i>${esc((KS.DIA_TYPEN[d.type] || {}).naam || d.type)}</span><span class="ruimte"></span>`);
+        lijstKnoppen(kop, k.dias, i, tekenDias);
+        if (d.type === "foto") {
+          const vak = h("div", "fotovak", it); const duim = h("div", "duim", vak); duim.style.backgroundImage = d.src ? `url('${d.src}')` : "";
+          const r = h("div", "", vak); r.style.flex = "1";
+          veld(r, "Kop (mag leeg)", invoer(d, "kop", "text", { maxLength: 70, placeholder: "bijv. Basisschool De Linde, Utrecht" }));
+          veld(it, "Tekst (mag leeg)", invoer(d, "tekst", "text", { maxLength: 140 }));
+          const r2 = h("div", "rij2", it);
+          veld(r2, "Weergave", keuze(d, "passend", [["vullen", "Hele scherm vullen"], ["passen", "Hele foto tonen"]]));
+          veld(r2, "Seconden (leeg = standaard)", invoer(d, "seconden", "number", { min: 3, max: 300 }));
+        } else if (d.type === "demo") {
+          veld(it, "Welk product of filmpje?", keuze(d, "pad", demoOpties(false).filter(o => { const x = DEMOS.find(y => y.pad === o[0]); return x && x.soort !== "spel"; })));
+          veld(it, "Seconden", invoer(d, "seconden", "number", { min: 10, max: 600 }), "Een filmpje speelt altijd helemaal uit. Rondleidingen (3D-demo's) duren ongeveer 45 seconden.");
+        } else if (d.type === "vimo") {
+          veld(it, "Titel", invoer(d, "titel", "text", { maxLength: 60 }), "*Sterretjes* om een woord geven een gele markering.");
+          veld(it, "Ondertitel", invoer(d, "ondertitel", "text", { maxLength: 140 }));
+          const ta = document.createElement("textarea"); ta.value = (d.zinnen || []).join("\n");
+          ta.addEventListener("input", () => { d.zinnen = ta.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); });
+          veld(it, "Wat Vimo zegt (één zin per regel)", ta);
+          veld(it, "Seconden", invoer(d, "seconden", "number", { min: 5, max: 300 }));
+        } else {
+          veld(it, "Kop", invoer(d, "kop", "text", { maxLength: 80 }), "*Sterretjes* om een woord geven een gele markering.");
+          veld(it, "Tekst (mag leeg)", invoer(d, "tekst", "textarea", { maxLength: 300 }));
+          veld(it, "Seconden (leeg = standaard)", invoer(d, "seconden", "number", { min: 3, max: 300 }));
+        }
+      });
+    };
+    tekenDias();
+    const tv = h("div", "toevoegen", b2);
+    const knop = (t, cls, fn) => { const b = h("button", "knop klein " + cls, tv, t); b.type = "button"; b.addEventListener("click", fn); return b; };
+    knop("+ Foto's uploaden", "geel", () => upload(srcs => { srcs.forEach(src => k.dias.push({ type: "foto", src, kop: "", tekst: "", passend: "vullen" })); tekenDias(); stuur(); }));
+    knop("+ Uit bibliotheek", "licht", () => kiesFoto(src => { k.dias.push({ type: "foto", src, kop: "", tekst: "", passend: "vullen" }); tekenDias(); stuur(); }));
+    knop("+ Product of filmpje", "licht", () => { k.dias.push(Object.assign({ type: "demo" }, KS.DIA_TYPEN.demo.std())); tekenDias(); stuur(); });
+    knop("+ Vimo", "licht", () => { k.dias.push(Object.assign({ type: "vimo" }, KS.DIA_TYPEN.vimo.std())); tekenDias(); stuur(); });
+    knop("+ Tekst", "licht", () => { k.dias.push(Object.assign({ type: "tekst" }, KS.DIA_TYPEN.tekst.std())); tekenDias(); stuur(); });
+
+    /* overzicht */
+    const o = k.overzicht;
+    const b3 = blok(f, "Overzicht na aantikken", "#a8cb67", "Verschijnt als iemand het scherm aanraakt.");
+    veld(b3, "Titel", invoer(o, "titel", "text", { maxLength: 50 }));
+    veld(b3, "Introtekst (mag leeg)", invoer(o, "intro", "textarea", { maxLength: 200 }));
+    veld(b3, "Achtergrond", kleurKeuze(o, "achtergrond", true));
+    veld(b3, "Kleur van de kopbalk", kleurKeuze(o, "balk", false));
+    veld(b3, "Kleur van de knoppen", kleurKeuze(o, "knop", false));
+    const r3 = h("div", "rij2", b3);
+    veld(r3, "Tekst op de lab-knop", invoer(o, "labTekst", "text", { maxLength: 30 }));
+    veld(r3, "Terug naar presentatie na (sec.)", invoer(o, "terugNa", "number", { min: 15, max: 1800 }), "Zonder aanraking.");
+
+    /* tegels */
+    const b4 = blok(f, "Producten in het overzicht", "#bda8bd", "Elke tegel opent de productpagina; met een lab erbij komt er een knop naar het lab.");
+    const tItems = h("div", "items", b4);
+    const tekenTegels = () => {
+      tItems.innerHTML = "";
+      k.tegels.forEach((t, i) => {
+        const it = h("div", "item", tItems);
+        const kop = h("div", "kop", it, `<span class="soort" style="--c:${esc(t.kleur || "#fbb900")}"><i></i>${esc(t.titel || "Tegel " + (i + 1))}</span><span class="ruimte"></span>`);
+        lijstKnoppen(kop, k.tegels, i, tekenTegels);
+        veld(it, "Naam", invoer(t, "titel", "text", { maxLength: 30 }));
+        veld(it, "Korte tekst", invoer(t, "tekst", "text", { maxLength: 70 }));
+        veld(it, "Productpagina", keuze(t, "product", demoOpties(false)));
+        veld(it, "Lab (na de productpagina)", keuze(t, "lab", demoOpties(true, "Geen lab")));
+        const vak = h("div", "fotovak", it); const duim = h("div", "duim", vak); duim.style.backgroundImage = t.foto ? `url('${t.foto}')` : "";
+        const fk = h("div", "", vak); h("span", "lab", fk, "Afbeelding").style.cssText = "display:block;font-weight:700;font-size:13px;margin-bottom:5px";
+        const rij = h("div", "", fk); rij.style.cssText = "display:flex;gap:6px;flex-wrap:wrap";
+        const zet = src => { t.foto = src; tekenTegels(); stuur(); };
+        const b1 = h("button", "knop klein licht", rij, "Uploaden"); b1.type = "button"; b1.addEventListener("click", () => upload(s => s[0] && zet(s[0]), true));
+        const b2 = h("button", "knop klein licht", rij, "Bibliotheek"); b2.type = "button"; b2.addEventListener("click", () => kiesFoto(zet));
+        const b3 = h("button", "knop klein licht", rij, "Weghalen"); b3.type = "button"; b3.addEventListener("click", () => zet(""));
+        veld(it, "Kleur", kleurKeuze(t, "kleur", false));
+      });
+    };
+    tekenTegels();
+    const tv2 = h("div", "toevoegen", b4);
+    const nt = h("button", "knop klein licht", tv2, "+ Product toevoegen"); nt.type = "button";
+    nt.addEventListener("click", () => { k.tegels.push({ titel: "Nieuw product", tekst: "", kleur: "#fbb900", product: DEMOS[0] ? DEMOS[0].pad : "", lab: "", foto: "" }); tekenTegels(); stuur(); });
+    const herstel = h("button", "knop klein licht", tv2, "Standaard vier producten terugzetten"); herstel.type = "button";
+    herstel.addEventListener("click", () => { if (confirm("De producttegels terugzetten naar Motion Cubes, Agili, Opti+ Move tafels en stoelen?")) { k.tegels = KS.TEGELS_STD(); tekenTegels(); stuur(); } });
+
+    /* opslaan */
+    const balk = h("div", "opslaanbalk", f, `<span class="status"></span>`);
+    const weg = h("button", "knop gevaar", balk, "Verwijderen"); weg.type = "button"; weg.addEventListener("click", verwijder);
+    const ops = h("button", "knop geel", balk, "Opslaan"); ops.type = "button"; ops.id = "opslaan"; ops.addEventListener("click", opslaan);
+    status();
+  }
+
+  /* ===== foto's: uploaden en kiezen (dezelfde bibliotheek als de schermen) ===== */
+  async function verklein(file) {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+    const img = await createImageBitmap(file).catch(() => null);
+    if (!img) return file;
+    const k = Math.min(1, 2400 / img.width, 2400 / img.height);
+    if (k === 1 && file.size < 1500000) return file;
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const type = file.type === "image/png" ? "image/png" : "image/jpeg";
+    return await new Promise(r => c.toBlob(b => r(b || file), type, .86));
+  }
+  let naUpload = null;
+  function upload(fn, enkel) { naUpload = fn; $("bestand").multiple = !enkel; $("bestand").value = ""; $("bestand").click(); }
+  $("bestand").addEventListener("change", async () => {
+    const files = [...$("bestand").files]; if (!files.length || !naUpload) return;
+    const fn = naUpload, uit = [];
+    toast(files.length > 1 ? `${files.length} foto's uploaden…` : "Foto uploaden…");
+    for (const file of files) {
+      try {
+        const b = await verklein(file);
+        const d = await api("/api/media", { method: "POST", body: b, headers: { "content-type": b.type || file.type, "x-naam": encodeURIComponent(file.name) } });
+        uit.push(d.url);
+      } catch (e) { toast(file.name + ": " + e.message); }
+    }
+    if (uit.length) { fn(uit); toast(uit.length > 1 ? `${uit.length} foto's toegevoegd` : "Foto toegevoegd"); }
+  });
+  let naKies = null;
+  async function kiesFoto(fn) {
+    naKies = fn; $("biebDialoog").hidden = false; $("bieb").innerHTML = "<p class='hulp'>Laden…</p>";
+    let lijst = []; try { lijst = await api("/api/media"); } catch (e) {}
+    $("biebLeeg").hidden = !!lijst.length;
+    $("bieb").innerHTML = lijst.map(m => `<button type="button" data-url="${esc(m.url)}" title="${esc(m.naam)}" style="background-image:url('${esc(m.url)}')"></button>`).join("");
+  }
+  $("bieb").addEventListener("click", e => { const b = e.target.closest("button[data-url]"); if (b && naKies) { naKies(b.dataset.url); $("biebDialoog").hidden = true; } });
+  $("biebSluit").addEventListener("click", () => { $("biebDialoog").hidden = true; });
+  $("biebDialoog").addEventListener("click", e => { if (e.target === $("biebDialoog")) $("biebDialoog").hidden = true; });
+
+  async function opslaan() {
+    const knop = $("opslaan"); knop.disabled = true; knop.textContent = "Opslaan…";
+    try {
+      const d = await api("/api/kiosk/" + huidig.id, { method: "PUT", body: JSON.stringify(huidig) });
+      huidig.bijgewerkt = d.bijgewerkt; opgeslagen = JSON.stringify(huidig);
+      await laadLijst(); status(); toast("Opgeslagen; het scherm past zich binnen een minuut aan");
+    } catch (e) { toast(e.message); }
+    knop.disabled = false; knop.textContent = "Opslaan";
+  }
+  async function verwijder() {
+    if (!confirm(`Aanraakscherm "${huidig.naam || huidig.id}" verwijderen?`)) return;
+    try {
+      await api("/api/kiosk/" + huidig.id, { method: "DELETE" });
+      huidig = null; opgeslagen = ""; $("adres").hidden = true;
+      $("formulier").innerHTML = `<div class="leegstaat"><h2>Verwijderd</h2><p>Kies links een ander aanraakscherm of maak een nieuw.</p></div>`;
+      await laadLijst();
+    } catch (e) { toast(e.message); }
+  }
+
+  start();
+})();
+</script>
+</body></html>

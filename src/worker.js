@@ -1,6 +1,7 @@
 /* Vanerum Schermen: opslag en API voor de schermindelingen.
    KV-sleutels:
      scherm:<id>      JSON van één scherm
+     kiosk:<id>       JSON van één aanraakscherm (bijv. de NOT-stand)
      media:<id>       geüploade afbeelding (metadata: type, naam)
      instelling:ww    gehasht wachtwoord (als er geen secret WACHTWOORD is) */
 
@@ -173,6 +174,38 @@ async function api(req, env, url, ctx) {
     if (m === "DELETE") { await env.KV.delete("scherm:" + id); return json({ ok: true }); }
   }
 
+  /* Aanraakschermen (kiosk): presentatie + productoverzicht, bijv. voor de NOT */
+  if (p === "/api/kiosks" && m === "GET") {
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    const lijst = await env.KV.list({ prefix: "kiosk:" });
+    const uit = [];
+    for (const k of lijst.keys) {
+      const s = await env.KV.get(k.name, "json");
+      if (s) uit.push({ id: s.id, naam: s.naam, bijgewerkt: s.bijgewerkt });
+    }
+    uit.sort((a, b) => (a.naam || "").localeCompare(b.naam || "", "nl"));
+    return json(uit);
+  }
+  let mk = p.match(/^\/api\/kiosk\/([^/]+)$/);
+  if (mk) {
+    const id = mk[1];
+    if (!ID.test(id)) return fout("Ongeldige naam voor het scherm");
+    if (m === "GET") {
+      const s = await env.KV.get("kiosk:" + id, "json");
+      return s ? json(s) : fout("Dit scherm bestaat niet", 404);
+    }
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    if (m === "PUT") {
+      const s = await req.json().catch(() => null);
+      if (!s || typeof s !== "object") return fout("Geen geldige instellingen");
+      if (JSON.stringify(s).length > 200000) return fout("De instellingen zijn te groot");
+      s.id = id; s.bijgewerkt = new Date().toISOString();
+      await env.KV.put("kiosk:" + id, JSON.stringify(s));
+      return json(s);
+    }
+    if (m === "DELETE") { await env.KV.delete("kiosk:" + id); return json({ ok: true }); }
+  }
+
   /* Afbeeldingen */
   if (p === "/api/media" && m === "GET") {
     if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
@@ -249,6 +282,9 @@ export default {
     /* /s/<id> is een kort adres voor AbleSign */
     const kort = url.pathname.match(/^\/s\/([a-z0-9-]+)\/?$/);
     if (kort) return env.ASSETS.fetch(new Request(url.origin + "/scherm", req));
+    /* /k/<id> is het adres van een aanraakscherm (kiosk) */
+    const kiosk = url.pathname.match(/^\/k\/([a-z0-9-]+)\/?$/);
+    if (kiosk) return env.ASSETS.fetch(new Request(url.origin + "/kiosk", req));
     return env.ASSETS.fetch(req);
   }
 };
