@@ -270,6 +270,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     k.overzicht = Object.assign(std.overzicht, k.overzicht || {});
     if (!Array.isArray(k.dias)) k.dias = std.dias;
     if (!Array.isArray(k.tegels)) k.tegels = std.tegels;
+    /* oudere versie: logo-pil linksboven met tekst → nu de balk bovenaan */
+    if (!k.balk) k.balk = Object.assign(std.balk, { aan: k.presentatie.kopbalk !== false, titel: k.presentatie.titel || "" });
+    else k.balk = Object.assign(std.balk, k.balk);
+    k.band = Object.assign(std.band, k.band || {});
+    if (!k.qr) k.qr = k.band.wifi ? Object.assign(std.qr, { soort: "wifi", tekst: "Wifi" }) : std.qr;
+    delete k.band.wifi;
+    delete k.presentatie.kopbalk; delete k.presentatie.titel;
   }
 
   function toonAdres() {
@@ -330,9 +337,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     s.addEventListener("change", () => { obj[key] = s.value; stuur(); if (na) na(); });
     return s;
   }
-  function vinkje(ouder, obj, key, tekst) {
+  function vinkje(ouder, obj, key, tekst, na) {
     const l = h("label", "vink", ouder, `<input type="checkbox"${obj[key] !== false ? " checked" : ""}> ${esc(tekst)}`);
-    l.querySelector("input").addEventListener("change", e => { obj[key] = e.target.checked; stuur(); });
+    l.querySelector("input").addEventListener("change", e => { obj[key] = e.target.checked; stuur(); if (na) na(); });
   }
   function blok(ouder, titel, kleur, uitleg) {
     const b = h("div", "blok", ouder); const t = h("h3", "", b, `<i></i>${esc(titel)}`); t.style.setProperty("--c", kleur);
@@ -340,9 +347,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     return b;
   }
   /* kleurkiezer: vaste Vanerum-kleuren (+ achtergronden) en een eigen kleur */
-  function kleurKeuze(obj, key, metAchtergronden) {
+  function kleurKeuze(obj, key, metAchtergronden, geenLabel) {
     const box = h("div", "kleuren");
-    const opties = metAchtergronden ? Object.entries(KS.ACHTERGRONDEN).map(([k, a]) => [k, a.naam, a.bg]) : KS.KLEUREN.map(([hex, naam]) => [hex, naam, hex]);
+    const opties = (geenLabel ? [["", geenLabel, "repeating-linear-gradient(45deg,#fff 0 4px,#e3e1dc 4px 8px)"]] : [])
+      .concat(metAchtergronden ? Object.entries(KS.ACHTERGRONDEN).map(([k, a]) => [k, a.naam, a.bg]) : KS.KLEUREN.map(([hex, naam]) => [hex, naam, hex]));
     const teken = () => {
       box.innerHTML = "";
       const isVast = opties.some(o => o[0] === obj[key]);
@@ -381,11 +389,53 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     const p = k.presentatie;
     const b1 = blok(f, "Presentatie", "#b8e7f9", "Loopt vanzelf zolang niemand het scherm aanraakt.");
     veld(b1, "Achtergrond", kleurKeuze(p, "achtergrond", true));
-    vinkje(b1, p, "kopbalk", "Logo en streepjes linksboven");
-    veld(b1, "Tekst naast het logo (mag leeg)", invoer(p, "titel", "text", { maxLength: 40, placeholder: "bijv. NOT 2027 · Stand 12.B045" }));
-    veld(b1, "Uitnodiging onderaan (leeg = niet tonen)", invoer(p, "hint", "text", { maxLength: 70 }));
+    veld(b1, "Uitnodiging om te tikken (leeg = niet tonen)", invoer(p, "hint", "text", { maxLength: 70 }));
+    veld(b1, "Plek van de uitnodiging", keuze(p, "hintPlek", [["ro", "Rechtsonder (klein, in de hoek)"], ["lo", "Linksonder"], ["rb", "Rechtsboven"], ["mo", "Midden onder"]]));
     veld(b1, "Kleur van de uitnodiging", kleurKeuze(p, "hintKleur", false));
     veld(b1, "Seconden per dia (standaard)", invoer(p, "seconden", "number", { min: 4, max: 300 }));
+
+    /* balk bovenaan */
+    const bk = k.balk;
+    const bkB = blok(f, "Balk bovenaan", "#1e1e1e", "Zoals op de gewone schermen: logo, titel en klok.");
+    const bkDelen = h("div", "");
+    vinkje(bkB, bk, "aan", "Balk tonen", () => { bkDelen.hidden = bk.aan === false; });
+    bkB.appendChild(bkDelen); bkDelen.hidden = bk.aan === false;
+    vinkje(bkDelen, bk, "logo", "Logo en streepjes");
+    vinkje(bkDelen, bk, "klok", "Klok met datum");
+    veld(bkDelen, "Titel in het midden (mag leeg)", invoer(bk, "titel", "text", { maxLength: 60, placeholder: "Bijv. Welkom op onze *stand*" }), "Zet *sterretjes* om een woord voor een gele markering.");
+    veld(bkDelen, "Kleur van de balk", kleurKeuze(bk, "kleur", false, "Zelfde als achtergrond"));
+
+    /* band onderaan */
+    const bd = k.band;
+    const bdB = blok(f, "Band onderaan", "#2e3033", "Een lopende band met tekst, zoals op de gewone schermen.");
+    const bdDelen = h("div", "");
+    vinkje(bdB, bd, "aan", "Band tonen", () => { bdDelen.hidden = bd.aan === false; });
+    bdB.appendChild(bdDelen); bdDelen.hidden = bd.aan === false;
+    const bronZicht = () => {
+      bdDelen.querySelectorAll(".bron-weetjes").forEach(x => x.hidden = bd.bron !== "weetjes");
+      bdDelen.querySelectorAll(".bron-teksten").forEach(x => x.hidden = bd.bron !== "teksten");
+      bdDelen.querySelectorAll(".bron-nieuws").forEach(x => x.hidden = bd.bron !== "nieuws");
+    };
+    veld(bdDelen, "Wat loopt er door de band?", keuze(bd, "bron", [["weetjes", "Wist u dat…"], ["teksten", "Eigen teksten"], ["nieuws", "Nieuwskoppen (RSS)"]], bronZicht));
+    veld(bdDelen, "Tekst in het gele vak (leeg = standaard)", invoer(bd, "label", "text", { maxLength: 30, placeholder: "Wist u dat… / Nieuws / Vanerum" }));
+    const regels = key => { const ta = document.createElement("textarea"); ta.style.minHeight = "150px"; ta.value = (bd[key] || []).join("\n"); ta.addEventListener("input", () => { bd[key] = ta.value.split("\n").map(x => x.trim()).filter(Boolean); stuur(); }); return ta; };
+    veld(bdDelen, "Weetjes (één per regel)", regels("weetjes")).classList.add("bron-weetjes");
+    veld(bdDelen, "Eigen teksten (één per regel)", regels("teksten"), "Bijv. Stand 12.B045 · Vraag naar een demo · vanerum.nl").classList.add("bron-teksten");
+    veld(bdDelen, "Adres van de nieuwsbron (RSS)", invoer(bd, "feed", "text", { placeholder: "https://vanerum.nl/nl/rss.xml" }), "Zonder internet loopt de band met de eigen teksten.").classList.add("bron-nieuws");
+    bronZicht();
+    veld(bdDelen, "Kleur van de band", kleurKeuze(bd, "kleur", false));
+    veld(bdDelen, "Kleur van het vak met de tekst", kleurKeuze(bd, "labelKleur", false));
+
+    /* QR-code */
+    const q = k.qr;
+    const qB = blok(f, "QR-code in de hoek", "#fbb900", "Linksonder in de band (met een tabje erboven), of als kaartje in de hoek als de band uit staat.");
+    const qDelen = h("div", "");
+    const qZicht = () => { qDelen.hidden = !q.soort; qDelen.querySelectorAll(".qr-link").forEach(x => x.hidden = q.soort !== "link"); };
+    veld(qB, "Wat doet de QR-code?", keuze(q, "soort", [["link", "Link naar een website (bijv. Motion Cubes en Agili)"], ["wifi", "Wifi (dezelfde code als op de gewone schermen)"], ["", "Geen QR-code"]], () => { if (q.soort === "wifi" && (!q.tekst || q.tekst === "Meer info")) q.tekst = "Wifi"; if (q.soort === "link" && (!q.tekst || q.tekst === "Wifi")) q.tekst = "Meer info"; const y = scrollY; tekenFormulier(); scrollTo(0, y); stuur(); }));
+    qB.appendChild(qDelen);
+    veld(qDelen, "Websiteadres", invoer(q, "url", "text", { placeholder: "https://…" }), "Bezoekers scannen de code met hun telefoon en komen op deze pagina.").classList.add("qr-link");
+    veld(qDelen, "Tekst erboven", invoer(q, "tekst", "text", { maxLength: 24, placeholder: "Meer info" }));
+    qZicht();
 
     /* dia's */
     const b2 = blok(f, "Dia's", "#fbb900", "In deze volgorde, daarna begint de presentatie opnieuw.");

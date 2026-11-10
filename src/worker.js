@@ -238,10 +238,11 @@ async function api(req, env, url, ctx) {
 
   /* Nieuws, alleen voor feeds die in een opgeslagen scherm staan */
   if (p === "/api/nieuws" && m === "GET") {
-    const id = url.searchParams.get("scherm") || "", feed = url.searchParams.get("feed") || "";
+    const kiosk = url.searchParams.get("kiosk") || "";
+    const id = url.searchParams.get("scherm") || kiosk, feed = url.searchParams.get("feed") || "";
     if (!ID.test(id)) return fout("Ongeldig scherm");
-    const s = await env.KV.get("scherm:" + id, "json");
-    const toegestaan = s ? feedsVan(s) : [];
+    const s = await env.KV.get((kiosk ? "kiosk:" : "scherm:") + id, "json");
+    const toegestaan = s ? (kiosk ? [s.band && s.band.feed].filter(Boolean) : feedsVan(s)) : [];
     const voorbeeld = (await magBewerken(req, env)) && /^https?:\/\//.test(feed);
     if (!toegestaan.includes(feed) && !voorbeeld) return fout("Deze nieuwsbron hoort niet bij dit scherm", 403);
     const cache = caches.default, sleutel = new Request("https://nieuws.cache/v2/" + encodeURIComponent(feed));

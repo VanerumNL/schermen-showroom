@@ -11,7 +11,7 @@
   };
   const KLEUREN = [
     ["#fbb900", "Geel"], ["#b8e7f9", "Lichtblauw"], ["#bda8bd", "Lila"], ["#a8cb67", "Groen"],
-    ["#1e1e1e", "Zwart"], ["#ffffff", "Wit"], ["#f4f4f2", "Lichtgrijs"]
+    ["#1e1e1e", "Zwart"], ["#2e3033", "Antraciet"], ["#ffffff", "Wit"], ["#f4f4f2", "Lichtgrijs"]
   ];
 
   /* is een kleur donker? (voor witte of zwarte letters erop) */
@@ -42,12 +42,25 @@
     { titel: "Opti+ Move stoelen", tekst: "Actief zitten, in elke maat.", kleur: "#bda8bd", product: "/demos/opti-move-stoel/", lab: "", foto: "/img/kiosk/opti-move-stoel.jpg" }
   ]);
 
+  const WEETJES = [
+    "Kinderen zitten een groot deel van de schooldag stil. Korte beweegmomenten helpen de aandacht vast te houden.",
+    "De Motion Cube is kruk, tafeltje en dobbelsteen in één. Hij werkt samen met het digibord.",
+    "De Agili tafel gaat van zitten naar staan, kantelt en klapt in: één tafel, vier standen.",
+    "Een stoel en tafel op de juiste hoogte helpen leerlingen om goed en geconcentreerd te zitten.",
+    "Vanerum maakt schoolmeubilair in een eigen fabriek in België.",
+    "Onze meubels gaan lang mee en losse onderdelen zijn te vervangen."
+  ];
+  const BALK_STD = () => ({ aan: true, logo: true, klok: true, titel: "", kleur: "" });
+  const BAND_STD = () => ({ aan: true, bron: "weetjes", label: "", weetjes: WEETJES.slice(), teksten: [], feed: "https://vanerum.nl/nl/rss.xml", kleur: "#2e3033", labelKleur: "#fbb900" });
+  const QR_STD = () => ({ soort: "link", url: "https://vanerum-bewegend-leren.paul-westerhout.workers.dev/", tekst: "Meer info" });
+
   function nieuweKiosk(id, naam) {
     return {
       id, naam,
+      balk: BALK_STD(), band: BAND_STD(), qr: QR_STD(),
       presentatie: {
-        achtergrond: "licht", kopbalk: true, titel: "", seconden: 10,
-        hint: "Tik op het scherm en ontdek onze producten", hintKleur: "#fbb900"
+        achtergrond: "licht", seconden: 10,
+        hint: "Tik voor onze producten", hintKleur: "#fbb900", hintPlek: "ro"
       },
       dias: [
         Object.assign({ type: "vimo" }, DIA_TYPEN.vimo.std()),
@@ -67,5 +80,5 @@
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const markeer = t => esc(t).replace(/\*([^*]+)\*/g, "<mark>$1</mark>").replace(/\n/g, "<br>");
 
-  window.KS = { ACHTERGRONDEN, KLEUREN, DIA_TYPEN, TEGELS_STD, nieuweKiosk, achtergrond, donker, esc, markeer };
+  window.KS = { WEETJES, BALK_STD, BAND_STD, QR_STD, ACHTERGRONDEN, KLEUREN, DIA_TYPEN, TEGELS_STD, nieuweKiosk, achtergrond, donker, esc, markeer };
 })();
