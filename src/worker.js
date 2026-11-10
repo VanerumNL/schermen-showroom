@@ -3,7 +3,10 @@
      scherm:<id>      JSON van één scherm
      kiosk:<id>       JSON van één aanraakscherm (bijv. de NOT-stand)
      media:<id>       geüploade afbeelding (metadata: type, naam)
-     instelling:ww    gehasht wachtwoord (als er geen secret WACHTWOORD is) */
+     instelling:ww    gehasht wachtwoord (als er geen secret WACHTWOORD is)
+   AbleSign-koppeling en offline-melding: zie src/ablesign.js */
+
+import { ableSignAan, overzicht, zetOpTv, haalVanTv, controleer, stuurMelding, AbleSignFout } from "./ablesign.js";
 
 const JSON_H = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: JSON_H });
@@ -263,6 +266,37 @@ async function api(req, env, url, ctx) {
     return new Response(r.body, { headers: JSON_H });
   }
 
+  /* AbleSign: tv's bekijken, een indeling erop zetten of eraf halen */
+  if (p.startsWith("/api/ablesign/")) {
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    if (p === "/api/ablesign/status") return json({ gekoppeld: ableSignAan(env), melding: !!env.MELDING_WEBHOOK });
+    if (!ableSignAan(env)) return fout("AbleSign is nog niet gekoppeld: zet in Cloudflare het secret ABLESIGN_KEY.", 409);
+    try {
+      if (p === "/api/ablesign/schermen" && m === "GET") return json(await overzicht(env, url.origin));
+      const body = m === "POST" ? await req.json().catch(() => ({})) : {};
+      if (p === "/api/ablesign/zet" && m === "POST") {
+        if (!ID.test(body.id || "")) return fout("Ongeldige indeling");
+        const s = await env.KV.get("scherm:" + body.id, "json");
+        if (!s) return fout("Sla de indeling eerst op", 404);
+        if (!Array.isArray(body.schermen) || !body.schermen.length) return fout("Kies minstens één tv");
+        return json(await zetOpTv(env, url.origin, { id: body.id, naam: s.naam, schermen: body.schermen.slice(0, 50), alleen: !!body.alleen, seconden: body.seconden }));
+      }
+      if (p === "/api/ablesign/haalweg" && m === "POST") {
+        if (!ID.test(body.id || "") || !Number.isInteger(+body.scherm)) return fout("Ongeldig verzoek");
+        return json(await haalVanTv(env, { id: body.id, scherm: +body.scherm }));
+      }
+      if (p === "/api/ablesign/testmelding" && m === "POST") {
+        if (!env.MELDING_WEBHOOK) return fout("Er is nog geen MELDING_WEBHOOK ingesteld", 409);
+        await stuurMelding(env, "Testmelding van Vanerum Schermen", ["Als u dit leest, komen meldingen over offline schermen hier binnen."], env.SITE_URL || url.origin);
+        return json({ ok: true });
+      }
+      if (p === "/api/ablesign/controleer" && m === "POST") return json(await controleer(env));
+    } catch (e) {
+      if (e instanceof AbleSignFout) return fout(e.message, e.status);
+      throw e;
+    }
+  }
+
   return fout("Onbekend adres", 404);
 }
 
@@ -286,5 +320,9 @@ export default {
     const kiosk = url.pathname.match(/^\/k\/([a-z0-9-]+)\/?$/);
     if (kiosk) return env.ASSETS.fetch(new Request(url.origin + "/kiosk", req));
     return env.ASSETS.fetch(req);
+  },
+  /* elk kwartier: kijken of er tv's offline zijn (zie "triggers" in wrangler.jsonc) */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(controleer(env).catch(e => console.error("AbleSign-controle mislukt:", e && e.message || e)));
   }
 };

@@ -6,6 +6,8 @@
   "kv_namespaces": [{ "binding": "KV", "id": "05c361f4095f468bbc181136e5870919" }],
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "observability": { "enabled": true },
+  /* elk kwartier controleren of de tv's in AbleSign online zijn (src/ablesign.js) */
+  "triggers": { "crons": ["*/15 * * * *"] },
   /* previews (andere branches dan main) krijgen een eigen, lege KV-opslag */
   "previews": {
     "kv_namespaces": [{ "binding": "KV", "id": "8fb995a401f34d5fa62618938c7710e8" }],
