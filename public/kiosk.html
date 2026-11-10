@@ -56,14 +56,16 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .puntjes i{width:14px;height:14px;border-radius:50%;background:rgba(30,30,30,.25);transition:all .4s}
 .puntjes i.aan{width:44px;border-radius:8px;background:var(--zwart)}
 .donkerebg .puntjes i{background:rgba(255,255,255,.35)}.donkerebg .puntjes i.aan{background:#fff}
-.hint{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:22px;background:var(--hint);color:var(--hint-ink);
-  font-weight:700;font-size:34px;padding:20px 40px 20px 22px;border-radius:999px;box-shadow:0 14px 40px rgba(30,30,30,.25);white-space:nowrap;animation:zweef 3s ease-in-out infinite}
-.hint .tik{position:relative;width:58px;height:58px;flex:none}
-.hint .tik i{position:absolute;inset:14px;border-radius:50%;background:currentColor}
-.hint .tik b{position:absolute;inset:0;border-radius:50%;border:4px solid currentColor;opacity:0;animation:rimpel 2s ease-out infinite}
+.hint{position:absolute;z-index:6;display:flex;align-items:center;gap:12px;background:var(--hint);color:var(--hint-ink);opacity:.94;
+  font-weight:700;font-size:22px;padding:10px 22px 10px 12px;border-radius:999px;box-shadow:0 8px 24px rgba(30,30,30,.22);white-space:nowrap;animation:zweef 3s ease-in-out infinite}
+.hint.ro{right:40px;bottom:36px}.hint.lo{left:40px;bottom:36px}.hint.rb{right:40px;top:40px}.hint.mo{left:50%;bottom:36px;translate:-50% 0}
+.hint .tik{position:relative;width:36px;height:36px;flex:none}
+.hint .tik i{position:absolute;inset:9px;border-radius:50%;background:currentColor}
+.hint .tik b{position:absolute;inset:0;border-radius:50%;border:3px solid currentColor;opacity:0;animation:rimpel 2s ease-out infinite}
 .hint .tik b+b{animation-delay:1s}
 @keyframes rimpel{0%{transform:scale(.35);opacity:.9}100%{transform:scale(1.15);opacity:0}}
-@keyframes zweef{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,-8px)}}
+@keyframes zweef{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.puntjes.links{right:auto;left:60px}
 .leeg{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;color:var(--antraciet);text-align:center;padding:100px}
 
 /* ===== productoverzicht ===== */
@@ -167,10 +169,11 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const v = $("presVlak"), p = cfg.presentatie || {};
     v.innerHTML = "";
     if (p.kopbalk !== false) v.insertAdjacentHTML("beforeend", `<div class="kopje"><img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">${p.titel ? `<span>${esc(p.titel)}</span>` : ""}</div>`);
-    if (p.hint) v.insertAdjacentHTML("beforeend", `<div class="hint"><span class="tik"><b></b><b></b><i></i></span>${esc(p.hint)}</div>`);
+    const hoek = ["ro", "lo", "rb", "mo"].includes(p.hintPlek) ? p.hintPlek : "ro";
+    if (p.hint) v.insertAdjacentHTML("beforeend", `<div class="hint ${hoek}"><span class="tik"><b></b><b></b><i></i></span>${esc(p.hint)}</div>`);
     const dias = (cfg.dias || []).filter(diaGeldig);
     if (!dias.length) { v.insertAdjacentHTML("beforeend", `<div class="leeg">Nog geen dia's. Voeg foto's, producten of Vimo toe in de instellingen.</div>`); return; }
-    if (dias.length > 1) v.insertAdjacentHTML("beforeend", `<div class="puntjes">${dias.map(() => "<i></i>").join("")}</div>`);
+    if (dias.length > 1) v.insertAdjacentHTML("beforeend", `<div class="puntjes${p.hint && hoek === "ro" ? " links" : ""}">${dias.map(() => "<i></i>").join("")}</div>`);
     huidigeDia = null; diaI = diaI % dias.length;
     toonDia(dias);
   }

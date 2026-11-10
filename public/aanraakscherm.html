@@ -383,7 +383,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     veld(b1, "Achtergrond", kleurKeuze(p, "achtergrond", true));
     vinkje(b1, p, "kopbalk", "Logo en streepjes linksboven");
     veld(b1, "Tekst naast het logo (mag leeg)", invoer(p, "titel", "text", { maxLength: 40, placeholder: "bijv. NOT 2027 · Stand 12.B045" }));
-    veld(b1, "Uitnodiging onderaan (leeg = niet tonen)", invoer(p, "hint", "text", { maxLength: 70 }));
+    veld(b1, "Uitnodiging om te tikken (leeg = niet tonen)", invoer(p, "hint", "text", { maxLength: 70 }));
+    veld(b1, "Plek van de uitnodiging", keuze(p, "hintPlek", [["ro", "Rechtsonder (klein, in de hoek)"], ["lo", "Linksonder"], ["rb", "Rechtsboven"], ["mo", "Midden onder"]]));
     veld(b1, "Kleur van de uitnodiging", kleurKeuze(p, "hintKleur", false));
     veld(b1, "Seconden per dia (standaard)", invoer(p, "seconden", "number", { min: 4, max: 300 }));
 

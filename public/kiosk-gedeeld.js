@@ -47,7 +47,7 @@
       id, naam,
       presentatie: {
         achtergrond: "licht", kopbalk: true, titel: "", seconden: 10,
-        hint: "Tik op het scherm en ontdek onze producten", hintKleur: "#fbb900"
+        hint: "Tik voor onze producten", hintKleur: "#fbb900", hintPlek: "ro"
       },
       dias: [
         Object.assign({ type: "vimo" }, DIA_TYPEN.vimo.std()),
