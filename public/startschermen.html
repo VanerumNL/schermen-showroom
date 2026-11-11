@@ -122,6 +122,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .iconen .ic{width:40px;height:40px;border:1.5px solid var(--lijn);border-radius:9px;background:#fff;cursor:pointer;padding:3px}
 .iconen .ic svg{width:100%;height:100%;display:block}
 .iconen .ic.aan{border-color:var(--zwart);box-shadow:0 0 0 3px var(--geel)}
+.albumvak{border:1.5px solid var(--lijn);border-radius:12px;background:#fff}
+.albumvak>summary{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;list-style:none;font-size:13.5px}
+.albumvak>summary::-webkit-details-marker{display:none}
+.albumvak>summary .aantal{font-weight:700;white-space:nowrap}
+.albumvak>summary .strook{display:flex;gap:4px;flex:1;min-width:0;overflow:hidden;align-items:center}
+.albumvak>summary .strook i{width:34px;height:26px;border-radius:5px;background-size:cover;background-position:center;flex:none}
+.albumvak>summary .strook b{font-size:12px;color:var(--grijs)}
+.albumvak>summary .pijltje{font-weight:700;font-size:12.5px;color:var(--grijs);white-space:nowrap}
+.albumvak>summary .pijltje::after{content:" ▾"}
+.albumvak[open]>summary .pijltje::after{content:" ▴"}
+.albumvak .album{padding:4px 10px 10px;border-top:1.5px solid var(--lijn)}
 .album{display:flex;flex-direction:column;gap:6px}
 .afoto{display:grid;grid-template-columns:88px 1fr auto;gap:8px;align-items:center}
 .afoto .duim{width:88px;margin:0;aspect-ratio:4/3}
@@ -505,8 +516,17 @@ ul.tips li{margin:5px 0}
   function album(ouder, t, label, na) {
     t.fotos = Array.isArray(t.fotos) ? t.fotos : [];
     const v = h("div", "veld", ouder); h("span", "lab", v).textContent = label;
-    const box = h("div", "album", v);
+    /* inklapbaar: de lijst met foto's neemt anders veel ruimte in */
+    const uit = h("details", "albumvak", v);
+    const kop = h("summary", "", uit);
+    const box = h("div", "album", uit);
+    const tekenKop = () => {
+      const n = t.fotos.length;
+      kop.innerHTML = `<span class="aantal">${n ? n + (n === 1 ? " foto" : " foto's") : "Nog geen foto's"}</span><span class="strook">${t.fotos.slice(0, 8).map(f => `<i style="background-image:url('${esc(f.src)}')"></i>`).join("")}${n > 8 ? `<b>+${n - 8}</b>` : ""}</span><span class="pijltje">${n ? "Tonen" : ""}</span>`;
+    };
+    uit.addEventListener("toggle", () => { const p = kop.querySelector(".pijltje"); if (p && t.fotos.length) p.textContent = uit.open ? "Inklappen" : "Tonen"; });
     const teken = () => {
+      tekenKop(); if (uit.open) { const p = kop.querySelector(".pijltje"); if (p && t.fotos.length) p.textContent = "Inklappen"; }
       box.innerHTML = "";
       if (!t.fotos.length) h("p", "hulp", box, "Nog geen foto's.");
       t.fotos.forEach((f, i) => {
@@ -524,6 +544,7 @@ ul.tips li{margin:5px 0}
     knop(rij, "+ Uit bibliotheek", "licht", () => kiesMedia("foto", src => { t.fotos.push({ src, tekst: "" }); teken(); stuur(); if (na) na(); }));
     const r2 = h("div", "rij2", v);
     veld(r2, "Seconden per foto", invoer(t, "seconden", "number", { min: 5, max: 300 }));
+    vinkje(v, t, "willekeurig", "Foto's in willekeurige volgorde (elke keer met een andere foto beginnen)", true);
   }
 
   /* ===== foto's en filmpjes: uploaden en kiezen (dezelfde bibliotheek als de schermen) ===== */

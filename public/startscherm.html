@@ -535,6 +535,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   function fotos(vak, t, metPijlen) {
     const lijst = (t.fotos || []).filter(f => f && f.src);
     if (!lijst.length) return false;
+    /* willekeurige volgorde (standaard): schudden, zodat elke keer een andere foto begint */
+    if (t.willekeurig !== false) for (let a = lijst.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [lijst[a], lijst[b]] = [lijst[b], lijst[a]]; }
     let i = 0, huidige = null, volgendeT = null;
     const sec = Math.max(5, +t.seconden || 12) * 1000;
     const toon = n => {
