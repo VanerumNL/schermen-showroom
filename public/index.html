@@ -28,13 +28,32 @@ header.top .ruimte{flex:1}
 .icoon{background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:6px;color:var(--grijs)}
 .icoon:hover{background:var(--bg);color:var(--zwart)}
 
+/* account en gebruikers */
+.ikNaam{font-weight:700;color:var(--grijs);font-size:14px}
+.acc{position:fixed;inset:0;background:rgba(30,30,30,.45);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:5vh 16px}
+.acc[hidden]{display:none}
+.acc>div{background:#fff;border-radius:22px;padding:26px 28px;max-width:640px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.acc h3{margin:0 0 4px;font-size:22px;display:flex;align-items:center;gap:8px}
+.acc h3 span{flex:1}
+.acc h4{margin:24px 0 8px;font-size:16px}
+.acc input[type=text],.acc input[type=password],.acc select{padding:9px 11px;border:1.5px solid var(--lijn);border-radius:9px;background:#fff;min-width:0;width:100%}
+.acc .rijen{display:grid;gap:8px}
+.acc .gebr{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--lijn)}
+.acc .gebr b{font-size:15px}
+.acc .gebr small{color:var(--grijs)}
+.acc .gebr .knoppen{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.acc .gebr.uit b{text-decoration:line-through;color:var(--grijs)}
+.acc .drie{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.acc .melding{color:var(--fout);min-height:1.2em;margin-top:8px;font-size:14px}
+.acc .goed{color:#2c7a3f}
+@media(max-width:560px){.acc .drie{grid-template-columns:1fr}}
 /* login */
 .login{max-width:420px;margin:12vh auto;background:#fff;border-radius:22px;padding:36px;box-shadow:0 2px 0 rgba(30,30,30,.05)}
 .login img{height:30px;display:block}
 .login h2{font-size:28px;margin:24px 0 6px}
 .login p{color:var(--grijs);margin:0 0 20px}
 .login label{display:block;margin:12px 0 6px;font-weight:700}
-.login input[type=password]{width:100%;padding:12px 14px;border:1.5px solid var(--lijn);border-radius:10px;background:#fff}
+.login input[type=password],.login input[type=text]{width:100%;padding:12px 14px;border:1.5px solid var(--lijn);border-radius:10px;background:#fff}
 .login .rij{display:flex;align-items:center;gap:8px;margin:14px 0 20px;color:var(--grijs)}
 .melding{color:var(--fout);min-height:1.4em;margin-top:10px}
 
@@ -161,6 +180,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   <img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">
   <h1>Schermen</h1><span class="ruimte"></span>
   <a class="knop licht klein" href="/aanraakscherm" id="naarKiosk">Aanraakscherm (NOT)</a>
+  <span class="ikNaam" id="ikNaam" hidden></span>
+  <button class="knop licht klein" id="accountKnop" hidden>Account</button>
   <button class="knop licht klein" id="uitlog" hidden>Uitloggen</button>
 </header>
 
@@ -169,6 +190,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   <h2 id="loginKop">Inloggen</h2>
   <p id="loginUitleg">Met het wachtwoord kunt u schermen maken en aanpassen.</p>
   <form id="loginForm">
+    <label for="gnaam" id="gnaamLab">Naam</label><input type="text" id="gnaam" autocomplete="username" autocapitalize="off" spellcheck="false">
     <label for="ww1">Wachtwoord</label><input type="password" id="ww1" autocomplete="current-password" required>
     <div id="ww2veld" hidden><label for="ww2">Nog een keer</label><input type="password" id="ww2" autocomplete="new-password"></div>
     <label class="rij"><input type="checkbox" id="onthoud" checked> Onthoud op dit apparaat</label>
@@ -213,6 +235,30 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 </main>
 
 <script src="/gedeeld.js"></script>
+<div class="acc" id="acc" hidden><div>
+  <h3><span id="accKop">Account</span><button class="knop licht klein" id="accSluit" type="button">Sluiten</button></h3>
+  <p class="hulp" id="accWie" style="margin:0"></p>
+  <div id="accEigen">
+    <h4>Mijn wachtwoord wijzigen</h4>
+    <div class="drie"><div><label class="hulp" for="pwOud">Huidig wachtwoord</label><input type="password" id="pwOud" autocomplete="current-password"></div><div><label class="hulp" for="pwNieuw">Nieuw (minstens 8 tekens)</label><input type="password" id="pwNieuw" autocomplete="new-password"></div><button class="knop klein" id="pwKnop" type="button">Wijzigen</button></div>
+    <div class="melding" id="pwMelding"></div>
+  </div>
+  <div id="accBeheer" hidden>
+    <h4>Collega's</h4>
+    <div id="gebrLijst"></div>
+    <h4>Collega toevoegen</h4>
+    <div class="rijen">
+      <div class="drie"><div><label class="hulp" for="nwNaam">Naam (hiermee logt hij of zij in)</label><input type="text" id="nwNaam" autocomplete="off"></div><div><label class="hulp" for="nwWw">Startwachtwoord (min. 8 tekens)</label><input type="text" id="nwWw" autocomplete="off"></div><div><label class="hulp" for="nwRol">Rol</label><select id="nwRol"><option value="redacteur">Redacteur</option><option value="beheerder">Beheerder</option></select></div></div>
+      <div><button class="knop klein" id="nwKnop" type="button">Toevoegen</button></div>
+      <p class="hulp" style="margin:0">Een <b>redacteur</b> kan schermen maken en aanpassen. Een <b>beheerder</b> kan daarnaast schermen verwijderen en collega's beheren. Geef het startwachtwoord door; de collega kan het hierna zelf wijzigen onder Account.</p>
+    </div>
+    <div class="melding" id="gebrMelding"></div>
+    <h4>Gedeeld wachtwoord</h4>
+    <p class="hulp" id="gedeeldTekst" style="margin:0 0 8px"></p>
+    <button class="knop licht klein" id="gedeeldKnop" type="button"></button>
+  </div>
+</div></div>
+
 <script src="/demos.js"></script>
 <script>
 (function () {
@@ -221,44 +267,49 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   const lees = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (e) { return null; } };
   const bewaar = (k, v, lang) => { try { (lang ? localStorage : sessionStorage).setItem(k, v); } catch (e) {} };
   const wis = k => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} };
-  let ww = lees("vs-ww") || "", lijst = [], huidig = null, opgeslagen = "", eersteKeer = false;
+  let ww = lees("vs-ww") || "", lijst = [], huidig = null, opgeslagen = "", eersteKeer = false, gedeeldAan = false, ik = null;
+  const isBeheerder = () => !!ik && ik.rol === "beheerder";
+  const tijd = t => t ? new Date(t).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
 
   function toast(t) { const d = document.createElement("div"); d.className = "toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); }
   async function api(pad, opties = {}) {
     const r = await fetch(pad, Object.assign({}, opties, { headers: Object.assign({ "x-wachtwoord": ww }, opties.body && typeof opties.body === "string" ? { "content-type": "application/json" } : {}, opties.headers || {}) }));
     const d = await r.json().catch(() => ({}));
     if (r.status === 401 && pad !== "/api/login") { toonLogin("Uw sessie is verlopen; log opnieuw in."); throw new Error("Niet ingelogd"); }
-    if (!r.ok) throw new Error(d.fout || ("Fout " + r.status));
+    if (!r.ok) { const e = new Error(d.fout || ("Fout " + r.status)); e.status = r.status; e.data = d; throw e; }
     return d;
   }
 
   /* ===== inloggen ===== */
   async function start() {
     const st = await fetch("/api/status").then(r => r.json()).catch(() => ({ ingesteld: true }));
-    eersteKeer = !st.ingesteld;
-    if (!eersteKeer && ww) { try { await api("/api/login", { method: "POST" }); return binnen(); } catch (e) {} }
+    eersteKeer = !st.ingesteld; gedeeldAan = !!st.gedeeld;
+    if (!eersteKeer && ww) { try { ik = await api("/api/login", { method: "POST" }); return binnen(); } catch (e) {} }
     toonLogin();
   }
   function toonLogin(fout) {
-    $("werk").hidden = true; $("uitlog").hidden = true; $("login").hidden = false;
+    ik = null; $("werk").hidden = true; $("uitlog").hidden = true; $("accountKnop").hidden = true; $("ikNaam").hidden = true; $("login").hidden = false;
     $("ww2veld").hidden = !eersteKeer; $("ww2").required = eersteKeer;
-    $("loginKop").textContent = eersteKeer ? "Kies een wachtwoord" : "Inloggen";
-    $("loginUitleg").textContent = eersteKeer ? "Dit is de eerste keer. Kies een wachtwoord (minstens 6 tekens) en geef het aan de collega's die ook schermen mogen aanpassen." : "Met het wachtwoord kunt u schermen maken en aanpassen.";
-    $("loginKnop").textContent = eersteKeer ? "Wachtwoord instellen" : "Inloggen";
+    $("gnaam").required = eersteKeer || !gedeeldAan;
+    $("gnaamLab").textContent = eersteKeer ? "Uw naam" : gedeeldAan ? "Naam (leeg laten voor het gedeelde wachtwoord)" : "Naam";
+    $("loginKop").textContent = eersteKeer ? "Maak het eerste account" : "Inloggen";
+    $("loginUitleg").textContent = eersteKeer ? "Dit is de eerste keer. Maak een account voor uzelf (u wordt beheerder). Daarna kunt u collega's toevoegen." : "Log in met uw eigen naam en wachtwoord.";
+    $("loginKnop").textContent = eersteKeer ? "Account maken" : "Inloggen";
     $("ww1").autocomplete = eersteKeer ? "new-password" : "current-password";
     $("loginFout").textContent = fout || "";
-    $("ww1").focus();
+    $("gnaam").focus();
   }
   $("loginForm").addEventListener("submit", async e => {
     e.preventDefault(); $("loginFout").textContent = "";
-    const w1 = $("ww1").value;
+    const w1 = $("ww1").value, naam = $("gnaam").value.trim();
     try {
       if (eersteKeer) {
         if (w1 !== $("ww2").value) throw new Error("De twee wachtwoorden zijn niet gelijk");
-        await api("/api/wachtwoord", { method: "POST", body: JSON.stringify({ nieuw: w1 }) });
+        await api("/api/eerste-account", { method: "POST", body: JSON.stringify({ naam, wachtwoord: w1 }) });
         eersteKeer = false;
       }
-      ww = w1; await api("/api/login", { method: "POST" });
+      if (naam) { ik = await api("/api/login", { method: "POST", body: JSON.stringify({ naam, wachtwoord: w1 }) }); ww = ik.token; }
+      else { ww = w1; ik = await api("/api/login", { method: "POST" }); }
       bewaar("vs-ww", ww, $("onthoud").checked);
       $("ww1").value = $("ww2").value = "";
       binnen();
@@ -267,7 +318,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   $("uitlog").addEventListener("click", () => { wis("vs-ww"); ww = ""; huidig = null; toonLogin(); });
 
   async function binnen() {
-    $("login").hidden = true; $("werk").hidden = false; $("uitlog").hidden = false;
+    $("login").hidden = true; $("werk").hidden = false; $("uitlog").hidden = false; $("accountKnop").hidden = false;
+    $("ikNaam").textContent = ik && ik.naam ? ik.naam : ""; $("ikNaam").hidden = !(ik && ik.naam);
     await laadLijst();
     const laatste = lees("vs-laatste");
     const kies = lijst.find(s => s.id === laatste) || lijst[0];
@@ -277,7 +329,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   /* ===== schermenlijst ===== */
   async function laadLijst() {
     lijst = await api("/api/schermen");
-    $("lijst").innerHTML = lijst.length ? lijst.map(s => `<button class="scherm${huidig && huidig.id === s.id ? " aan" : ""}" data-id="${esc(s.id)}">${esc(s.naam || s.id)}<small>${s.stand === "staand" ? "Staand · " : ""}${esc((VS.sjabloon(s.sjabloon, s.stand === "staand") || {}).naam || "")}</small></button>`).join("")
+    $("lijst").innerHTML = lijst.length ? lijst.map(s => `<button class="scherm${huidig && huidig.id === s.id ? " aan" : ""}" data-id="${esc(s.id)}">${esc(s.naam || s.id)}<small>${s.stand === "staand" ? "Staand · " : ""}${esc((VS.sjabloon(s.sjabloon, s.stand === "staand") || {}).naam || "")}${s.bijgewerktDoor ? " · " + esc(s.bijgewerktDoor.split(" ")[0]) + ", " + esc(tijd(s.bijgewerkt)) : ""}</small></button>`).join("")
       : `<p class="hulp" style="padding:0 8px">Nog geen schermen.</p>`;
   }
   $("lijst").addEventListener("click", e => { const b = e.target.closest("button.scherm"); if (b) open(b.dataset.id); });
@@ -451,7 +503,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   function status() {
     const s = document.querySelector(".opslaanbalk .status"); if (!s) return;
     const v = isVuil(); s.classList.toggle("vuil", v);
-    s.textContent = v ? "Niet opgeslagen wijzigingen" : "Alles is opgeslagen" + (huidig.bijgewerkt ? " · " + new Date(huidig.bijgewerkt).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "");
+    s.textContent = v ? "Niet opgeslagen wijzigingen" : "Alles is opgeslagen" + (huidig.bijgewerkt ? " · " + tijd(huidig.bijgewerkt) + (huidig.bijgewerktDoor ? " door " + huidig.bijgewerktDoor.split(" ")[0] : "") : "");
   }
   $("kopieer").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText($("adresTekst").textContent); toast("Adres gekopieerd"); }
@@ -570,13 +622,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     tussenFormulier(f, s);
 
     const ob = document.createElement("div"); ob.className = "opslaanbalk";
-    ob.innerHTML = `<button class="knop licht klein" type="button" id="terug" title="Laatste wijziging terugdraaien (Ctrl+Z)">↶ Terug</button><button class="knop licht klein" type="button" id="opnieuw" title="Opnieuw doen (Ctrl+Y)">↷</button><span class="status"></span><button class="knop gevaar klein" type="button" id="verwijder">Verwijderen</button><button class="knop geel" type="button" id="opslaan">Opslaan</button>`;
+    ob.innerHTML = `<button class="knop licht klein" type="button" id="terug" title="Laatste wijziging terugdraaien (Ctrl+Z)">↶ Terug</button><button class="knop licht klein" type="button" id="opnieuw" title="Opnieuw doen (Ctrl+Y)">↷</button><span class="status"></span>${isBeheerder() ? `<button class="knop gevaar klein" type="button" id="verwijder">Verwijderen</button>` : ""}<button class="knop geel" type="button" id="opslaan">Opslaan</button>`;
     f.appendChild(ob);
     ob.querySelector("#opslaan").addEventListener("click", opslaan);
     ob.querySelector("#terug").addEventListener("click", terug);
     ob.querySelector("#opnieuw").addEventListener("click", opnieuw);
     knoppenHistorie();
-    ob.querySelector("#verwijder").addEventListener("click", verwijder);
+    if (ob.querySelector("#verwijder")) ob.querySelector("#verwijder").addEventListener("click", verwijder);
     status();
   }
 
@@ -950,8 +1002,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   async function opslaan() {
     const knop = $("opslaan"); knop.disabled = true; knop.textContent = "Opslaan…";
     try {
-      const d = await api("/api/scherm/" + huidig.id, { method: "PUT", body: JSON.stringify(schoon(huidig)) });
-      huidig.bijgewerkt = d.bijgewerkt; opgeslagen = JSON.stringify(huidig);
+      const stuurOp = forceer => api("/api/scherm/" + huidig.id, { method: "PUT", body: JSON.stringify(schoon(huidig)), headers: Object.assign({}, huidig.bijgewerkt ? { "x-basis": huidig.bijgewerkt } : {}, forceer ? { "x-forceer": "1" } : {}) });
+      let d;
+      try { d = await stuurOp(false); }
+      catch (e) {
+        if (!(e.status === 409 && e.data && e.data.conflict)) throw e;
+        const wie = e.data.door ? e.data.door.split(" ")[0] : "Iemand anders";
+        if (!confirm(`${wie} heeft dit scherm om ${tijd(e.data.op)} aangepast.\n\nAls u nu opslaat, verdwijnen die wijzigingen en blijft uw versie over.\n\nToch opslaan?`)) throw new Error("Niet opgeslagen. Laad het scherm opnieuw om de wijzigingen van " + wie + " te zien.");
+        d = await stuurOp(true);
+      }
+      huidig.bijgewerkt = d.bijgewerkt; huidig.bijgewerktDoor = d.bijgewerktDoor; opgeslagen = JSON.stringify(huidig);
       await laadLijst(); status(); toast("Opgeslagen; het scherm past zich binnen een minuut aan");
     } catch (e) { toast(e.message); }
     knop.disabled = false; knop.textContent = "Opslaan";
@@ -965,6 +1025,70 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       await laadLijst();
     } catch (e) { toast(e.message); }
   }
+
+  /* ===== account en gebruikers ===== */
+  const rolNaam = r => r === "beheerder" ? "Beheerder" : "Redacteur";
+  async function openAccount() {
+    $("acc").hidden = false;
+    $("accWie").textContent = ik && ik.gedeeld ? "U bent ingelogd met het gedeelde wachtwoord." : `Ingelogd als ${ik.naam} (${rolNaam(ik.rol).toLowerCase()}).`;
+    $("accEigen").hidden = !!(ik && ik.gedeeld);
+    $("pwMelding").textContent = "";
+    $("accBeheer").hidden = !isBeheerder();
+    if (isBeheerder()) await laadGebruikers();
+  }
+  async function laadGebruikers() {
+    try {
+      const d = await api("/api/gebruikers");
+      $("gebrLijst").innerHTML = d.gebruikers.length ? d.gebruikers.map(g => `<div class="gebr${g.actief ? "" : " uit"}" data-k="${esc(g.sleutel)}">
+        <div><b>${esc(g.naam)}</b> <small>· ${rolNaam(g.rol)}${g.actief ? "" : " · uitgesloten"}</small></div>
+        <span></span>
+        <div class="knoppen"><button class="knop licht klein" data-a="rol">${g.rol === "beheerder" ? "Maak redacteur" : "Maak beheerder"}</button><button class="knop licht klein" data-a="ww">Nieuw wachtwoord</button><button class="knop licht klein" data-a="actief">${g.actief ? "Uitsluiten" : "Weer toelaten"}</button><button class="knop gevaar klein" data-a="weg">Verwijderen</button></div></div>`).join("")
+        : `<p class="hulp">Nog geen collega's met een eigen account.</p>`;
+      $("gedeeldTekst").textContent = d.gedeeld ? "Het gedeelde wachtwoord werkt nog: iedereen die het weet kan inloggen zonder eigen naam, en dan is niet te zien wie wat deed. Zet het uit zodra iedereen een eigen account heeft." : "Het gedeelde wachtwoord staat uit. Alleen collega's met een eigen account kunnen inloggen.";
+      $("gedeeldKnop").textContent = d.gedeeld ? "Gedeeld wachtwoord uitzetten" : "Gedeeld wachtwoord weer aanzetten";
+      $("gedeeldKnop").dataset.aan = d.gedeeld ? "1" : "";
+      gedeeldAan = d.gedeeld;
+    } catch (e) { $("gebrMelding").textContent = e.message; }
+  }
+  const gebrFout = t => { $("gebrMelding").textContent = t || ""; };
+  $("accountKnop").addEventListener("click", openAccount);
+  $("accSluit").addEventListener("click", () => { $("acc").hidden = true; });
+  $("acc").addEventListener("click", e => { if (e.target === $("acc")) $("acc").hidden = true; });
+  $("pwKnop").addEventListener("click", async () => {
+    const m = $("pwMelding"); m.className = "melding"; m.textContent = "";
+    try {
+      const d = await api("/api/mijn-wachtwoord", { method: "POST", body: JSON.stringify({ oud: $("pwOud").value, nieuw: $("pwNieuw").value }) });
+      let lang = false; try { lang = !!localStorage.getItem("vs-ww"); } catch (e) {}
+      ww = d.token; wis("vs-ww"); bewaar("vs-ww", ww, lang);
+      $("pwOud").value = $("pwNieuw").value = ""; m.className = "melding goed"; m.textContent = "Wachtwoord gewijzigd. Op uw andere apparaten moet u opnieuw inloggen.";
+    } catch (e) { m.textContent = e.message; }
+  });
+  $("nwKnop").addEventListener("click", async () => {
+    gebrFout();
+    try {
+      await api("/api/gebruikers", { method: "POST", body: JSON.stringify({ naam: $("nwNaam").value, wachtwoord: $("nwWw").value, rol: $("nwRol").value }) });
+      toast("Account aangemaakt voor " + $("nwNaam").value.trim()); $("nwNaam").value = $("nwWw").value = "";
+      await laadGebruikers();
+    } catch (e) { gebrFout(e.message); }
+  });
+  $("gebrLijst").addEventListener("click", async e => {
+    const b = e.target.closest("button[data-a]"); if (!b) return;
+    const rij = b.closest(".gebr"), k = rij.dataset.k, naam = rij.querySelector("b").textContent, a = b.dataset.a;
+    gebrFout();
+    try {
+      if (a === "weg") { if (!confirm(`${naam} verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return; await api("/api/gebruikers/" + k, { method: "DELETE" }); }
+      else if (a === "actief") await api("/api/gebruikers/" + k, { method: "PUT", body: JSON.stringify({ actief: rij.classList.contains("uit") }) });
+      else if (a === "rol") await api("/api/gebruikers/" + k, { method: "PUT", body: JSON.stringify({ rol: b.textContent.includes("beheerder") ? "beheerder" : "redacteur" }) });
+      else if (a === "ww") { const n = prompt(`Nieuw wachtwoord voor ${naam} (minstens 8 tekens):`); if (!n) return; await api("/api/gebruikers/" + k, { method: "PUT", body: JSON.stringify({ wachtwoord: n }) }); toast("Wachtwoord van " + naam + " gewijzigd"); }
+      await laadGebruikers();
+    } catch (err) { gebrFout(err.message); }
+  });
+  $("gedeeldKnop").addEventListener("click", async () => {
+    gebrFout();
+    const aan = !$("gedeeldKnop").dataset.aan;
+    if (!aan && !confirm("Het gedeelde wachtwoord uitzetten? Iedereen die er nu mee is ingelogd, moet dan opnieuw inloggen met een eigen account.")) return;
+    try { await api("/api/gedeeld-wachtwoord", { method: "POST", body: JSON.stringify({ aan }) }); await laadGebruikers(); } catch (err) { gebrFout(err.message); }
+  });
 
   start();
 })();

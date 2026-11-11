@@ -36,7 +36,7 @@ header.top a.terug:hover{color:var(--zwart)}
 .login h2{font-size:28px;margin:24px 0 6px}
 .login p{color:var(--grijs);margin:0 0 20px}
 .login label{display:block;margin:12px 0 6px;font-weight:700}
-.login input[type=password]{width:100%;padding:12px 14px;border:1.5px solid var(--lijn);border-radius:10px;background:#fff}
+.login input[type=password],.login input[type=text]{width:100%;padding:12px 14px;border:1.5px solid var(--lijn);border-radius:10px;background:#fff}
 .login .rij{display:flex;align-items:center;gap:8px;margin:14px 0 20px;color:var(--grijs)}
 .melding{color:var(--fout);min-height:1.4em;margin-top:10px}
 
@@ -140,8 +140,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 <section class="login" id="login" hidden>
   <img src="/img/logo.png" alt="Vanerum">
   <h2 id="loginKop">Inloggen</h2>
-  <p id="loginUitleg">Gebruik hetzelfde wachtwoord als voor de schermen.</p>
+  <p id="loginUitleg">Log in met dezelfde naam en hetzelfde wachtwoord als voor de schermen.</p>
   <form id="loginForm">
+    <label for="gnaam">Naam (leeg laten voor het gedeelde wachtwoord)</label><input type="text" id="gnaam" autocomplete="username" autocapitalize="off" spellcheck="false">
     <label for="ww1">Wachtwoord</label><input type="password" id="ww1" autocomplete="current-password" required>
     <label class="rij"><input type="checkbox" id="onthoud" checked> Onthoud op dit apparaat</label>
     <button class="knop geel" type="submit">Inloggen</button>
@@ -214,7 +215,11 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   function toonLogin(fout) { $("werk").hidden = true; $("uitlog").hidden = true; $("login").hidden = false; $("loginFout").textContent = fout || ""; $("ww1").focus(); }
   $("loginForm").addEventListener("submit", async e => {
     e.preventDefault(); $("loginFout").textContent = "";
-    try { ww = $("ww1").value; await api("/api/login", { method: "POST" }); bewaar("vs-ww", ww, $("onthoud").checked); $("ww1").value = ""; binnen(); }
+    try {
+      const naam = $("gnaam").value.trim();
+      if (naam) { const d = await api("/api/login", { method: "POST", body: JSON.stringify({ naam, wachtwoord: $("ww1").value }) }); ww = d.token; }
+      else { ww = $("ww1").value; await api("/api/login", { method: "POST" }); }
+      bewaar("vs-ww", ww, $("onthoud").checked); $("ww1").value = ""; binnen(); }
     catch (err) { $("loginFout").textContent = err.message; }
   });
   $("uitlog").addEventListener("click", () => { wis("vs-ww"); ww = ""; huidig = null; toonLogin(); });

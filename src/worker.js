@@ -3,7 +3,8 @@
      scherm:<id>      JSON van één scherm
      kiosk:<id>       JSON van één aanraakscherm (bijv. de NOT-stand)
      media:<id>       geüploade afbeelding (metadata: type, naam)
-     instelling:ww    gehasht wachtwoord (als er geen secret WACHTWOORD is)
+     instelling:ww    gehasht gedeeld wachtwoord (als er geen secret WACHTWOORD is); instelling:ww_uit zet het gedeelde wachtwoord uit
+     gebruiker:<naam> eigen account per collega; sessie:<hash> ingelogde sessie; poging:<hash> teller verkeerde wachtwoorden
    AbleSign-koppeling en offline-melding: zie src/ablesign.js */
 
 import { ableSignAan, overzicht, zetOpTv, haalVanTv, controleer, stuurMelding, AbleSignFout } from "./ablesign.js";
@@ -23,18 +24,64 @@ function gelijk(a, b) {
   return d === 0;
 }
 
-/* Wachtwoord: een secret WACHTWOORD in Cloudflare gaat voor; anders het wachtwoord dat bij de eerste keer in de editor is gekozen. */
-async function wachtwoordStatus(env) {
-  if (env.WACHTWOORD) return { ingesteld: true, bron: "secret" };
-  const h = await env.KV.get("instelling:ww");
-  return { ingesteld: !!h, bron: h ? "kv" : null };
+/* Inloggen: per collega een eigen account (gebruiker:<sleutel>), met een sessie van 30 dagen (sessie:<hash>).
+   Het oude gedeelde wachtwoord (secret WACHTWOORD of instelling:ww) werkt door tot een beheerder het uitzet (instelling:ww_uit). */
+const enc = t => new TextEncoder().encode(t);
+const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+const vanHex = h => Uint8Array.from(h.match(/../g) || [], x => parseInt(x, 16));
+async function pbkdf2(ww, zout) {
+  const k = await crypto.subtle.importKey("raw", enc(ww), "PBKDF2", false, ["deriveBits"]);
+  return hex(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: vanHex(zout), iterations: 100000 }, k, 256));
 }
+const sleutelVan = naam => String(naam || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+const gebruiker = (env, sleutel) => sleutel ? env.KV.get("gebruiker:" + sleutel, "json") : null;
+async function alleGebruikers(env) {
+  const l = await env.KV.list({ prefix: "gebruiker:" }), uit = [];
+  for (const k of l.keys) { const g = await env.KV.get(k.name, "json"); if (g) uit.push(g); }
+  return uit;
+}
+async function gedeeldGebruik(env) {
+  if (await env.KV.get("instelling:ww_uit")) return false;
+  return !!env.WACHTWOORD || !!(await env.KV.get("instelling:ww"));
+}
+async function wachtwoordStatus(env) {
+  const gedeeld = await gedeeldGebruik(env);
+  const gebruikers = (await env.KV.list({ prefix: "gebruiker:", limit: 1 })).keys.length > 0;
+  return { ingesteld: gedeeld || gebruikers, gedeeld, gebruikers, bron: env.WACHTWOORD ? "secret" : (gedeeld ? "kv" : null) };
+}
+/* geeft de ingelogde persoon terug ({ naam, sleutel, rol }) of false */
 async function magBewerken(req, env) {
   const ww = req.headers.get("x-wachtwoord") || "";
   if (!ww) return false;
-  if (env.WACHTWOORD) return gelijk(ww, env.WACHTWOORD);
-  const h = await env.KV.get("instelling:ww");
-  return !!h && gelijk(await sha("vanerum-schermen:" + ww), h);
+  if (ww.startsWith("vs1.")) {
+    const sessie = await env.KV.get("sessie:" + (await sha(ww)), "json");
+    if (!sessie) return false;
+    const g = await gebruiker(env, sessie.u);
+    if (!g || !g.actief || (g.v || 0) !== (sessie.v || 0)) return false;
+    return { naam: g.naam, sleutel: g.sleutel, rol: g.rol };
+  }
+  if (!(await gedeeldGebruik(env))) return false;
+  let goed;
+  if (env.WACHTWOORD) goed = gelijk(ww, env.WACHTWOORD);
+  else { const h = await env.KV.get("instelling:ww"); goed = !!h && gelijk(await sha("vanerum-schermen:" + ww), h); }
+  return goed ? { naam: "Gedeeld wachtwoord", sleutel: "", rol: "beheerder", gedeeld: true } : false;
+}
+async function maakGebruiker(env, naam, wachtwoord, rol) {
+  naam = String(naam || "").trim().slice(0, 40);
+  const sleutel = sleutelVan(naam);
+  if (naam.length < 2 || !ID.test(sleutel)) return "Kies een naam van minstens 2 tekens";
+  if (String(wachtwoord || "").length < 8) return "Kies een wachtwoord van minstens 8 tekens";
+  if (await gebruiker(env, sleutel)) return "Er bestaat al iemand met deze naam";
+  const zout = hex(crypto.getRandomValues(new Uint8Array(16)));
+  await env.KV.put("gebruiker:" + sleutel, JSON.stringify({ naam, sleutel, rol: rol === "beheerder" ? "beheerder" : "redacteur", actief: true, zout, hash: await pbkdf2(wachtwoord, zout), v: 0, aangemaakt: new Date().toISOString() }));
+  return null;
+}
+const publiek = g => ({ naam: g.naam, sleutel: g.sleutel, rol: g.rol, actief: g.actief, aangemaakt: g.aangemaakt });
+/* blijft er na een wijziging nog iemand over die gebruikers kan beheren? */
+async function beheerderOver(env, wijziging) {
+  if (await gedeeldGebruik(env)) return true;
+  const alle = await alleGebruikers(env);
+  return alle.map(g => wijziging(g)).filter(g => g && g.actief && g.rol === "beheerder").length > 0;
 }
 
 /* Nieuws: RSS of Atom ophalen en omzetten naar een lijst koppen */
@@ -140,7 +187,95 @@ async function api(req, env, url, ctx) {
   }
 
   if (p === "/api/login" && m === "POST") {
-    return (await magBewerken(req, env)) ? json({ ok: true }) : fout("Wachtwoord klopt niet", 401);
+    const body = await req.json().catch(() => ({}));
+    if (body && typeof body.wachtwoord === "string") {
+      const sl = sleutelVan(body.naam);
+      const teller = "poging:" + (await sha(sl + "|" + (req.headers.get("cf-connecting-ip") || "")));
+      const n = +(await env.KV.get(teller)) || 0;
+      if (n >= 8) return fout("Te vaak een verkeerd wachtwoord. Probeer het over een kwartier opnieuw.", 429);
+      const g = await gebruiker(env, sl);
+      if (!g || !g.actief || !gelijk(await pbkdf2(body.wachtwoord, g.zout), g.hash)) {
+        await env.KV.put(teller, String(n + 1), { expirationTtl: 900 });
+        return fout("Naam of wachtwoord klopt niet", 401);
+      }
+      await env.KV.delete(teller);
+      const token = "vs1." + hex(crypto.getRandomValues(new Uint8Array(32)));
+      await env.KV.put("sessie:" + (await sha(token)), JSON.stringify({ u: sl, v: g.v || 0 }), { expirationTtl: 30 * 86400 });
+      return json({ ok: true, token, naam: g.naam, rol: g.rol });
+    }
+    const u = await magBewerken(req, env);
+    return u ? json({ ok: true, naam: u.naam, rol: u.rol, gedeeld: !!u.gedeeld }) : fout("Wachtwoord klopt niet", 401);
+  }
+
+  /* het allereerste account (alleen zolang er nog geen enkele inlog bestaat) */
+  if (p === "/api/eerste-account" && m === "POST") {
+    if ((await wachtwoordStatus(env)).ingesteld) return fout("Er is al een inlog ingesteld", 409);
+    const body = await req.json().catch(() => ({}));
+    const f = await maakGebruiker(env, body.naam, body.wachtwoord, "beheerder");
+    return f ? fout(f) : json({ ok: true });
+  }
+
+  /* eigen wachtwoord wijzigen */
+  if (p === "/api/mijn-wachtwoord" && m === "POST") {
+    const wie = await magBewerken(req, env);
+    if (!wie) return fout("Niet ingelogd", 401);
+    if (wie.gedeeld) return fout("Met het gedeelde wachtwoord heeft u geen eigen account", 409);
+    const body = await req.json().catch(() => ({}));
+    const g = await gebruiker(env, wie.sleutel);
+    if (!gelijk(await pbkdf2(String(body.oud || ""), g.zout), g.hash)) return fout("Het huidige wachtwoord klopt niet", 403);
+    if (String(body.nieuw || "").length < 8) return fout("Kies een wachtwoord van minstens 8 tekens");
+    g.zout = hex(crypto.getRandomValues(new Uint8Array(16))); g.hash = await pbkdf2(body.nieuw, g.zout); g.v = (g.v || 0) + 1;
+    await env.KV.put("gebruiker:" + g.sleutel, JSON.stringify(g));
+    /* andere apparaten moeten opnieuw inloggen; dit apparaat krijgt meteen een nieuwe sessie */
+    const token = "vs1." + hex(crypto.getRandomValues(new Uint8Array(32)));
+    await env.KV.put("sessie:" + (await sha(token)), JSON.stringify({ u: g.sleutel, v: g.v }), { expirationTtl: 30 * 86400 });
+    return json({ ok: true, token });
+  }
+
+  /* gebruikers beheren (alleen beheerders) */
+  if (p === "/api/gebruikers" || p.startsWith("/api/gebruikers/") || p === "/api/gedeeld-wachtwoord") {
+    const wie = await magBewerken(req, env);
+    if (!wie) return fout("Niet ingelogd", 401);
+    if (wie.rol !== "beheerder") return fout("Alleen een beheerder mag gebruikers beheren", 403);
+    if (p === "/api/gebruikers" && m === "GET") {
+      const alle = (await alleGebruikers(env)).map(publiek).sort((a, b) => a.naam.localeCompare(b.naam, "nl"));
+      return json({ gebruikers: alle, gedeeld: await gedeeldGebruik(env), gedeeldBron: env.WACHTWOORD ? "secret" : "kv" });
+    }
+    if (p === "/api/gebruikers" && m === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const f = await maakGebruiker(env, body.naam, body.wachtwoord, body.rol);
+      return f ? fout(f) : json({ ok: true });
+    }
+    if (p === "/api/gedeeld-wachtwoord" && m === "POST") {
+      const body = await req.json().catch(() => ({}));
+      if (body.aan) { await env.KV.delete("instelling:ww_uit"); return json({ ok: true }); }
+      if (!(await alleGebruikers(env)).some(g => g.actief && g.rol === "beheerder")) return fout("Maak eerst een account met rol beheerder aan, anders kan niemand meer inloggen", 409);
+      await env.KV.put("instelling:ww_uit", "1");
+      return json({ ok: true });
+    }
+    const mg = p.match(/^\/api\/gebruikers\/([a-z0-9-]+)$/);
+    if (mg) {
+      const g = await gebruiker(env, mg[1]);
+      if (!g) return fout("Deze gebruiker bestaat niet", 404);
+      if (m === "DELETE") {
+        if (!(await beheerderOver(env, x => x.sleutel === g.sleutel ? null : x))) return fout("Er moet minstens één beheerder overblijven", 409);
+        await env.KV.delete("gebruiker:" + g.sleutel);
+        return json({ ok: true });
+      }
+      if (m === "PUT") {
+        const body = await req.json().catch(() => ({}));
+        const nieuw = Object.assign({}, g);
+        if (body.rol === "beheerder" || body.rol === "redacteur") nieuw.rol = body.rol;
+        if (typeof body.actief === "boolean") nieuw.actief = body.actief;
+        if (body.wachtwoord !== undefined && body.wachtwoord !== "") {
+          if (String(body.wachtwoord).length < 8) return fout("Kies een wachtwoord van minstens 8 tekens");
+          nieuw.zout = hex(crypto.getRandomValues(new Uint8Array(16))); nieuw.hash = await pbkdf2(String(body.wachtwoord), nieuw.zout); nieuw.v = (g.v || 0) + 1;
+        }
+        if (!(await beheerderOver(env, x => x.sleutel === g.sleutel ? nieuw : x))) return fout("Er moet minstens één beheerder overblijven", 409);
+        await env.KV.put("gebruiker:" + g.sleutel, JSON.stringify(nieuw));
+        return json({ ok: true });
+      }
+    }
   }
 
   /* Schermen */
@@ -150,7 +285,7 @@ async function api(req, env, url, ctx) {
     const uit = [];
     for (const k of lijst.keys) {
       const s = await env.KV.get(k.name, "json");
-      if (s) uit.push({ id: s.id, naam: s.naam, sjabloon: s.sjabloon, stand: s.stand || "liggend", bijgewerkt: s.bijgewerkt });
+      if (s) uit.push({ id: s.id, naam: s.naam, sjabloon: s.sjabloon, stand: s.stand || "liggend", bijgewerkt: s.bijgewerkt, bijgewerktDoor: s.bijgewerktDoor || "" });
     }
     uit.sort((a, b) => (a.naam || "").localeCompare(b.naam || "", "nl"));
     return json(uit);
@@ -162,19 +297,30 @@ async function api(req, env, url, ctx) {
     if (!ID.test(id)) return fout("Ongeldige naam voor het scherm");
     if (m === "GET") {
       const s = await env.KV.get("scherm:" + id, "json");
-      return s ? json(s) : fout("Dit scherm bestaat niet", 404);
+      if (!s) return fout("Dit scherm bestaat niet", 404);
+      if (!(await magBewerken(req, env))) delete s.bijgewerktDoor;   /* de tv hoeft niet te weten wie het deed */
+      return json(s);
     }
-    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    const wie = await magBewerken(req, env);
+    if (!wie) return fout("Niet ingelogd", 401);
     if (m === "PUT") {
       const s = await req.json().catch(() => null);
       if (!s || typeof s !== "object") return fout("Geen geldige indeling");
       const tekst = JSON.stringify(s);
       if (tekst.length > 200000) return fout("De indeling is te groot");
-      s.id = id; s.bijgewerkt = new Date().toISOString();
+      /* is het scherm intussen door iemand anders opgeslagen? */
+      const bestaand = await env.KV.get("scherm:" + id, "json");
+      const basis = req.headers.get("x-basis") || "";
+      if (bestaand && basis && bestaand.bijgewerkt && bestaand.bijgewerkt !== basis && req.headers.get("x-forceer") !== "1")
+        return json({ fout: "Dit scherm is intussen aangepast door " + (bestaand.bijgewerktDoor || "iemand anders") + ".", conflict: true, door: bestaand.bijgewerktDoor || "", op: bestaand.bijgewerkt }, 409);
+      s.id = id; s.bijgewerkt = new Date().toISOString(); s.bijgewerktDoor = wie.naam;
       await env.KV.put("scherm:" + id, JSON.stringify(s));
       return json(s);
     }
-    if (m === "DELETE") { await env.KV.delete("scherm:" + id); return json({ ok: true }); }
+    if (m === "DELETE") {
+      if (wie.rol !== "beheerder") return fout("Alleen een beheerder mag schermen verwijderen", 403);
+      await env.KV.delete("scherm:" + id); return json({ ok: true });
+    }
   }
 
   /* Aanraakschermen (kiosk): presentatie + productoverzicht, bijv. voor de NOT */
@@ -197,16 +343,20 @@ async function api(req, env, url, ctx) {
       const s = await env.KV.get("kiosk:" + id, "json");
       return s ? json(s) : fout("Dit scherm bestaat niet", 404);
     }
-    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    const wie = await magBewerken(req, env);
+    if (!wie) return fout("Niet ingelogd", 401);
     if (m === "PUT") {
       const s = await req.json().catch(() => null);
       if (!s || typeof s !== "object") return fout("Geen geldige instellingen");
       if (JSON.stringify(s).length > 200000) return fout("De instellingen zijn te groot");
-      s.id = id; s.bijgewerkt = new Date().toISOString();
+      s.id = id; s.bijgewerkt = new Date().toISOString(); s.bijgewerktDoor = wie.naam;
       await env.KV.put("kiosk:" + id, JSON.stringify(s));
       return json(s);
     }
-    if (m === "DELETE") { await env.KV.delete("kiosk:" + id); return json({ ok: true }); }
+    if (m === "DELETE") {
+      if (wie.rol !== "beheerder") return fout("Alleen een beheerder mag schermen verwijderen", 403);
+      await env.KV.delete("kiosk:" + id); return json({ ok: true });
+    }
   }
 
   /* Afbeeldingen */
