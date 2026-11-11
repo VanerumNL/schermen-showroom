@@ -167,6 +167,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 <section class="laag" id="beheerLaag" hidden><div class="vlak" id="beheerVlak"></div></section>
 
 <script src="/startscherm-gedeeld.js"></script>
+<script src="/spellen.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id);
@@ -187,7 +188,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   let timers = [];
   const later = (f, ms) => { const t = setTimeout(f, ms); timers.push(t); return t; };
   const elke = (f, ms) => { const t = setInterval(f, ms); timers.push(t); return t; };
-  const ruimOp = () => { timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = []; };
+  const ruimOp = () => { timers.forEach(t => { if (t && t.stop) { try { t.stop(); } catch (e) {} } else { clearTimeout(t); clearInterval(t); } }); timers = []; };
 
   /* ---------- schalen naar het scherm ---------- */
   const maat = () => cfg && cfg.start && cfg.start.stand === "staand" ? [1080, 1920] : [1920, 1080];
@@ -274,6 +275,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   let bewerk = false, token = "";
   const IDEEEN = [
     { soort: "radio", titel: "Radio 5", zender: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3", zenders: [{ naam: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3" }], icoon: "radio", kleur: "#fbb900", uitleg: "Muziek van vroeger" },
+    { soort: "spellen", titel: "Spelletjes", icoon: "puzzel", kleur: "#f2c7a5", uitleg: "Memory, puzzel en meer" },
     { soort: "journaal", titel: "Journaal", van: 1950, tot: 1970, icoon: "tv", kleur: "#a8cb67", uitleg: "Polygoon-journaals 1950–1970" },
     { soort: "website", titel: "Oude foto's", url: "https://geheugen.delpher.nl", icoon: "foto", kleur: "#bda8bd", uitleg: "Het Geheugen (KB)" },
     { soort: "website", titel: "Puzzelen", url: "https://www.jigidi.com", icoon: "puzzel", kleur: "#a8cb67", uitleg: "Legpuzzels op Jigidi" }
@@ -389,18 +391,18 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     d.querySelectorAll(".keuze").forEach(b => b.addEventListener("click", () => {
       const bron = (b.dataset.groep === "idee" ? IDEEEN : SOORT_NIEUW)[+b.dataset.i];
       const t = JSON.parse(JSON.stringify(bron)); delete t.naam; delete t.uitleg;
-      t.foto = ""; t.blijfAan = t.soort !== "website";
+      t.foto = ""; t.blijfAan = !["website", "spellen"].includes(t.soort);
       maakTegel(t);
     }));
   }
 
   function maakTegel(t) {
-    const geenAdres = t.soort === "journaal";
+    const geenAdres = t.soort === "journaal" || t.soort === "spellen";
     const veld = t.soort === "website" ? "url" : t.soort === "video" ? "video" : t.soort === "journaal" ? "van" : "stream";
     const labels = { url: "Adres van de website", video: "Link naar YouTube-filmpje of -afspeellijst", stream: "Adres van de radiostream" };
     const d = toonDlg(`<h2>${esc(SS.SOORTEN[t.soort].naam)} toevoegen</h2>
       <div class="twee"><div><label>Naam op de tegel</label><input type="text" id="mNaam" maxlength="18" value="${esc(t.titel)}" autocomplete="off"></div>
-      ${geenAdres ? `<div><label>Jaren</label><div class="twee" style="grid-template-columns:1fr 1fr;gap:16px"><input type="text" id="mVan" value="${esc(t.van)}" maxlength="4" autocomplete="off"><input type="text" id="mTot" value="${esc(t.tot)}" maxlength="4" autocomplete="off"></div></div>`
+      ${t.soort === "spellen" ? `<div><label>Spelletjes</label><p style="font-size:30px;margin:12px 0 0;opacity:.75">Memory, legpuzzel, spreekwoorden, zeepbellen en kleurplaat</p></div>` : geenAdres ? `<div><label>Jaren</label><div class="twee" style="grid-template-columns:1fr 1fr;gap:16px"><input type="text" id="mVan" value="${esc(t.van)}" maxlength="4" autocomplete="off"><input type="text" id="mTot" value="${esc(t.tot)}" maxlength="4" autocomplete="off"></div></div>`
         : `<div><label>${labels[veld]}</label><input type="text" id="mAdres" value="${esc(t[veld])}" autocomplete="off" spellcheck="false"></div>`}</div>
       <div class="twee ruim"><div><label>Plaatje</label><div class="ikonen">${Object.entries(SS.ICONEN).map(([k, x]) => `<button type="button" data-ic="${k}" class="${k === t.icoon ? "aan" : ""}" aria-label="${esc(x.naam)}">${x.svg}</button>`).join("")}</div></div>
       <div><label>Kleur</label><div class="kleurrij">${SS.KLEUREN.filter(k => k[0] !== "#1e1e1e").map(([hex, n]) => `<button type="button" data-kl="${hex}" class="${hex === t.kleur ? "aan" : ""}" style="background:${hex}" aria-label="${esc(n)}"></button>`).join("")}</div></div></div>
@@ -414,7 +416,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const ok = d.querySelector('[data-k="ok"]'), fout = d.querySelector("#mFout");
     ok.addEventListener("click", async () => {
       t.titel = naamV.value.trim();
-      if (geenAdres) {
+      if (t.soort === "spellen") { /* niets in te vullen */ }
+      else if (geenAdres) {
         const jv = +d.querySelector("#mVan").value, jt = +d.querySelector("#mTot").value;
         if (!(jv >= 1900 && jv <= 2000 && jt >= 1900 && jt <= 2000)) { fout.textContent = "Vul twee jaartallen in, bijvoorbeeld 1950 en 1970"; return; }
         t.van = Math.min(jv, jt); t.tot = Math.max(jv, jt);
@@ -446,6 +449,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     else if (t.soort === "radio") radio(vak, t);
     else if (t.soort === "fotos") fotos(vak, t, true);
     else if (t.soort === "journaal") journaal(vak, t);
+    else if (t.soort === "spellen") { const s = window.Spellen.start(vak, t, { esc, ICONEN: SS.ICONEN }); if (s) timers.push({ stop: s }); }
     $("thuis").hidden = true; $("bekijk").hidden = false; tikKlok(); schaal();
   }
   function naarThuis() {
