@@ -30,17 +30,28 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .kop h1{margin:0;font-size:88px;line-height:1;letter-spacing:0;font-weight:700}
 .kop p{margin:14px 0 0;font-size:44px;line-height:1.15;opacity:.82}
 .kop .klok{font-size:128px;font-weight:700;line-height:.9;letter-spacing:0;font-variant-numeric:tabular-nums}
-.tegels{display:grid;gap:36px;padding:0 72px 64px;min-height:0;grid-template-columns:repeat(var(--kol,3),minmax(0,1fr));grid-auto-rows:minmax(0,1fr)}
-.tegel{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto;background:#fff;color:var(--zwart);border-radius:40px;overflow:hidden;text-align:left;
+.tegels{display:grid;gap:var(--gap,36px);padding:0 72px 56px;min-height:0;grid-template-columns:repeat(var(--kol,3),var(--maat,360px));grid-auto-rows:var(--maat,360px);justify-content:center;align-content:center}
+.tegel{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto;width:var(--maat,360px);height:var(--maat,360px);background:#fff;color:var(--zwart);border-radius:calc(var(--maat,360px) * .12);overflow:hidden;text-align:left;
   box-shadow:0 2px 0 rgba(30,30,30,.05),0 22px 48px rgba(30,30,30,.10);transition:transform .15s ease;min-height:0}
 .tegel:active{transform:scale(.97)}
 .tegel .beeld{position:relative;background:var(--c);min-height:0;overflow:hidden}
 .tegel .beeld img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.tegel .beeld svg{position:absolute;left:50%;top:50%;height:78%;max-width:78%;transform:translate(-50%,-50%)}
-.tegel .naam{display:flex;align-items:center;gap:22px;padding:24px 34px 28px;font-weight:700;font-size:var(--letter,58px);line-height:1.05;letter-spacing:0;border-top:12px solid var(--c)}
+.tegel .beeld svg{position:absolute;left:50%;top:50%;height:80%;max-width:80%;transform:translate(-50%,-50%)}
+.tegel .naam{display:flex;align-items:center;justify-content:center;padding:calc(var(--maat,360px) * .055) calc(var(--maat,360px) * .07);font-weight:700;font-size:calc(var(--maat,360px) * .125);line-height:1.05;letter-spacing:0;border-top:calc(var(--maat,360px) * .03) solid var(--c);text-align:center}
 .tegel .naam span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tegel.onaf{opacity:.45}
-.tegel.onaf::after{content:"Nog instellen";position:absolute;left:24px;top:24px;background:#fff;border-radius:999px;padding:10px 20px;font-weight:700;font-size:26px}
+.tegel.onaf::after{content:"Nog instellen";position:absolute;left:20px;top:20px;background:#fff;border-radius:999px;padding:8px 18px;font-weight:700;font-size:24px}
+/* tegels aanpassen op het scherm zelf */
+.tegel.plus{background:transparent;border:8px dashed rgba(30,30,30,.35);box-shadow:none;display:grid;place-items:center;grid-template-rows:1fr;color:var(--ink)}
+.tegel.plus b{font-size:calc(var(--maat,360px) * .42);line-height:1;font-weight:400}
+.tegel.plus span{display:block;font-size:calc(var(--maat,360px) * .1);font-weight:700;text-align:center;margin-top:-10px}
+.bewerk .tegel:not(.plus){animation:wiebel .5s ease-in-out infinite alternate}
+@keyframes wiebel{from{transform:rotate(-.6deg)}to{transform:rotate(.6deg)}}
+.tegel .weg{position:absolute;right:14px;top:14px;width:96px;height:96px;border-radius:50%;background:#1e1e1e;color:#fff;display:grid;place-items:center;font-size:52px;font-weight:700;z-index:2;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.bewerkkop{display:flex;align-items:center;gap:40px;padding:52px 72px 40px}
+.bewerkkop div{flex:1}
+.bewerkkop h1{margin:0;font-size:76px;line-height:1;letter-spacing:0}
+.bewerkkop p{margin:14px 0 0;font-size:38px;opacity:.75}
 .leeg{display:grid;place-items:center;text-align:center;font-size:44px;opacity:.7;padding:80px}
 
 /* ===== bekijken ===== */
@@ -87,6 +98,44 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .rond:active{transform:scale(.95)}
 .volume{display:flex;gap:22px}
 
+/* dialogen voor het aanpassen op het scherm */
+#beheerLaag{background:rgba(30,30,30,.55)}
+#beheerLaag .vlak{background:transparent;display:grid;place-items:center}
+.dlg{background:#fff;color:var(--zwart);border-radius:44px;padding:44px 56px;width:min(1500px,calc(var(--w) - 120px));max-height:calc(var(--h) - 80px);overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.dlg h2{margin:0 0 12px;font-size:60px;letter-spacing:0}
+.dlg .sub{margin:0 0 30px;font-size:34px;opacity:.7}
+.dlg label{display:block;font-weight:700;font-size:30px;margin:16px 0 8px}
+.dlg .twee{display:grid;grid-template-columns:1fr 2fr;gap:28px}
+.dlg .twee.ruim{grid-template-columns:auto auto;justify-content:space-between;align-items:start}
+.dlg input{width:100%;font:inherit;font-size:38px;padding:16px 24px;border:3px solid #d8d6d0;border-radius:22px;outline:0;background:#fff;color:var(--zwart)}
+.dlg input:focus{border-color:var(--zwart);box-shadow:0 0 0 6px var(--geel)}
+.dlg .knoppen{display:flex;gap:24px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap}
+.dlg .knop2{font-weight:700;font-size:38px;border-radius:999px;padding:20px 48px;background:#efeee9}
+.dlg .knop2.geel{background:var(--geel)}
+.dlg .knop2.zwart{background:var(--zwart);color:#fff}
+.dlg .fout{color:#b3261e;font-weight:700;font-size:30px;margin-top:14px;min-height:1em}
+.dlg .knoppen .fout{flex:1;margin:0;align-self:center}
+.keuzes{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.keuze{display:grid;grid-template-rows:150px auto;border-radius:30px;overflow:hidden;background:#fff;border:3px solid #e4e2dc;text-align:center}
+.keuze .k{background:var(--c);position:relative}
+.keuze .k svg{position:absolute;left:50%;top:50%;height:80%;transform:translate(-50%,-50%)}
+.keuze b{display:block;padding:16px 10px 4px;font-size:32px}
+.keuze small{display:block;padding:0 10px 16px;font-size:24px;opacity:.65}
+.ikonen{display:flex;flex-wrap:wrap;gap:8px}
+.ikonen button{width:72px;height:72px;border-radius:22px;border:3px solid #e4e2dc;padding:8px;background:#fff}
+.ikonen button.aan{border-color:var(--zwart);box-shadow:0 0 0 6px var(--geel)}
+.ikonen svg{width:100%;height:100%;display:block}
+.kleurrij{display:flex;gap:18px;flex-wrap:wrap}
+.kleurrij button{width:72px;height:72px;border-radius:50%;border:3px solid rgba(0,0,0,.15)}
+.kleurrij button.aan{box-shadow:0 0 0 6px #fff,0 0 0 12px var(--zwart)}
+.toetsen{margin-top:22px;background:#efeee9;border-radius:30px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.toetsen .r{display:flex;gap:12px;justify-content:center}
+.toetsen button{flex:1;max-width:118px;height:70px;border-radius:18px;background:#fff;font-size:40px;font-weight:700;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.toetsen button.breed{max-width:260px;flex:2}
+.toetsen button.spatie{max-width:520px;flex:5}
+.toetsen button.aan{background:var(--geel)}
+.toetsen button:active{transform:translateY(2px);box-shadow:none}
+
 /* een melding die over alles heen ligt */
 .melding{position:fixed;inset:0;display:grid;place-items:center;background:#fdf8ef;font-size:3vh;color:var(--antraciet);text-align:center;gap:3vh;align-content:center;padding:6vh}
 </style>
@@ -101,6 +150,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   </header>
   <div class="inhoud" id="inhoud"></div>
 </div></section>
+
+<section class="laag" id="beheerLaag" hidden><div class="vlak" id="beheerVlak"></div></section>
 
 <script src="/startscherm-gedeeld.js"></script>
 <script>
@@ -133,7 +184,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const k = Math.min(innerWidth / w, innerHeight / h);
     document.querySelectorAll(".vlak").forEach(v => { v.style.transform = `translate(-50%,-50%) scale(${k})`; });
   }
-  addEventListener("resize", schaal);
+  addEventListener("resize", () => { schaal(); pasTegelsAan(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => pasTegelsAan());
 
   /* ---------- klok en groet ---------- */
   const DAGEN = ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"];
@@ -150,35 +202,219 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 
   /* ---------- de tegels ---------- */
   const zichtbaar = () => (cfg.tegels || []).map((t, i) => ({ t, i })).filter(x => VOORBEELD ? x.t && x.t.titel : SS.compleet(x.t));
-  function kolommen(n, staand) {
-    if (staand) return n <= 3 ? 1 : n <= 8 ? 2 : 3;
-    return [1, 1, 2, 3, 2, 3, 3, 4, 4, 3, 4, 4, 4][n] || 4;
+  /* vierkante tegels: zoek de indeling (kolommen) waarbij de tegels zo groot mogelijk worden */
+  function pasTegelsAan() {
+    const box = $("thuisVlak").querySelector(".tegels"); if (!box) return;
+    const v = $("thuisVlak"), kop = v.querySelector(".kop, .bewerkkop");
+    const n = box.children.length, gap = n > 9 ? 28 : 36;
+    const W = v.clientWidth - 144, H = v.clientHeight - (kop ? kop.offsetHeight : 0) - 64;
+    let best = 0, kol = 1;
+    for (let c = 1; c <= n; c++) {
+      const r = Math.ceil(n / c), m = Math.min((W - gap * (c - 1)) / c, (H - gap * (r - 1)) / r);
+      if (m > best + 0.5) { best = m; kol = c; }
+    }
+    best = Math.floor(Math.min(best, 560));
+    box.style.setProperty("--maat", best + "px"); box.style.setProperty("--kol", kol); box.style.setProperty("--gap", gap + "px");
+  }
+  function tegelHtml(t, i) {
+    return `<button class="tegel${SS.compleet(t) ? "" : " onaf"}" type="button" data-i="${i}" style="--c:${esc(t.kleur || "#fbb900")}">
+      <div class="beeld">${t.foto ? `<img src="${esc(t.foto)}" alt="">` : ((SS.ICONEN[t.icoon] || SS.ICONEN.ster).svg)}</div>
+      <div class="naam"><span>${esc(t.titel)}</span></div>${bewerk ? `<span class="weg" data-weg="${i}" aria-label="Weghalen">✕</span>` : ""}
+    </button>`;
   }
   function tekenThuis() {
-    const s = cfg.start || {}, v = $("thuisVlak"), lijst = zichtbaar(), staand = s.stand === "staand";
+    const s = cfg.start || {}, v = $("thuisVlak");
+    const lijst = bewerk ? (cfg.tegels || []).map((t, i) => ({ t, i })).filter(x => x.t) : zichtbaar();
     const bg = SS.achtergrond(s.achtergrond);
     document.documentElement.style.setProperty("--bg", bg.bg); document.documentElement.style.setProperty("--ink", bg.ink);
-    const kol = kolommen(lijst.length, staand), rijen = Math.ceil(lijst.length / kol) || 1;
-    const letter = kol >= 4 || rijen >= 4 ? 46 : kol === 3 || rijen === 3 ? 54 : 64;
     const plek = s.logo ? `<img class="logo" src="${esc(s.logo)}" alt="">` : (s.vanerum ? `<img class="logo" src="${bg.ink === "#ffffff" ? "/img/logo-wit.png" : "/img/logo.png"}" alt="Vanerum" style="height:40px">` : "");
-    const kopHtml = s.welkom !== false
+    const kopHtml = bewerk
+      ? `<header class="bewerkkop"><div><h1>Tegels aanpassen</h1><p>Tik op ✕ om een tegel weg te halen, of op + om er een toe te voegen.</p></div><button class="grootknop" type="button" data-actie="klaar">Klaar</button></header>`
+      : s.welkom !== false
       ? `<header class="kop"><div class="links"><div class="plek"><img class="str" src="/img/streepjes.png" alt="">${plek}${s.titel ? `<span>${esc(s.titel)}</span>` : ""}</div><h1 data-groet></h1><p data-datum></p></div><div class="klok" data-klok></div></header>`
-      : `<header class="kop"><div class="links"><div class="plek" style="margin:0"><img class="str" src="/img/streepjes.png" alt="">${plek}${s.titel ? `<span style="font-size:52px;opacity:1">${esc(s.titel)}</span>` : ""}</div></div></header>`;
-    v.innerHTML = kopHtml + (lijst.length
-      ? `<div class="tegels" style="--kol:${kol};--letter:${letter}px">${lijst.map(({ t, i }) => `
-        <button class="tegel${SS.compleet(t) ? "" : " onaf"}" type="button" data-i="${i}" style="--c:${esc(t.kleur || "#fbb900")}">
-          <div class="beeld">${t.foto ? `<img src="${esc(t.foto)}" alt="">` : ((SS.ICONEN[t.icoon] || SS.ICONEN.ster).svg)}</div>
-          <div class="naam"><span>${esc(t.titel)}</span></div>
-        </button>`).join("")}</div>`
+      : `<header class="kop"><div class="links"><div class="plek" style="margin:0"><img class="str" src="/img/streepjes.png" alt="">${plek}${s.titel ? `<span style="font-size:52px;opacity:1">${esc(s.titel)}</span>` : ""}</div></div><div class="klok" data-klok style="font-size:72px"></div></header>`;
+    v.classList.toggle("bewerk", bewerk);
+    v.innerHTML = kopHtml + (lijst.length || bewerk
+      ? `<div class="tegels">${lijst.map(({ t, i }) => tegelHtml(t, i)).join("")}${bewerk ? `<button class="tegel plus" type="button" data-actie="plus"><div><b>+</b><span>Toevoegen</span></div></button>` : ""}</div>`
       : `<div class="leeg">Er staan nog geen tegels klaar.</div>`);
     v.querySelectorAll(".tegel img").forEach(img => img.addEventListener("error", () => { const b = img.parentNode; img.remove(); b.insertAdjacentHTML("beforeend", SS.ICONEN.ster.svg); }));
     tikKlok();
+    pasTegelsAan();
   }
   $("thuisVlak").addEventListener("click", e => {
+    if (bewerk) {
+      const w = e.target.closest("[data-weg]"); if (w) return vraagWeg(+w.dataset.weg);
+      const a = e.target.closest("[data-actie]"); if (!a) return;
+      if (a.dataset.actie === "plus") return kiesSoort();
+      if (a.dataset.actie === "klaar") return stopBewerken();
+      return;
+    }
     const b = e.target.closest(".tegel"); if (!b) return;
     const t = (cfg.tegels || [])[+b.dataset.i];
     if (t && SS.compleet(t)) openTegel(t);
   });
+
+  /* ================= tegels aanpassen op het scherm zelf =================
+     Medewerkers houden de klok (of de naam bovenaan) 3 seconden ingedrukt, loggen in
+     met hetzelfde wachtwoord als de editor, en kunnen dan tegels toevoegen of weghalen.
+     Na 3 minuten zonder aanraking stopt dit vanzelf. */
+  let bewerk = false, token = "";
+  const IDEEEN = [
+    { soort: "radio", titel: "Radio 5", zender: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3", icoon: "radio", kleur: "#fbb900", uitleg: "Muziek van vroeger" },
+    { soort: "website", titel: "Oude tv", url: "https://schatkamer.nl", icoon: "tv", kleur: "#a8cb67", uitleg: "Schatkamer van Beeld & Geluid" },
+    { soort: "website", titel: "Oude foto's", url: "https://geheugen.delpher.nl", icoon: "foto", kleur: "#bda8bd", uitleg: "Het Geheugen (KB)" },
+    { soort: "website", titel: "Puzzelen", url: "https://www.jigidi.com", icoon: "puzzel", kleur: "#a8cb67", uitleg: "Legpuzzels op Jigidi" }
+  ];
+  const SOORT_NIEUW = [
+    { soort: "website", titel: "", url: "https://", icoon: "ster", kleur: "#b8e7f9", naam: "Eigen website", uitleg: "Adres intikken" },
+    { soort: "video", titel: "", video: "https://www.youtube.com/watch?v=", icoon: "vis", kleur: "#fbb900", naam: "YouTube-filmpje", uitleg: "Link intikken" },
+    { soort: "radio", titel: "", zender: "", stream: "https://", icoon: "radio", kleur: "#fbb900", naam: "Radiozender", uitleg: "Adres van de stream" }
+  ];
+
+  /* lang indrukken op de klok of de kop opent het inloggen */
+  let drukT = null;
+  $("thuisVlak").addEventListener("pointerdown", e => {
+    if (bewerk || VOORBEELD || !e.target.closest(".kop")) return;
+    clearTimeout(drukT); drukT = setTimeout(vraagLogin, 3000);
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(t => $("thuisVlak").addEventListener(t, () => clearTimeout(drukT)));
+
+  const laag = () => $("beheerVlak");
+  function toonDlg(html) { laag().innerHTML = `<div class="dlg">${html}</div>`; $("beheerLaag").hidden = false; schaal(); return laag().firstElementChild; }
+  function sluitDlg() { $("beheerLaag").hidden = true; laag().innerHTML = ""; }
+
+  /* eigen toetsenbord, zodat het ook werkt zonder toetsenbord van Windows */
+  function toetsenbord(dlg) {
+    const rijen = ["1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm"];
+    const box = document.createElement("div"); box.className = "toetsen";
+    box.innerHTML = rijen.map((r, n) => `<div class="r">${n === 3 ? '<button type="button" class="breed" data-t="shift">⇧</button>' : ""}${[...r].map(c => `<button type="button" data-t="${c}">${c}</button>`).join("")}${n === 3 ? '<button type="button" class="breed" data-t="bs">⌫</button>' : ""}</div>`).join("")
+      + `<div class="r"><button type="button" class="breed" data-t="https://">https://</button><button type="button" data-t=".">.</button><button type="button" data-t="/">/</button><button type="button" data-t=":">:</button><button type="button" data-t="-">-</button><button type="button" data-t="?">?</button><button type="button" data-t="=">=</button><button type="button" class="spatie" data-t=" ">spatie</button><button type="button" class="breed" data-t=".nl">.nl</button></div>`;
+    dlg.appendChild(box);
+    let shift = false, doel = dlg.querySelector("input");
+    dlg.querySelectorAll("input").forEach(i => { i.setAttribute("inputmode", "none"); i.addEventListener("focus", () => { doel = i; setTimeout(() => { try { i.setSelectionRange(i.value.length, i.value.length); } catch (e) {} }, 0); }); });
+    box.addEventListener("pointerdown", e => e.preventDefault());
+    box.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b || !doel) return;
+      let t = b.dataset.t;
+      if (t === "shift") { shift = !shift; b.classList.toggle("aan", shift); box.querySelectorAll("[data-t]").forEach(k => { if (k.dataset.t.length === 1 && /[a-z]/.test(k.dataset.t)) k.textContent = shift ? k.dataset.t.toUpperCase() : k.dataset.t; }); return; }
+      const v = doel.value, a = doel.selectionStart == null ? v.length : doel.selectionStart, z = doel.selectionEnd == null ? v.length : doel.selectionEnd;
+      if (t === "bs") { const van = a === z ? Math.max(0, a - 1) : a; doel.value = v.slice(0, van) + v.slice(z); doel.setSelectionRange(van, van); }
+      else {
+        if (shift && t.length === 1) { t = t.toUpperCase(); shift = false; box.querySelector('[data-t="shift"]').click(); shift = false; }
+        doel.value = v.slice(0, a) + t + v.slice(z); doel.setSelectionRange(a + t.length, a + t.length);
+      }
+      doel.dispatchEvent(new Event("input")); doel.focus();
+    });
+  }
+
+  function vraagLogin() {
+    aangeraakt();
+    const d = toonDlg(`<h2>Tegels aanpassen</h2><p class="sub">Voor medewerkers. Log in met de gegevens van de schermen-editor.</p>
+      <div class="twee" style="grid-template-columns:1fr 1fr"><div><label>Naam (mag leeg bij het gedeelde wachtwoord)</label><input type="text" id="lNaam" autocomplete="off" spellcheck="false"></div>
+      <div><label>Wachtwoord</label><input type="password" id="lWw" autocomplete="off"></div></div>
+      <div class="knoppen"><div class="fout" id="lFout"></div><button class="knop2" type="button" data-k="stop">Annuleren</button><button class="knop2 geel" type="button" data-k="ok">Inloggen</button></div>`);
+    toetsenbord(d);
+    d.querySelector("#lNaam").focus();
+    d.querySelector('[data-k="stop"]').addEventListener("click", sluitDlg);
+    d.querySelector('[data-k="ok"]').addEventListener("click", async () => {
+      const naam = d.querySelector("#lNaam").value.trim(), ww = d.querySelector("#lWw").value;
+      d.querySelector("#lFout").textContent = "";
+      try {
+        let tk = ww;
+        const r = naam
+          ? await fetch("/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ naam, wachtwoord: ww }) })
+          : await fetch("/api/login", { method: "POST", headers: { "x-wachtwoord": ww } });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.fout || "Inloggen lukte niet");
+        if (naam) tk = j.token;
+        token = tk; sluitDlg(); startBewerken();
+      } catch (e) { d.querySelector("#lFout").textContent = e.message; }
+    });
+  }
+
+  async function haalVers() {
+    const r = await fetch(`/api/startscherm/${encodeURIComponent(ID)}`, { cache: "no-store", headers: { "x-wachtwoord": token } });
+    const j = await r.json(); if (!r.ok) throw new Error(j.fout || "Fout " + r.status);
+    return j;
+  }
+  async function bewaar(nieuw) {
+    const r = await fetch(`/api/startscherm/${encodeURIComponent(ID)}`, { method: "PUT", headers: { "x-wachtwoord": token, "content-type": "application/json" }, body: JSON.stringify(nieuw) });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.fout || "Opslaan lukte niet");
+    cfg = j; try { localStorage.setItem(opslag, JSON.stringify(j)); } catch (e) {}
+    tekenThuis();
+  }
+  async function startBewerken() {
+    try { cfg = await haalVers(); } catch (e) {}
+    bewerk = true; tekenThuis();
+  }
+  function stopBewerken() { bewerk = false; token = ""; sluitDlg(); tekenThuis(); }
+  setInterval(() => { if (bewerk && Date.now() - laatsteAanraking > 3 * 60000) stopBewerken(); }, 5000);
+
+  function vraagWeg(i) {
+    const t = cfg.tegels[i]; if (!t) return;
+    const d = toonDlg(`<h2>Tegel weghalen?</h2><p class="sub">De tegel “${esc(t.titel || "zonder naam")}” verdwijnt van het scherm.</p>
+      <div class="fout" id="wFout"></div><div class="knoppen"><button class="knop2" type="button" data-k="nee">Nee, laten staan</button><button class="knop2 zwart" type="button" data-k="ja">Ja, weghalen</button></div>`);
+    d.querySelector('[data-k="nee"]').addEventListener("click", sluitDlg);
+    d.querySelector('[data-k="ja"]').addEventListener("click", async () => {
+      try {
+        const vers = await haalVers();
+        const n = vers.tegels.findIndex(x => JSON.stringify(x) === JSON.stringify(t));
+        vers.tegels.splice(n >= 0 ? n : i, 1);
+        await bewaar(vers); sluitDlg();
+      } catch (e) { d.querySelector("#wFout").textContent = e.message; }
+    });
+  }
+
+  function keuzeHtml(x, i, groep) {
+    return `<button class="keuze" type="button" data-groep="${groep}" data-i="${i}" style="--c:${x.kleur}"><div class="k">${(SS.ICONEN[x.icoon] || SS.ICONEN.ster).svg}</div><b>${esc(x.naam || x.titel)}</b><small>${esc(x.uitleg || "")}</small></button>`;
+  }
+  function kiesSoort() {
+    const d = toonDlg(`<h2>Tegel toevoegen</h2><p class="sub">Kies een idee, of maak zelf een tegel. Foto's en eigen filmpjes zet u erbij via de editor op de computer.</p>
+      <div class="keuzes">${IDEEEN.map((x, i) => keuzeHtml(x, i, "idee")).join("")}${SOORT_NIEUW.map((x, i) => keuzeHtml(x, i, "nieuw")).join("")}</div>
+      <div class="knoppen"><button class="knop2" type="button" data-k="stop">Annuleren</button></div>`);
+    d.querySelector('[data-k="stop"]').addEventListener("click", sluitDlg);
+    d.querySelectorAll(".keuze").forEach(b => b.addEventListener("click", () => {
+      const bron = (b.dataset.groep === "idee" ? IDEEEN : SOORT_NIEUW)[+b.dataset.i];
+      const t = JSON.parse(JSON.stringify(bron)); delete t.naam; delete t.uitleg;
+      t.foto = ""; t.blijfAan = t.soort !== "website";
+      maakTegel(t);
+    }));
+  }
+
+  function maakTegel(t) {
+    const veld = t.soort === "website" ? "url" : t.soort === "video" ? "video" : "stream";
+    const labels = { url: "Adres van de website", video: "Link naar het YouTube-filmpje", stream: "Adres van de radiostream" };
+    const d = toonDlg(`<h2>${esc(SS.SOORTEN[t.soort].naam)} toevoegen</h2>
+      <div class="twee"><div><label>Naam op de tegel</label><input type="text" id="mNaam" maxlength="18" value="${esc(t.titel)}" autocomplete="off"></div>
+      <div><label>${labels[veld]}</label><input type="text" id="mAdres" value="${esc(t[veld])}" autocomplete="off" spellcheck="false"></div></div>
+      <div class="twee ruim"><div><label>Plaatje</label><div class="ikonen">${Object.entries(SS.ICONEN).map(([k, x]) => `<button type="button" data-ic="${k}" class="${k === t.icoon ? "aan" : ""}" aria-label="${esc(x.naam)}">${x.svg}</button>`).join("")}</div></div>
+      <div><label>Kleur</label><div class="kleurrij">${SS.KLEUREN.filter(k => k[0] !== "#1e1e1e").map(([hex, n]) => `<button type="button" data-kl="${hex}" class="${hex === t.kleur ? "aan" : ""}" style="background:${hex}" aria-label="${esc(n)}"></button>`).join("")}</div></div></div>
+      <div class="knoppen"><div class="fout" id="mFout"></div><button class="knop2" type="button" data-k="terug">Terug</button><button class="knop2 geel" type="button" data-k="ok">Toevoegen</button></div>`);
+    d.querySelectorAll("[data-ic]").forEach(b => b.addEventListener("click", () => { t.icoon = b.dataset.ic; d.querySelectorAll("[data-ic]").forEach(x => x.classList.toggle("aan", x === b)); }));
+    d.querySelectorAll("[data-kl]").forEach(b => b.addEventListener("click", () => { t.kleur = b.dataset.kl; d.querySelectorAll("[data-kl]").forEach(x => x.classList.toggle("aan", x === b)); }));
+    toetsenbord(d);
+    const naamV = d.querySelector("#mNaam"), adresV = d.querySelector("#mAdres");
+    (t.titel ? adresV : naamV).focus();
+    d.querySelector('[data-k="terug"]').addEventListener("click", kiesSoort);
+    const ok = d.querySelector('[data-k="ok"]'), fout = d.querySelector("#mFout");
+    ok.addEventListener("click", async () => {
+      t.titel = naamV.value.trim(); t[veld] = adresV.value.trim();
+      if (t.soort === "radio" && !t.zender) t.zender = t.titel;
+      if (!SS.compleet(t)) { fout.textContent = SS.ontbreekt(t); return; }
+      ok.disabled = true; ok.textContent = "Even geduld…"; fout.textContent = "";
+      try {
+        if (t.soort === "website") {
+          const r = await fetch("/api/insluitbaar?url=" + encodeURIComponent(t.url), { headers: { "x-wachtwoord": token } });
+          const j = await r.json().catch(() => ({}));
+          if (j.insluitbaar === false) throw new Error("Deze website gaat niet open binnen het scherm. Kies een andere website.");
+          if (j.insluitbaar === true) t.insluitbaar = true;
+        }
+        const vers = await haalVers();
+        vers.tegels.push(t);
+        await bewaar(vers); sluitDlg();
+      } catch (e) { fout.textContent = e.message; ok.disabled = false; ok.textContent = "Toevoegen"; }
+    });
+  }
 
   /* ---------- een tegel openen ---------- */
   function openTegel(t) {
@@ -337,6 +573,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
       if (!r.ok) throw new Error(d.fout || "Fout " + r.status);
       try { localStorage.setItem(opslag, JSON.stringify(d)); } catch (e) {}
       document.querySelectorAll(".melding").forEach(m => m.remove());
+      if (bewerk) return;
       if (!cfg || cfg.bijgewerkt !== d.bijgewerkt) teken(d);
     } catch (e) {
       if (!cfg) {
