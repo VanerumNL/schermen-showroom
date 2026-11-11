@@ -15,7 +15,7 @@
     website: { naam: "Website", kleur: "#b8e7f9", uitleg: "Opent een website binnen het scherm, met een grote Terug-knop erboven." },
     video: { naam: "Filmpje", kleur: "#fbb900", uitleg: "Een YouTube-filmpje, een hele YouTube-afspeellijst (bijv. clips van vroeger) of een eigen filmpje (mp4). Alles begint aan het eind weer opnieuw." },
     radio: { naam: "Radio", kleur: "#a8cb67", uitleg: "Een radiozender, met grote knoppen voor aan/uit en harder/zachter. Foto's erbij lopen mee in beeld." },
-    journaal: { naam: "Oude journaals", kleur: "#a8cb67", uitleg: "Een eigen tv-zender met Polygoon-journaals en ander oud nieuws van Open Beelden (Beeld en Geluid). Kies de jaren; de filmpjes spelen in willekeurige volgorde na elkaar." },
+    journaal: { naam: "Oude journaals", kleur: "#a8cb67", uitleg: "Een eigen tv-zender met Polygoon-journaals van Beeld en Geluid (via Open Beelden en Wikimedia Commons). Kies de jaren; de filmpjes spelen in willekeurige volgorde na elkaar." },
     fotos: { naam: "Fotoalbum", kleur: "#bda8bd", uitleg: "Foto's die rustig na elkaar in beeld komen, met grote pijlen om zelf te bladeren." }
   };
 
@@ -97,7 +97,53 @@
     if (/^#[0-9a-f]{6}$/i.test(w || "")) return { naam: "Eigen kleur", bg: w, ink: donker(w) ? "#ffffff" : "#1e1e1e" };
     return ACHTERGRONDEN.warm;
   }
+  /* Oude journaals: Polygoon-journaals van Open Beelden (Beeld en Geluid) staan ook op Wikimedia Commons,
+     in categorieën per jaar ("Polygoonjournaal in 1960"). Die vragen we rechtstreeks vanuit de browser op;
+     Commons maakt er webm-versies van die op elk scherm afspelen. */
+  const COMMONS = "https://commons.wikimedia.org/w/api.php?origin=*&format=json&formatversion=2&";
+  const schud = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  function nette(titel) {
+    return titel.replace(/^File:/, "").replace(/\.(ogv|ogg|webm|mp4|mpe?g)$/i, "").replace(/\s*-\s*Open Beelden\s*-\s*\d+$/i, "")
+      .replace(/-\d{4,}$/, "").replace(/\s*Weeknummer\s*\d+[-–]\d+/i, "").replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function besteVersie(pg) {
+    const vi = (pg.videoinfo || [])[0] || {};
+    const d = (vi.derivatives || []).filter(x => x && x.src);
+    const webm = d.filter(x => /webm/i.test(x.type || x.src) && (+x.height || 360) <= 480).sort((a, b) => (+b.height || 0) - (+a.height || 0));
+    const mp4 = d.filter(x => /mp4/i.test(x.type || x.src) && (+x.height || 360) <= 720).sort((a, b) => (+b.height || 0) - (+a.height || 0));
+    const kies = webm[0] || mp4[0] || d.find(x => /webm|mp4/i.test(x.type || x.src));
+    if (kies) return kies.src;
+    return /\.(webm|mp4)$/i.test(vi.url || "") ? vi.url : "";
+  }
+  async function journaals(van, tot, aantal) {
+    van = +van || 1950; tot = +tot || 1970; if (van > tot) [van, tot] = [tot, van];
+    const jaren = schud(Array.from({ length: tot - van + 1 }, (_, i) => van + i)).slice(0, 8);
+    const titels = [];
+    for (const jaar of jaren) {
+      const r = await fetch(COMMONS + "action=query&list=categorymembers&cmtype=file&cmlimit=500&cmtitle=" + encodeURIComponent("Category:Polygoonjournaal in " + jaar));
+      if (!r.ok) continue;
+      const d = await r.json();
+      ((d.query || {}).categorymembers || []).forEach(m => { if (/\.(ogv|webm|mp4|ogg)$/i.test(m.title)) titels.push({ titel: m.title, jaar }); });
+      if (titels.length > aantal * 4) break;
+    }
+    const kandidaten = schud(titels).slice(0, Math.ceil(aantal * 1.5));
+    const uit = [];
+    for (let i = 0; i < kandidaten.length && uit.length < aantal; i += 50) {
+      const groep = kandidaten.slice(i, i + 50);
+      const r = await fetch(COMMONS + "action=query&prop=videoinfo&viprop=url|derivatives&titles=" + encodeURIComponent(groep.map(x => x.titel).join("|")));
+      if (!r.ok) continue;
+      const d = await r.json();
+      const perTitel = new Map(((d.query || {}).pages || []).map(pg => [pg.title, pg]));
+      for (const k of groep) {
+        const pg = perTitel.get(k.titel) || perTitel.get(k.titel.replace(/_/g, " "));
+        const v = pg ? besteVersie(pg) : "";
+        if (v) uit.push({ t: nette(k.titel), j: k.jaar, p: "", v });
+      }
+    }
+    return schud(uit).slice(0, aantal);
+  }
+
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  window.SS = { ACHTERGRONDEN, KLEUREN, SOORTEN, ICONEN, nieuwStartscherm, compleet, ontbreekt, youtubeId, youtubeLijst, zendersVan, donker, achtergrond, esc };
+  window.SS = { ACHTERGRONDEN, KLEUREN, SOORTEN, ICONEN, nieuwStartscherm, compleet, ontbreekt, youtubeId, youtubeLijst, zendersVan, journaals, donker, achtergrond, esc };
 })();

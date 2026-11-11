@@ -557,21 +557,23 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     vak.classList.add("journaal");
     const laden = document.createElement("div"); laden.className = "laden"; laden.textContent = "Even geduld, de journaals worden opgehaald…"; vak.appendChild(laden);
     const van = +t.van || 1950, tot = +t.tot || 1970;
-    fetch(`/api/openbeelden?van=${van}&tot=${tot}&aantal=80`).then(r => r.json().then(d => { if (!r.ok) throw new Error(d.fout || "Fout"); return d; })).then(d => {
+    /* eerst Wikimedia Commons; lukt dat niet, dan de lijst die de site zelf bij Open Beelden ophaalt */
+    const viaSite = () => fetch(`/api/openbeelden?van=${van}&tot=${tot}&aantal=80`).then(r => r.json()).then(d => (d && d.items) || []).catch(() => []);
+    SS.journaals(van, tot, 60).catch(() => []).then(l => l.length ? l : viaSite()).then(items => {
       if (!vak.isConnected) return;
-      const lijst = (d.items || []).filter(x => x && x.v);
+      const lijst = (items || []).filter(x => x && x.v);
       laden.remove();
-      if (!lijst.length) { bericht(vak, "Er zijn nog geen journaals", "Het ophalen van de beelden is net begonnen. Probeer het over een kwartier nog eens.", null); return; }
+      if (!lijst.length) { bericht(vak, "De journaals zijn nu niet te vinden", "Probeer het later nog eens, of kies in de instellingen andere jaren.", null); return; }
       const v = document.createElement("video"); v.playsInline = true; v.setAttribute("playsinline", ""); v.autoplay = true; v.preload = "auto";
       vak.appendChild(v);
-      vak.insertAdjacentHTML("beforeend", `<div class="over"><b></b><span></span></div><div class="bron">Polygoon / Beeld en Geluid · Open Beelden (CC BY-SA)</div><button class="pijl r volgende" type="button" aria-label="Volgende journaal">${PIJL_R}</button>`);
+      vak.insertAdjacentHTML("beforeend", `<div class="over"><b></b><span></span></div><div class="bron">Polygoon / Beeld en Geluid · Open Beelden, via Wikimedia Commons (CC BY-SA)</div><button class="pijl r volgende" type="button" aria-label="Volgende journaal">${PIJL_R}</button>`);
       const over = vak.querySelector(".over");
       let i = -1, fouten = 0, verbergT = null;
       const speel = () => {
         i = (i + 1) % lijst.length;
         const x = lijst[i];
         over.querySelector("b").textContent = x.t;
-        over.querySelector("span").textContent = [x.p, x.j].filter(Boolean).join(", ");
+        over.querySelector("span").textContent = [x.p, x.j ? "Polygoon-journaal " + x.j : ""].filter(Boolean).join(", ");
         over.classList.remove("weg"); clearTimeout(verbergT); verbergT = later(() => over.classList.add("weg"), 9000);
         v.src = x.v;
         v.play().catch(() => {

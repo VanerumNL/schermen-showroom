@@ -502,10 +502,18 @@ ul.tips li{margin:5px 0}
       const r2 = h("div", "rij2", it);
       veld(r2, "Vanaf jaar", invoer(t, "van", "number", { min: 1900, max: 2000 }));
       veld(r2, "Tot en met jaar", invoer(t, "tot", "number", { min: 1900, max: 2000 }));
-      const st = h("p", "hulp", it, "Bezig met kijken hoeveel journaals er zijn…");
-      api("/api/openbeelden/stand").then(d => {
-        st.textContent = d.aantal ? `Er staan ${d.aantal.toLocaleString("nl-NL")} oude filmpjes klaar${d.klaar ? "" : "; er komen er elk kwartier meer bij"}. Bron: Open Beelden (Beeld en Geluid), vrij te gebruiken met naamsvermelding; die staat klein in beeld.` : "Het ophalen van de journaals begint zodra iemand de tegel opent of binnen een kwartier vanzelf. Bron: Open Beelden (Beeld en Geluid).";
-      }).catch(() => { st.textContent = "Bron: Open Beelden (Beeld en Geluid)."; });
+      const st = h("div", "hulp", it);
+      const toets = async () => {
+        st.className = "hulp"; st.textContent = "Kijken welke journaals er zijn…";
+        try {
+          const l = await SS.journaals(t.van, t.tot, 6);
+          if (!l.length) throw new Error("niets gevonden voor deze jaren");
+          st.className = "hulp goed";
+          st.textContent = `✓ Journaals gevonden, bijvoorbeeld: ${l.slice(0, 3).map(x => `“${x.t}” (${x.j})`).join(", ")}. Bron: Beeld en Geluid via Wikimedia Commons; de naamsvermelding staat klein in beeld.`;
+        } catch (e) { st.className = "hulp fout"; st.textContent = "Er konden geen journaals worden opgehaald: " + e.message + ". Het scherm probeert het dan via de site zelf."; }
+      };
+      let tt = null; it.querySelectorAll('input[type="number"]').forEach(i => i.addEventListener("input", () => { clearTimeout(tt); tt = setTimeout(toets, 800); }));
+      toets();
     }
 
     /* uiterlijk van de tegel */
