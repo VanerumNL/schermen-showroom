@@ -45,7 +45,7 @@
         tegel("video", "Vissen", "vis", "#b8e7f9", { video: "" }),
         tegel("video", "Haardvuur", "vuur", "#f2c7a5", { video: "" }),
         tegel("fotos", "Vroeger", "foto", "#bda8bd", { fotos: [], seconden: 12 }),
-        tegel("website", "Oude tv", "tv", "#a8cb67", { url: "https://schatkamer.nl" }),
+        tegel("video", "Oude tv", "tv", "#a8cb67", { video: "" }),
         tegel("video", "Zingen", "muziek", "#fbb900", { video: "" })
       ]
     };
