@@ -12,7 +12,8 @@
     puzzel: { naam: "Legpuzzel", uitleg: "Maak de foto weer heel", kleur: "#a8cb67", icoon: "puzzel" },
     spreekwoord: { naam: "Spreekwoorden", uitleg: "Maak het spreekwoord af", kleur: "#fbb900", icoon: "hart" },
     bellen: { naam: "Zeepbellen", uitleg: "Tik op de bellen", kleur: "#bda8bd", icoon: "boom" },
-    kleuren: { naam: "Kleurplaat", uitleg: "Kleur de tekening in", kleur: "#f2c7a5", icoon: "bloem" }
+    kleuren: { naam: "Kleurplaat", uitleg: "Kleur de tekening in", kleur: "#f2c7a5", icoon: "bloem" },
+    sorteren: { naam: "Knopen sorteren", uitleg: "Doe de knoop in het goede bakje", kleur: "#fbb900", icoon: "knoop" }
   };
 
   const LOF = ["Goed gedaan!", "Mooi zo!", "Prachtig!", "Heel goed!", "Knap gedaan!"];
@@ -102,6 +103,10 @@
      <circle data-v cx="92" cy="40" r="11" ${L}/>
      <path d="M40 250c-6-30 4-60 0-90M60 250c6-24-2-50 6-70" ${L} fill="none"/>`
   ];
+  /* een grote knoop (zoals uit de naaidoos), in elke kleur */
+  const knoop = (kleur, maat) => `<svg viewBox="0 0 200 200" width="${maat || 200}" height="${maat || 200}" aria-hidden="true"><circle cx="100" cy="100" r="86" fill="${kleur}" stroke="#1e1e1e" stroke-width="8"/><circle cx="100" cy="100" r="62" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="8"/><circle cx="80" cy="80" r="12" fill="#1e1e1e"/><circle cx="120" cy="80" r="12" fill="#1e1e1e"/><circle cx="80" cy="120" r="12" fill="#1e1e1e"/><circle cx="120" cy="120" r="12" fill="#1e1e1e"/></svg>`;
+  const KNOOPKLEUREN = [["#e04b3a", "rood"], ["#4a90d9", "blauw"], ["#fbb900", "geel"], ["#6fb23f", "groen"]];
+
   const VERF = [["#e04b3a", "Rood"], ["#f39c33", "Oranje"], ["#fbb900", "Geel"], ["#6fb23f", "Groen"], ["#4a90d9", "Blauw"], ["#b77fc9", "Paars"], ["#f2a7c0", "Roze"], ["#9b6a43", "Bruin"]];
 
   /* een vrolijke tekening als puzzel, als er geen eigen foto's zijn */
@@ -179,6 +184,18 @@
   @keyframes knap{to{transform:var(--t) scale(1.5);opacity:0}}
   .bellenlucht{position:absolute;inset:0;overflow:hidden;background:linear-gradient(180deg,#cfe9f6,#eef7fb)}
   .bellenteller{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);font-size:40px;font-weight:700;opacity:.6}
+
+  /* knopen sorteren */
+  .sort{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:30px;width:100%;height:100%;justify-items:center}
+  .sort .los{display:grid;place-items:center;position:relative;width:100%}
+  .sort .los .k{transition:transform .7s cubic-bezier(.5,0,.3,1),opacity .7s;filter:drop-shadow(0 16px 24px rgba(0,0,0,.18))}
+  .sort .los .k.wiebel{animation:wiebel2 .5s}
+  @keyframes wiebel2{25%{transform:translateX(-24px)}75%{transform:translateX(24px)}}
+  .sort .bakjes{display:flex;gap:60px;justify-content:center}
+  .sort .bakje{width:320px;height:190px;border-radius:0 0 160px 160px;background:var(--c);border:8px solid #1e1e1e;border-top-width:14px;display:flex;flex-wrap:wrap;align-content:flex-end;justify-content:center;padding:10px 24px 26px;gap:4px;box-shadow:0 14px 30px rgba(0,0,0,.15);overflow:hidden}
+  .sort .bakje svg{width:46px;height:46px}
+  .sort .bakje:active{transform:scale(.97)}
+  .sort .tel{font-size:36px;opacity:.7;text-align:center}
   /* kleurplaat */
   .kl{display:flex;gap:40px;width:100%;height:100%;align-items:center;justify-content:center}
   .kl svg{height:100%;width:auto;max-width:calc(100% - 300px);background:#fff;border-radius:24px;box-shadow:0 12px 28px rgba(0,0,0,.1)}
@@ -194,7 +211,10 @@
     const { esc, ICONEN } = hulp;
     const geluid = t.geluid !== false;
     const fotos = (t.fotos || []).map(f => f && f.src).filter(Boolean);
-    const aan = (Array.isArray(t.spellen) && t.spellen.length ? t.spellen : Object.keys(SPELLEN)).filter(k => SPELLEN[k]);
+    /* tegels van vóór het zesde spelletje hadden alle vijf aangevinkt: dan ook het nieuwe tonen */
+    const OUD = ["memory", "puzzel", "spreekwoord", "bellen", "kleuren"];
+    const gekozen = Array.isArray(t.spellen) && t.spellen.length && !OUD.every(k => t.spellen.includes(k)) ? t.spellen : Object.keys(SPELLEN);
+    const aan = gekozen.filter(k => SPELLEN[k]);
     const root = document.createElement("div"); root.className = "spel"; vak.appendChild(root);
     let stop = null;   /* opruimen van het spel dat nu loopt */
     const leeft = () => root.isConnected;
@@ -217,7 +237,7 @@
       if (aan.length === 1) { SPEL[aan[0]](); return; }
       const v = scherm("Kies een spelletje", false);
       const k = aan.length <= 3 ? aan.length : aan.length === 4 ? 2 : 3;
-      v.innerHTML = `<div class="smenu" style="--k:${k}">${aan.map(s => `<button type="button" data-s="${s}" style="--c:${SPELLEN[s].kleur}"><div class="si">${(ICONEN[SPELLEN[s].icoon] || ICONEN.ster).svg}</div><div><b>${SPELLEN[s].naam}</b><small>${SPELLEN[s].uitleg}</small></div></button>`).join("")}</div>`;
+      v.innerHTML = `<div class="smenu" style="--k:${k}">${aan.map(s => `<button type="button" data-s="${s}" style="--c:${SPELLEN[s].kleur}"><div class="si">${SPELLEN[s].icoon === "knoop" ? knoop("#e04b3a") : (ICONEN[SPELLEN[s].icoon] || ICONEN.ster).svg}</div><div><b>${SPELLEN[s].naam}</b><small>${SPELLEN[s].uitleg}</small></div></button>`).join("")}</div>`;
       v.querySelectorAll("[data-s]").forEach(b => b.addEventListener("click", () => SPEL[b.dataset.s]()));
     }
 
@@ -341,6 +361,36 @@
         };
         raf = requestAnimationFrame(stap);
         stop = () => cancelAnimationFrame(raf);
+      },
+
+      sorteren() {
+        const v = scherm("Knopen sorteren · tik op het bakje met dezelfde kleur", aan.length > 1);
+        const kleuren = schud(KNOOPKLEUREN.slice()).slice(0, 3), totaal = 9;
+        let gedaan = 0, bezig = false, nu = null;
+        v.innerHTML = `<div class="sort"><div class="los"></div><div><div class="bakjes">${kleuren.map(([c, n]) => `<button class="bakje" type="button" data-c="${c}" style="--c:${c}" aria-label="Bakje ${n}"></button>`).join("")}</div><div class="tel"></div></div></div>`;
+        const los = v.querySelector(".los"), tel = v.querySelector(".tel");
+        const volgende = () => {
+          if (gedaan >= totaal) { feest(v, "Alles opgeruimd!", SPEL.sorteren); return; }
+          nu = kleuren[Math.floor(Math.random() * kleuren.length)][0];
+          los.innerHTML = `<div class="k">${knoop(nu, 300)}</div>`;
+          tel.textContent = `Nog ${totaal - gedaan} ${totaal - gedaan === 1 ? "knoop" : "knopen"}`;
+          bezig = false;
+        };
+        v.querySelectorAll(".bakje").forEach(b => b.addEventListener("click", () => {
+          if (bezig || !nu) return;
+          const k = los.querySelector(".k");
+          if (b.dataset.c === nu) {
+            bezig = true; belletje(geluid);
+            const a = k.getBoundingClientRect(), z = b.getBoundingClientRect(), schaal = a.width / (k.offsetWidth || 1);
+            k.style.transform = `translate(${(z.left + z.width / 2 - (a.left + a.width / 2)) / schaal}px,${(z.top + z.height / 2 - (a.top + a.height / 2)) / schaal}px) scale(.2)`;
+            k.style.opacity = "0";
+            setTimeout(() => { if (!leeft()) return; b.insertAdjacentHTML("beforeend", knoop(nu, 46)); gedaan++; volgende(); }, 700);
+          } else {
+            k.classList.remove("wiebel"); void k.offsetWidth; k.classList.add("wiebel");
+            tel.textContent = "Kijk nog eens goed naar de kleur";
+          }
+        }));
+        volgende();
       },
 
       kleuren() {

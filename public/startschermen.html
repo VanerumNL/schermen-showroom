@@ -501,7 +501,8 @@ ul.tips li{margin:5px 0}
       album(it, t, "Foto's", check);
     } else if (t.soort === "spellen") {
       const alle = Object.entries(window.Spellen ? window.Spellen.SPELLEN : {});
-      if (!Array.isArray(t.spellen) || !t.spellen.length) t.spellen = alle.map(([k]) => k);
+      const OUD = ["memory", "puzzel", "spreekwoord", "bellen", "kleuren"];
+      if (!Array.isArray(t.spellen) || !t.spellen.length || OUD.every(k => t.spellen.includes(k))) t.spellen = [...new Set([...(t.spellen || []), ...alle.map(([k]) => k)])];
       const v = h("div", "veld", it); h("span", "lab", v).textContent = "Welke spelletjes";
       const box = h("div", "", v); box.style.cssText = "display:flex;flex-wrap:wrap;gap:6px 18px";
       alle.forEach(([k, x]) => {
