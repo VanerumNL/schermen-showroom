@@ -226,6 +226,7 @@ ul.tips li{margin:5px 0}
 <input type="file" id="filmBestand" accept="video/mp4,video/webm" hidden>
 
 <script src="/startscherm-gedeeld.js"></script>
+<script src="/spellen.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id);
@@ -427,11 +428,12 @@ ul.tips li{margin:5px 0}
     const tekenTegels = () => { items.innerHTML = ""; if (!k.tegels.length) h("p", "hulp", items, "Nog geen tegels."); k.tegels.forEach((t, i) => tegelForm(items, t, i, tekenTegels)); };
     tekenTegels();
     const tv = h("div", "toevoegen", b2);
-    const nieuw = (soort, extra) => { k.tegels.push(Object.assign({ soort, titel: "", icoon: { website: "ster", video: "vis", radio: "radio", fotos: "foto", journaal: "tv" }[soort], kleur: "#fbb900", foto: "", blijfAan: soort !== "website" }, extra)); tekenTegels(); stuur(); setTimeout(() => { const l = items.lastElementChild; if (l) { l.scrollIntoView({ behavior: "smooth", block: "center" }); const i = l.querySelector("input"); if (i) i.focus(); } }, 50); };
+    const nieuw = (soort, extra) => { k.tegels.push(Object.assign({ soort, titel: "", icoon: { website: "ster", video: "vis", radio: "radio", fotos: "foto", journaal: "tv", spellen: "puzzel" }[soort], kleur: "#fbb900", foto: "", blijfAan: soort !== "website" }, extra)); tekenTegels(); stuur(); setTimeout(() => { const l = items.lastElementChild; if (l) { l.scrollIntoView({ behavior: "smooth", block: "center" }); const i = l.querySelector("input"); if (i) i.focus(); } }, 50); };
     knop(tv, "+ Website", "licht", () => nieuw("website", { url: "" }));
     knop(tv, "+ Filmpje", "licht", () => nieuw("video", { video: "" }));
     knop(tv, "+ Radio", "licht", () => nieuw("radio", { zender: "", stream: "", zenders: [], fotos: [], seconden: 15 }));
     knop(tv, "+ Fotoalbum", "licht", () => nieuw("fotos", { fotos: [], seconden: 12 }));
+    knop(tv, "+ Spelletjes", "licht", () => nieuw("spellen", { titel: "Spelletjes", icoon: "puzzel", kleur: "#f2c7a5", paren: "4", stukjes: "4", fotos: [], blijfAan: false }));
     knop(tv, "+ Oude journaals", "licht", () => nieuw("journaal", { van: 1950, tot: 1970, titel: "Journaal", icoon: "tv", kleur: "#a8cb67" }));
 
     const b3 = blok(f, "Tips voor deze doelgroep", "#a8cb67");
@@ -459,7 +461,7 @@ ul.tips li{margin:5px 0}
 
     const r = h("div", "rij2", it);
     veld(r, "Naam op de tegel", invoer(t, "titel", "text", { maxLength: 18, placeholder: "bijv. Vissen" }, v => { kop.querySelector(".tnaam").textContent = v || "Nieuwe tegel"; check(); }));
-    veld(r, "Soort", keuze(t, "soort", Object.entries(SS.SOORTEN).map(([w, x]) => [w, x.naam]), () => { t.blijfAan = t.soort !== "website"; if (t.soort === "radio" || t.soort === "fotos") t.fotos = t.fotos || []; if (t.soort === "radio") t.zenders = t.zenders || []; opnieuw(); }));
+    veld(r, "Soort", keuze(t, "soort", Object.entries(SS.SOORTEN).map(([w, x]) => [w, x.naam]), () => { t.blijfAan = !["website", "spellen"].includes(t.soort); if (t.soort === "radio" || t.soort === "fotos") t.fotos = t.fotos || []; if (t.soort === "radio") t.zenders = t.zenders || []; opnieuw(); }));
     h("p", "hulp", it).textContent = soort.uitleg;
 
     if (t.soort === "website") {
@@ -497,6 +499,24 @@ ul.tips li{margin:5px 0}
       album(it, t, "Foto's in beeld tijdens de radio (mag leeg)");
     } else if (t.soort === "fotos") {
       album(it, t, "Foto's", check);
+    } else if (t.soort === "spellen") {
+      const alle = Object.entries(window.Spellen ? window.Spellen.SPELLEN : {});
+      if (!Array.isArray(t.spellen) || !t.spellen.length) t.spellen = alle.map(([k]) => k);
+      const v = h("div", "veld", it); h("span", "lab", v).textContent = "Welke spelletjes";
+      const box = h("div", "", v); box.style.cssText = "display:flex;flex-wrap:wrap;gap:6px 18px";
+      alle.forEach(([k, x]) => {
+        const l = h("label", "vink", box, `<input type="checkbox"${t.spellen.includes(k) ? " checked" : ""}> ${esc(x.naam)}`);
+        l.querySelector("input").addEventListener("change", e => {
+          t.spellen = e.target.checked ? [...new Set([...t.spellen, k])] : t.spellen.filter(s => s !== k);
+          if (!t.spellen.length) { t.spellen = [k]; e.target.checked = true; }
+          stuur();
+        });
+      });
+      const r2 = h("div", "rij2", it);
+      veld(r2, "Memory: aantal paren", keuze(t, "paren", [["3", "3 paren (makkelijk)"], ["4", "4 paren"], ["6", "6 paren"], ["8", "8 paren (moeilijk)"]]));
+      veld(r2, "Legpuzzel: aantal stukjes", keuze(t, "stukjes", [["4", "4 stukjes (makkelijk)"], ["6", "6 stukjes"], ["9", "9 stukjes"], ["12", "12 stukjes (moeilijk)"]]));
+      album(it, t, "Eigen foto's voor memory en legpuzzel (mag leeg; dan tekeningen)");
+      vinkje(it, t, "geluid", "Zacht belletje als iets lukt", true);
     } else if (t.soort === "journaal") {
       if (!t.van) t.van = 1950; if (!t.tot) t.tot = 1970;
       const r2 = h("div", "rij2", it);
