@@ -98,6 +98,10 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .rond:active{transform:scale(.95)}
 .volume{display:flex;gap:22px}
 
+.radio .zenders{position:absolute;left:50%;top:40px;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:20px;width:calc(100% - 120px);z-index:3}
+.radio .zenders button{background:rgba(255,255,255,.92);color:var(--zwart);font-weight:700;font-size:40px;border-radius:999px;padding:22px 40px;box-shadow:0 12px 30px rgba(0,0,0,.25);border:6px solid transparent;max-width:640px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.radio .zenders button.aan{background:var(--geel);border-color:var(--zwart)}
+.radio .zenders button:active{transform:scale(.96)}
 /* oude journaals */
 .journaal video{object-fit:contain!important;background:#000}
 .journaal .over{position:absolute;left:56px;top:48px;max-width:70%;background:#fff;color:var(--zwart);border-radius:26px;padding:22px 34px;box-shadow:0 18px 40px rgba(0,0,0,.3);transition:opacity 1.2s;z-index:2}
@@ -269,7 +273,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
      Na 3 minuten zonder aanraking stopt dit vanzelf. */
   let bewerk = false, token = "";
   const IDEEEN = [
-    { soort: "radio", titel: "Radio 5", zender: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3", icoon: "radio", kleur: "#fbb900", uitleg: "Muziek van vroeger" },
+    { soort: "radio", titel: "Radio 5", zender: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3", zenders: [{ naam: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3" }], icoon: "radio", kleur: "#fbb900", uitleg: "Muziek van vroeger" },
     { soort: "journaal", titel: "Journaal", van: 1950, tot: 1970, icoon: "tv", kleur: "#a8cb67", uitleg: "Polygoon-journaals 1950–1970" },
     { soort: "website", titel: "Oude foto's", url: "https://geheugen.delpher.nl", icoon: "foto", kleur: "#bda8bd", uitleg: "Het Geheugen (KB)" },
     { soort: "website", titel: "Puzzelen", url: "https://www.jigidi.com", icoon: "puzzel", kleur: "#a8cb67", uitleg: "Legpuzzels op Jigidi" }
@@ -415,7 +419,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
         if (!(jv >= 1900 && jv <= 2000 && jt >= 1900 && jt <= 2000)) { fout.textContent = "Vul twee jaartallen in, bijvoorbeeld 1950 en 1970"; return; }
         t.van = Math.min(jv, jt); t.tot = Math.max(jv, jt);
       } else t[veld] = adresV.value.trim();
-      if (t.soort === "radio" && !t.zender) t.zender = t.titel;
+      if (t.soort === "radio") { if (!t.zender) t.zender = t.titel; t.zenders = [{ naam: t.zender, stream: t.stream }]; }
       if (!SS.compleet(t)) { fout.textContent = SS.ontbreekt(t); return; }
       ok.disabled = true; ok.textContent = "Even geduld…"; fout.textContent = "";
       try {
@@ -627,25 +631,40 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   }
 
   function radio(vak, t) {
+    const zenders = SS.zendersVan(t);
     const box = document.createElement("div"); box.className = "radio"; vak.appendChild(box);
     if (!fotos(box, t, false)) box.insertAdjacentHTML("beforeend", `<div class="achter">${(SS.ICONEN[t.icoon] || SS.ICONEN.radio).svg}</div>`);
-    box.insertAdjacentHTML("beforeend", `<div class="paneel"><div class="info"><b>${esc(t.zender || t.titel)}</b><span data-status>Bezig met afstemmen…</span></div>
+    /* meerdere zenders: grote knoppen om te wisselen */
+    if (zenders.length > 1) box.insertAdjacentHTML("beforeend", `<div class="zenders">${zenders.map((z, i) => `<button type="button" data-z="${i}">${esc(z.naam)}</button>`).join("")}</div>`);
+    box.insertAdjacentHTML("beforeend", `<div class="paneel"><div class="info"><b data-naam></b><span data-status>Bezig met afstemmen…</span></div>
       <button class="rond hoofd" type="button" data-knop="speel" aria-label="Aan of uit">${PAUZE}</button>
       <div class="volume"><button class="rond" type="button" data-knop="zachter" aria-label="Zachter">${MIN}</button><button class="rond" type="button" data-knop="harder" aria-label="Harder">${PLUS}</button></div></div>`);
     const a = new Audio(); a.preload = "none";
-    const sleutel = "ss-volume-" + ID;
+    const sleutel = "ss-volume-" + ID, zKey = "ss-zender-" + ID + "-" + (t.titel || "");
     let vol = 0.7; try { vol = Math.min(1, Math.max(0.1, +localStorage.getItem(sleutel) || 0.7)); } catch (e) {}
     a.volume = vol;
     box.appendChild(a);
-    const status = box.querySelector("[data-status]"), speel = box.querySelector('[data-knop="speel"]');
+    let nr = 0; try { nr = Math.min(zenders.length - 1, Math.max(0, +localStorage.getItem(zKey) || 0)); } catch (e) {}
+    const status = box.querySelector("[data-status]"), speel = box.querySelector('[data-knop="speel"]'), naam = box.querySelector("[data-naam]");
     const toonVol = () => { status.textContent = "Volume " + Math.round(a.volume * 10) + " van 10"; later(() => { if (!a.paused) status.textContent = "Speelt nu"; }, 2000); };
     const zet = aan => { speel.innerHTML = aan ? PAUZE : SPEEL; };
     a.addEventListener("playing", () => { status.textContent = "Speelt nu"; zet(true); });
     let mislukt = false;
     a.addEventListener("pause", () => { if (!mislukt) status.textContent = "Staat op pauze"; zet(false); });
     a.addEventListener("waiting", () => { status.textContent = "Even geduld…"; });
-    a.addEventListener("error", () => { if (!a.getAttribute("src")) return; mislukt = true; status.textContent = "De zender is nu niet te bereiken"; zet(false); });
-    const start = () => { mislukt = false; a.src = t.stream; a.play().catch(() => { if (!mislukt) status.textContent = "Tik op de gele knop om te luisteren"; zet(false); }); };
+    a.addEventListener("error", () => { if (!a.getAttribute("src")) return; mislukt = true; status.textContent = "Deze zender is nu niet te bereiken"; zet(false); });
+    const start = () => {
+      mislukt = false;
+      const z = zenders[nr];
+      naam.textContent = z.naam; status.textContent = "Bezig met afstemmen…";
+      box.querySelectorAll("[data-z]").forEach(b => b.classList.toggle("aan", +b.dataset.z === nr));
+      a.src = z.stream;
+      a.play().catch(() => { if (!mislukt) status.textContent = "Tik op de gele knop om te luisteren"; zet(false); });
+    };
+    box.querySelectorAll("[data-z]").forEach(b => b.addEventListener("click", () => {
+      nr = +b.dataset.z; try { localStorage.setItem(zKey, nr); } catch (e) {}
+      start();
+    }));
     speel.addEventListener("click", () => { if (a.paused) start(); else { a.pause(); a.removeAttribute("src"); a.load(); zet(false); status.textContent = "Staat uit"; } });
     box.querySelector('[data-knop="zachter"]').addEventListener("click", () => { a.volume = Math.max(0.1, Math.round((a.volume - 0.1) * 10) / 10); try { localStorage.setItem(sleutel, a.volume); } catch (e) {} toonVol(); });
     box.querySelector('[data-knop="harder"]').addEventListener("click", () => { a.volume = Math.min(1, Math.round((a.volume + 0.1) * 10) / 10); try { localStorage.setItem(sleutel, a.volume); } catch (e) {} toonVol(); });

@@ -398,6 +398,32 @@ async function api(req, env, url, ctx) {
       await env.KV.delete("start:" + id); return json({ ok: true });
     }
   }
+  /* Radiozenders zoeken in de open gids van radio-browser.info (alleen https-streams, die werken op het scherm) */
+  if (p === "/api/zenders" && m === "GET") {
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    const zoek = (url.searchParams.get("zoek") || "").trim().slice(0, 60);
+    if (zoek.length < 2) return fout("Typ minstens twee letters");
+    const pad = `/json/stations/search?name=${encodeURIComponent(zoek)}&hidebroken=true&order=clickcount&reverse=true&limit=40`;
+    let lijst = null, laatste = "";
+    for (const host of ["de1.api.radio-browser.info", "de2.api.radio-browser.info", "fi1.api.radio-browser.info", "all.api.radio-browser.info"]) {
+      try {
+        const r = await fetch("https://" + host + pad, { headers: { "user-agent": "VanerumSchermen/1.0 (+https://www.vanerum.nl)" }, cf: { cacheTtl: 3600 } });
+        if (r.ok) { lijst = await r.json(); break; }
+        laatste = "fout " + r.status;
+      } catch (e) { laatste = e && e.message || String(e); }
+    }
+    if (!lijst) return fout("De zendergids is nu niet bereikbaar (" + laatste + ")", 502);
+    const gezien = new Set(), uit = [];
+    for (const z of lijst) {
+      const stream = String(z.url_resolved || z.url || "").trim();
+      if (!/^https:\/\//i.test(stream) || gezien.has(stream)) continue;
+      gezien.add(stream);
+      uit.push({ naam: String(z.name || "").trim().slice(0, 60), stream, land: z.countrycode || z.country || "", tags: String(z.tags || "").split(",").slice(0, 4).join(", "), kwaliteit: z.bitrate ? z.bitrate + " kbps" : "", populair: z.clickcount || 0 });
+      if (uit.length >= 15) break;
+    }
+    return json(uit);
+  }
+
   /* Oude journaals van Open Beelden (Beeld en Geluid) voor een startscherm-tegel; openbaar, het scherm is niet ingelogd */
   if (p === "/api/openbeelden" && m === "GET") {
     const jr = (k, d) => { const n = parseInt(url.searchParams.get(k), 10); return Number.isFinite(n) ? Math.min(2000, Math.max(1900, n)) : d; };

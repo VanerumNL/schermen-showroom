@@ -42,7 +42,7 @@
       id, naam,
       start: { titel: naam || "", welkom: true, achtergrond: "warm", stand: "liggend", logo: "", vanerum: false, terugNa: 5 },
       tegels: [
-        tegel("radio", "Muziek", "radio", "#fbb900", { zender: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3", fotos: [], seconden: 15 }),
+        tegel("radio", "Muziek", "radio", "#fbb900", { zenders: [{ naam: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3" }], zender: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3", fotos: [], seconden: 15 }),
         tegel("video", "Vissen", "vis", "#b8e7f9", { video: "" }),
         tegel("video", "Haardvuur", "vuur", "#f2c7a5", { video: "" }),
         tegel("fotos", "Vroeger", "foto", "#bda8bd", { fotos: [], seconden: 12 }),
@@ -57,7 +57,7 @@
     if (!t || !t.titel) return false;
     if (t.soort === "website") return /^https:\/\//i.test(t.url || "");
     if (t.soort === "video") return !!(youtubeLijst(t.video) || youtubeId(t.video) || /^(https:\/\/|\/media\/)/i.test(t.video || ""));
-    if (t.soort === "radio") return /^https:\/\//i.test(t.stream || "");
+    if (t.soort === "radio") return zendersVan(t).length > 0;
     if (t.soort === "fotos") return Array.isArray(t.fotos) && t.fotos.some(f => f && f.src);
     if (t.soort === "journaal") return true;
     return false;
@@ -66,11 +66,16 @@
     if (!t.titel) return "Geef de tegel een naam";
     if (t.soort === "website") return /^http:\/\//i.test(t.url || "") ? "Het adres moet met https:// beginnen" : "Vul het adres van de website in";
     if (t.soort === "video") return "Plak een YouTube-link (filmpje of afspeellijst) of upload een filmpje";
-    if (t.soort === "radio") return /^http:\/\//i.test(t.stream || "") ? "Het adres van de zender moet met https:// beginnen" : "Vul het adres van de radiostream in";
+    if (t.soort === "radio") return (t.zenders || []).some(z => z && /^http:\/\//i.test(z.stream || "")) || /^http:\/\//i.test(t.stream || "") ? "Het adres van een zender moet met https:// beginnen" : "Voeg minstens één radiozender toe";
     if (t.soort === "fotos") return "Upload een of meer foto's";
     return "";
   }
 
+  /* de zenders van een radiotegel; oudere tegels hebben één zender in stream/zender */
+  function zendersVan(t) {
+    const l = Array.isArray(t.zenders) && t.zenders.length ? t.zenders : (t.stream ? [{ naam: t.zender || t.titel, stream: t.stream }] : []);
+    return l.filter(z => z && /^https:\/\//i.test(z.stream || "")).map(z => ({ naam: z.naam || "Radio", stream: z.stream }));
+  }
   /* een YouTube-afspeellijst: ...?list=PL... of /playlist?list=... */
   function youtubeLijst(u) {
     const m = String(u || "").match(/youtube(?:-nocookie)?\.com\/.*[?&]list=([A-Za-z0-9_-]{10,})/);
@@ -94,5 +99,5 @@
   }
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  window.SS = { ACHTERGRONDEN, KLEUREN, SOORTEN, ICONEN, nieuwStartscherm, compleet, ontbreekt, youtubeId, youtubeLijst, donker, achtergrond, esc };
+  window.SS = { ACHTERGRONDEN, KLEUREN, SOORTEN, ICONEN, nieuwStartscherm, compleet, ontbreekt, youtubeId, youtubeLijst, zendersVan, donker, achtergrond, esc };
 })();

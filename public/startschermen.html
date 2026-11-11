@@ -122,6 +122,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .iconen .ic{width:40px;height:40px;border:1.5px solid var(--lijn);border-radius:9px;background:#fff;cursor:pointer;padding:3px}
 .iconen .ic svg{width:100%;height:100%;display:block}
 .iconen .ic.aan{border-color:var(--zwart);box-shadow:0 0 0 3px var(--geel)}
+.zlijst{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+.zrij{display:grid;grid-template-columns:150px 1fr auto;gap:6px;align-items:center}
+.zrij input,.zzoek input{padding:7px 9px;border:1.5px solid var(--lijn);border-radius:9px;width:100%;font:inherit;font-size:13.5px}
+.zzoek{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:6px}
+.zresultaat{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:340px;overflow:auto}
+.zgevonden{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;border:1.5px solid var(--lijn);border-radius:10px;padding:7px 9px;background:#fff}
+.zgevonden b{display:block;font-size:13.5px}
+.zgevonden small{display:block;font-size:12px;color:var(--grijs)}
 .albumvak{border:1.5px solid var(--lijn);border-radius:12px;background:#fff}
 .albumvak>summary{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;list-style:none;font-size:13.5px}
 .albumvak>summary::-webkit-details-marker{display:none}
@@ -422,7 +430,7 @@ ul.tips li{margin:5px 0}
     const nieuw = (soort, extra) => { k.tegels.push(Object.assign({ soort, titel: "", icoon: { website: "ster", video: "vis", radio: "radio", fotos: "foto", journaal: "tv" }[soort], kleur: "#fbb900", foto: "", blijfAan: soort !== "website" }, extra)); tekenTegels(); stuur(); setTimeout(() => { const l = items.lastElementChild; if (l) { l.scrollIntoView({ behavior: "smooth", block: "center" }); const i = l.querySelector("input"); if (i) i.focus(); } }, 50); };
     knop(tv, "+ Website", "licht", () => nieuw("website", { url: "" }));
     knop(tv, "+ Filmpje", "licht", () => nieuw("video", { video: "" }));
-    knop(tv, "+ Radio", "licht", () => nieuw("radio", { zender: "", stream: "", fotos: [], seconden: 15 }));
+    knop(tv, "+ Radio", "licht", () => nieuw("radio", { zender: "", stream: "", zenders: [], fotos: [], seconden: 15 }));
     knop(tv, "+ Fotoalbum", "licht", () => nieuw("fotos", { fotos: [], seconden: 12 }));
     knop(tv, "+ Oude journaals", "licht", () => nieuw("journaal", { van: 1950, tot: 1970, titel: "Journaal", icoon: "tv", kleur: "#a8cb67" }));
 
@@ -451,7 +459,7 @@ ul.tips li{margin:5px 0}
 
     const r = h("div", "rij2", it);
     veld(r, "Naam op de tegel", invoer(t, "titel", "text", { maxLength: 18, placeholder: "bijv. Vissen" }, v => { kop.querySelector(".tnaam").textContent = v || "Nieuwe tegel"; check(); }));
-    veld(r, "Soort", keuze(t, "soort", Object.entries(SS.SOORTEN).map(([w, x]) => [w, x.naam]), () => { t.blijfAan = t.soort !== "website"; if (t.soort === "radio" || t.soort === "fotos") t.fotos = t.fotos || []; opnieuw(); }));
+    veld(r, "Soort", keuze(t, "soort", Object.entries(SS.SOORTEN).map(([w, x]) => [w, x.naam]), () => { t.blijfAan = t.soort !== "website"; if (t.soort === "radio" || t.soort === "fotos") t.fotos = t.fotos || []; if (t.soort === "radio") t.zenders = t.zenders || []; opnieuw(); }));
     h("p", "hulp", it).textContent = soort.uitleg;
 
     if (t.soort === "website") {
@@ -485,9 +493,7 @@ ul.tips li{margin:5px 0}
       knop(rij, "Uit bibliotheek", "licht", () => kiesMedia("video", zet));
       vinkje(it, t, "willekeurig", "Afspeellijst in willekeurige volgorde (elke keer met een ander nummer beginnen)", true);
     } else if (t.soort === "radio") {
-      const r2 = h("div", "rij2", it);
-      veld(r2, "Naam van de zender", invoer(t, "zender", "text", { maxLength: 40, placeholder: "bijv. NPO Radio 5" }));
-      veld(r2, "Adres van de radiostream", invoer(t, "stream", "text", { placeholder: "https://…mp3" }, check), "Het directe adres van de stream (vaak eindigend op .mp3 of .aac), niet de website.");
+      zenderLijst(it, t, check);
       album(it, t, "Foto's in beeld tijdens de radio (mag leeg)");
     } else if (t.soort === "fotos") {
       album(it, t, "Foto's", check);
@@ -520,6 +526,69 @@ ul.tips li{margin:5px 0}
     knop(fr, "Uit bibliotheek", "licht", () => kiesMedia("foto", zetFoto));
     veld(it, "Kleur", kleurKeuze(t, "kleur", false, tekenDuim));
     vinkje(it, t, "blijfAan", "Blijft open tot iemand op Terug tikt (handig voor vissen, haardvuur en radio)", false);
+  }
+
+  /* ===== radiozenders bij een tegel: meerdere, met zoeken in de open zendergids ===== */
+  const OUDE_MUZIEK = ["NPO Radio 5", "Radio 10 60", "Radio Remember", "Nostalgie", "M4D Radio", "Golden Oldies", "60s", "50s"];
+  let proef = null;
+  function luister(stream, knopEl) {
+    if (proef && proef.src === stream && !proef.paused) { proef.pause(); knopEl.textContent = "▶ Luister"; return; }
+    if (proef) proef.pause();
+    document.querySelectorAll(".zresultaat .luister").forEach(b => { b.textContent = "▶ Luister"; });
+    proef = new Audio(stream); knopEl.textContent = "Laden…";
+    proef.play().then(() => { knopEl.textContent = "■ Stop"; }).catch(() => { knopEl.textContent = "Werkt niet"; });
+    proef.addEventListener("error", () => { knopEl.textContent = "Werkt niet"; });
+  }
+  function zenderLijst(ouder, t, na) {
+    if (!Array.isArray(t.zenders) || !t.zenders.length) t.zenders = t.stream ? [{ naam: t.zender || t.titel || "Radio", stream: t.stream }] : [];
+    /* het eerste adres blijft ook in stream/zender staan, voor schermen met een oudere versie */
+    const sync = () => { const e = SS.zendersVan(t)[0]; t.stream = e ? e.stream : ""; t.zender = e ? e.naam : ""; if (na) na(); };
+    const v = h("div", "veld", ouder); h("span", "lab", v).textContent = "Radiozenders";
+    h("div", "hulp", v).textContent = "Met meer dan één zender krijgt het scherm grote knoppen om te wisselen. Alleen adressen die met https:// beginnen werken op het scherm.";
+    const box = h("div", "zlijst", v);
+    const teken = () => {
+      box.innerHTML = "";
+      if (!t.zenders.length) h("p", "hulp", box, "Nog geen zenders. Zoek er hieronder een, of kies uit de voorstellen.");
+      t.zenders.forEach((z, i) => {
+        const rij = h("div", "zrij", box);
+        rij.appendChild(invoer(z, "naam", "text", { maxLength: 30, placeholder: "Naam op de knop" }));
+        rij.appendChild(invoer(z, "stream", "text", { placeholder: "https://…" }, sync));
+        const kn = h("div", "", rij); kn.style.cssText = "display:flex";
+        lijstKnoppen(kn, t.zenders, i, () => { teken(); sync(); });
+      });
+    };
+    teken();
+    const zoekRij = h("div", "zzoek", v);
+    const inp = h("input", "", zoekRij); inp.type = "text"; inp.placeholder = "Zender zoeken, bijv. Radio 10 of Nostalgie";
+    const zk = knop(zoekRij, "Zoeken", "licht", () => zoek([inp.value.trim()]));
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); zk.click(); } });
+    const rij2 = knoppenRij(v);
+    knop(rij2, "Voorstellen: oude muziek", "geel", () => zoek(OUDE_MUZIEK, 3));
+    knop(rij2, "+ Zender met eigen adres", "licht", () => { t.zenders.push({ naam: "", stream: "https://" }); teken(); sync(); stuur(); });
+    const uit = h("div", "zresultaat", v);
+    async function zoek(termen, perTerm) {
+      termen = termen.filter(x => x && x.length > 1);
+      if (!termen.length) return;
+      uit.innerHTML = "<p class='hulp'>Zoeken…</p>";
+      const gevonden = [], gezien = new Set(t.zenders.map(z => z.stream));
+      for (const term of termen) {
+        try {
+          const l = await api("/api/zenders?zoek=" + encodeURIComponent(term));
+          l.slice(0, perTerm || 15).forEach(z => { if (!gezien.has(z.stream)) { gezien.add(z.stream); gevonden.push(z); } });
+        } catch (e) { uit.innerHTML = `<p class='hulp fout'>${esc(e.message)}</p>`; return; }
+      }
+      if (!gevonden.length) { uit.innerHTML = "<p class='hulp'>Geen zenders gevonden die op het scherm werken. Probeer een ander woord.</p>"; return; }
+      uit.innerHTML = "<p class='hulp'>Luister eerst even; tik dan op Toevoegen.</p>";
+      gevonden.forEach(z => {
+        const r = h("div", "zgevonden", uit, `<div><b>${esc(z.naam)}</b><small>${esc([z.land, z.tags, z.kwaliteit].filter(Boolean).join(" · "))}</small></div>`);
+        const l = knop(r, "▶ Luister", "licht luister", () => luister(z.stream, l));
+        knop(r, "Toevoegen", "geel", () => {
+          t.zenders.push({ naam: z.naam.replace(/\s+/g, " ").slice(0, 30), stream: z.stream });
+          r.remove(); teken(); sync(); stuur();
+          if (proef) proef.pause();
+        });
+      });
+    }
   }
 
   /* fotoalbum bij een tegel: foto's met een korte tekst eronder */
