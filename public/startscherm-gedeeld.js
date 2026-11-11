@@ -13,7 +13,7 @@
 
   const SOORTEN = {
     website: { naam: "Website", kleur: "#b8e7f9", uitleg: "Opent een website binnen het scherm, met een grote Terug-knop erboven." },
-    video: { naam: "Filmpje", kleur: "#fbb900", uitleg: "Een YouTube-link of een eigen filmpje (mp4) dat steeds opnieuw begint. Fijn voor een aquarium of haardvuur." },
+    video: { naam: "Filmpje", kleur: "#fbb900", uitleg: "Een YouTube-filmpje, een hele YouTube-afspeellijst (bijv. clips van vroeger) of een eigen filmpje (mp4). Alles begint aan het eind weer opnieuw." },
     radio: { naam: "Radio", kleur: "#a8cb67", uitleg: "Een radiozender, met grote knoppen voor aan/uit en harder/zachter. Foto's erbij lopen mee in beeld." },
     fotos: { naam: "Fotoalbum", kleur: "#bda8bd", uitleg: "Foto's die rustig na elkaar in beeld komen, met grote pijlen om zelf te bladeren." }
   };
@@ -55,7 +55,7 @@
   function compleet(t) {
     if (!t || !t.titel) return false;
     if (t.soort === "website") return /^https:\/\//i.test(t.url || "");
-    if (t.soort === "video") return !!(youtubeId(t.video) || /^(https:\/\/|\/media\/)/i.test(t.video || ""));
+    if (t.soort === "video") return !!(youtubeLijst(t.video) || youtubeId(t.video) || /^(https:\/\/|\/media\/)/i.test(t.video || ""));
     if (t.soort === "radio") return /^https:\/\//i.test(t.stream || "");
     if (t.soort === "fotos") return Array.isArray(t.fotos) && t.fotos.some(f => f && f.src);
     return false;
@@ -63,12 +63,17 @@
   function ontbreekt(t) {
     if (!t.titel) return "Geef de tegel een naam";
     if (t.soort === "website") return /^http:\/\//i.test(t.url || "") ? "Het adres moet met https:// beginnen" : "Vul het adres van de website in";
-    if (t.soort === "video") return "Plak een YouTube-link of upload een filmpje";
+    if (t.soort === "video") return "Plak een YouTube-link (filmpje of afspeellijst) of upload een filmpje";
     if (t.soort === "radio") return /^http:\/\//i.test(t.stream || "") ? "Het adres van de zender moet met https:// beginnen" : "Vul het adres van de radiostream in";
     if (t.soort === "fotos") return "Upload een of meer foto's";
     return "";
   }
 
+  /* een YouTube-afspeellijst: ...?list=PL... of /playlist?list=... */
+  function youtubeLijst(u) {
+    const m = String(u || "").match(/youtube(?:-nocookie)?\.com\/.*[?&]list=([A-Za-z0-9_-]{10,})/);
+    return m ? m[1] : "";
+  }
   function youtubeId(u) {
     const m = String(u || "").match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
     return m ? m[1] : "";
@@ -87,5 +92,5 @@
   }
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  window.SS = { ACHTERGRONDEN, KLEUREN, SOORTEN, ICONEN, nieuwStartscherm, compleet, ontbreekt, youtubeId, donker, achtergrond, esc };
+  window.SS = { ACHTERGRONDEN, KLEUREN, SOORTEN, ICONEN, nieuwStartscherm, compleet, ontbreekt, youtubeId, youtubeLijst, donker, achtergrond, esc };
 })();

@@ -416,6 +416,7 @@ ul.tips li{margin:5px 0}
 
     const b3 = blok(f, "Tips voor deze doelgroep", "#a8cb67");
     h("ul", "tips", b3, `
+      <li>Muziek met beeld van vroeger: maak op YouTube een eigen afspeellijst met officiële clips en oude tv-optredens die de bewoners kennen, en plak de link van die afspeellijst in een filmpjestegel.</li>
       <li>Kies voor filmpjes liever een eigen mp4 (bijv. een aquarium of haardvuur van 1 tot 3 minuten) dan YouTube: bij YouTube kan er reclame tussendoor komen.</li>
       <li>Foto's van vroeger uit de eigen buurt (de kerk, de markt, de straat) roepen vaak de meeste herkenning op. Vraag familie om foto's.</li>
       <li>Test een nieuwe website eerst in het voorbeeld. Kijk of er geen cookiemelding of reclame verschijnt die verwarrend is.</li>
@@ -462,9 +463,9 @@ ul.tips li{margin:5px 0}
       it.lastElementChild.appendChild(uitslag); toonUitslag();
     } else if (t.soort === "video") {
       const naam = h("div", "hulp");
-      const toon = () => { naam.textContent = SS.youtubeId(t.video) ? "YouTube-filmpje; speelt in een lus, zonder voorgestelde filmpjes erna." : /^\/media\//.test(t.video || "") ? "Eigen filmpje uit de bibliotheek; speelt in een lus." : ""; };
-      const inp = invoer(t, "video", "text", { placeholder: "https://www.youtube.com/watch?v=…  of upload hieronder een filmpje" }, () => { check(); toon(); });
-      veld(it, "YouTube-link of eigen filmpje", inp);
+      const toon = () => { naam.textContent = SS.youtubeLijst(t.video) ? "YouTube-afspeellijst; speelt alle filmpjes na elkaar en begint daarna opnieuw." : SS.youtubeId(t.video) ? "YouTube-filmpje; speelt in een lus, zonder voorgestelde filmpjes erna." : /^\/media\//.test(t.video || "") ? "Eigen filmpje uit de bibliotheek; speelt in een lus." : ""; };
+      const inp = invoer(t, "video", "text", { placeholder: "https://www.youtube.com/playlist?list=…  of upload hieronder een filmpje" }, () => { check(); toon(); });
+      veld(it, "YouTube-link (filmpje of afspeellijst) of eigen filmpje", inp);
       it.lastElementChild.appendChild(naam); toon();
       const rij = knoppenRij(it);
       const zet = u => { t.video = u; inp.value = u; check(); toon(); stuur(); };

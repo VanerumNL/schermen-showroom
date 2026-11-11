@@ -267,7 +267,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   ];
   const SOORT_NIEUW = [
     { soort: "website", titel: "", url: "https://", icoon: "ster", kleur: "#b8e7f9", naam: "Eigen website", uitleg: "Adres intikken" },
-    { soort: "video", titel: "", video: "https://www.youtube.com/watch?v=", icoon: "vis", kleur: "#fbb900", naam: "YouTube-filmpje", uitleg: "Link intikken" },
+    { soort: "video", titel: "", video: "https://www.youtube.com/watch?v=", icoon: "vis", kleur: "#fbb900", naam: "YouTube", uitleg: "Filmpje of afspeellijst" },
     { soort: "radio", titel: "", zender: "", stream: "https://", icoon: "radio", kleur: "#fbb900", naam: "Radiozender", uitleg: "Adres van de stream" }
   ];
 
@@ -383,7 +383,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 
   function maakTegel(t) {
     const veld = t.soort === "website" ? "url" : t.soort === "video" ? "video" : "stream";
-    const labels = { url: "Adres van de website", video: "Link naar het YouTube-filmpje", stream: "Adres van de radiostream" };
+    const labels = { url: "Adres van de website", video: "Link naar YouTube-filmpje of -afspeellijst", stream: "Adres van de radiostream" };
     const d = toonDlg(`<h2>${esc(SS.SOORTEN[t.soort].naam)} toevoegen</h2>
       <div class="twee"><div><label>Naam op de tegel</label><input type="text" id="mNaam" maxlength="18" value="${esc(t.titel)}" autocomplete="off"></div>
       <div><label>${labels[veld]}</label><input type="text" id="mAdres" value="${esc(t[veld])}" autocomplete="off" spellcheck="false"></div></div>
@@ -460,6 +460,15 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   }
 
   function video(vak, t) {
+    const lijst = SS.youtubeLijst(t.video);
+    if (lijst) {
+      /* hele afspeellijst: speelt alles na elkaar en begint daarna opnieuw */
+      const f = document.createElement("iframe");
+      f.allow = "autoplay; encrypted-media; fullscreen"; f.referrerPolicy = "strict-origin-when-cross-origin";
+      f.src = `https://www.youtube-nocookie.com/embed/videoseries?list=${lijst}&autoplay=1&loop=1&rel=0&controls=0&disablekb=1&fs=0&iv_load_policy=3&modestbranding=1&playsinline=1`;
+      vak.appendChild(f);
+      return;
+    }
     const yt = SS.youtubeId(t.video);
     if (yt) {
       const f = document.createElement("iframe");
