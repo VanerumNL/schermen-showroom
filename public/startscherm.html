@@ -98,6 +98,15 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .rond:active{transform:scale(.95)}
 .volume{display:flex;gap:22px}
 
+/* oude journaals */
+.journaal video{object-fit:contain!important;background:#000}
+.journaal .over{position:absolute;left:56px;top:48px;max-width:70%;background:#fff;color:var(--zwart);border-radius:26px;padding:22px 34px;box-shadow:0 18px 40px rgba(0,0,0,.3);transition:opacity 1.2s;z-index:2}
+.journaal .over b{display:block;font-size:52px;line-height:1.1}
+.journaal .over span{display:block;font-size:36px;opacity:.75;margin-top:6px}
+.journaal .over.weg{opacity:0}
+.journaal .bron{position:absolute;right:24px;bottom:18px;font-size:20px;color:rgba(255,255,255,.75);background:rgba(0,0,0,.45);padding:6px 14px;border-radius:999px;z-index:2}
+.journaal .volgende{position:absolute;right:44px;top:50%;transform:translateY(-50%);z-index:3}
+
 /* dialogen voor het aanpassen op het scherm */
 #beheerLaag{background:rgba(30,30,30,.55)}
 #beheerLaag .vlak{background:transparent;display:grid;place-items:center}
@@ -261,7 +270,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   let bewerk = false, token = "";
   const IDEEEN = [
     { soort: "radio", titel: "Radio 5", zender: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3", icoon: "radio", kleur: "#fbb900", uitleg: "Muziek van vroeger" },
-    { soort: "website", titel: "Journaal", url: "https://openbeelden.nl", icoon: "tv", kleur: "#a8cb67", uitleg: "Polygoon-journaals (Open Beelden)" },
+    { soort: "journaal", titel: "Journaal", van: 1950, tot: 1970, icoon: "tv", kleur: "#a8cb67", uitleg: "Polygoon-journaals 1950–1970" },
     { soort: "website", titel: "Oude foto's", url: "https://geheugen.delpher.nl", icoon: "foto", kleur: "#bda8bd", uitleg: "Het Geheugen (KB)" },
     { soort: "website", titel: "Puzzelen", url: "https://www.jigidi.com", icoon: "puzzel", kleur: "#a8cb67", uitleg: "Legpuzzels op Jigidi" }
   ];
@@ -382,11 +391,13 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   }
 
   function maakTegel(t) {
-    const veld = t.soort === "website" ? "url" : t.soort === "video" ? "video" : "stream";
+    const geenAdres = t.soort === "journaal";
+    const veld = t.soort === "website" ? "url" : t.soort === "video" ? "video" : t.soort === "journaal" ? "van" : "stream";
     const labels = { url: "Adres van de website", video: "Link naar YouTube-filmpje of -afspeellijst", stream: "Adres van de radiostream" };
     const d = toonDlg(`<h2>${esc(SS.SOORTEN[t.soort].naam)} toevoegen</h2>
       <div class="twee"><div><label>Naam op de tegel</label><input type="text" id="mNaam" maxlength="18" value="${esc(t.titel)}" autocomplete="off"></div>
-      <div><label>${labels[veld]}</label><input type="text" id="mAdres" value="${esc(t[veld])}" autocomplete="off" spellcheck="false"></div></div>
+      ${geenAdres ? `<div><label>Jaren</label><div class="twee" style="grid-template-columns:1fr 1fr;gap:16px"><input type="text" id="mVan" value="${esc(t.van)}" maxlength="4" autocomplete="off"><input type="text" id="mTot" value="${esc(t.tot)}" maxlength="4" autocomplete="off"></div></div>`
+        : `<div><label>${labels[veld]}</label><input type="text" id="mAdres" value="${esc(t[veld])}" autocomplete="off" spellcheck="false"></div>`}</div>
       <div class="twee ruim"><div><label>Plaatje</label><div class="ikonen">${Object.entries(SS.ICONEN).map(([k, x]) => `<button type="button" data-ic="${k}" class="${k === t.icoon ? "aan" : ""}" aria-label="${esc(x.naam)}">${x.svg}</button>`).join("")}</div></div>
       <div><label>Kleur</label><div class="kleurrij">${SS.KLEUREN.filter(k => k[0] !== "#1e1e1e").map(([hex, n]) => `<button type="button" data-kl="${hex}" class="${hex === t.kleur ? "aan" : ""}" style="background:${hex}" aria-label="${esc(n)}"></button>`).join("")}</div></div></div>
       <div class="knoppen"><div class="fout" id="mFout"></div><button class="knop2" type="button" data-k="terug">Terug</button><button class="knop2 geel" type="button" data-k="ok">Toevoegen</button></div>`);
@@ -394,11 +405,16 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     d.querySelectorAll("[data-kl]").forEach(b => b.addEventListener("click", () => { t.kleur = b.dataset.kl; d.querySelectorAll("[data-kl]").forEach(x => x.classList.toggle("aan", x === b)); }));
     toetsenbord(d);
     const naamV = d.querySelector("#mNaam"), adresV = d.querySelector("#mAdres");
-    (t.titel ? adresV : naamV).focus();
+    (t.titel && adresV ? adresV : naamV).focus();
     d.querySelector('[data-k="terug"]').addEventListener("click", kiesSoort);
     const ok = d.querySelector('[data-k="ok"]'), fout = d.querySelector("#mFout");
     ok.addEventListener("click", async () => {
-      t.titel = naamV.value.trim(); t[veld] = adresV.value.trim();
+      t.titel = naamV.value.trim();
+      if (geenAdres) {
+        const jv = +d.querySelector("#mVan").value, jt = +d.querySelector("#mTot").value;
+        if (!(jv >= 1900 && jv <= 2000 && jt >= 1900 && jt <= 2000)) { fout.textContent = "Vul twee jaartallen in, bijvoorbeeld 1950 en 1970"; return; }
+        t.van = Math.min(jv, jt); t.tot = Math.max(jv, jt);
+      } else t[veld] = adresV.value.trim();
       if (t.soort === "radio" && !t.zender) t.zender = t.titel;
       if (!SS.compleet(t)) { fout.textContent = SS.ontbreekt(t); return; }
       ok.disabled = true; ok.textContent = "Even geduld…"; fout.textContent = "";
@@ -420,18 +436,19 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   function openTegel(t) {
     ruimOp(); open = t; modus = "bekijk"; laatsteAanraking = Date.now();
     $("bekijkTitel").textContent = t.titel || "";
-    const vak = $("inhoud"); vak.innerHTML = ""; vak.style.setProperty("--c", t.kleur || "#fbb900");
+    const vak = $("inhoud"); vak.innerHTML = ""; vak.classList.remove("journaal"); vak.style.setProperty("--c", t.kleur || "#fbb900");
     if (t.soort === "website") website(vak, t);
     else if (t.soort === "video") video(vak, t);
     else if (t.soort === "radio") radio(vak, t);
     else if (t.soort === "fotos") fotos(vak, t, true);
+    else if (t.soort === "journaal") journaal(vak, t);
     $("thuis").hidden = true; $("bekijk").hidden = false; tikKlok(); schaal();
   }
   function naarThuis() {
     ruimOp(); open = null; modus = "thuis"; laatsteAanraking = Date.now();
     const vak = $("inhoud");
     vak.querySelectorAll("audio,video").forEach(m => { try { m.pause(); m.removeAttribute("src"); m.load(); } catch (e) {} });
-    vak.innerHTML = "";
+    vak.innerHTML = ""; vak.classList.remove("journaal");
     $("bekijk").hidden = true; $("thuis").hidden = false;
     if (wachtend) { cfg = wachtend; wachtend = null; schaal(); }
     tekenThuis();
@@ -529,6 +546,51 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     });
     v.addEventListener("error", () => bericht(vak, "Dit filmpje speelt nu niet", "Probeer het later nog eens.", null));
     probeer();
+  }
+
+  /* oude journaals van Open Beelden: als een tv-zender, het ene filmpje na het andere */
+  function journaal(vak, t) {
+    vak.classList.add("journaal");
+    const laden = document.createElement("div"); laden.className = "laden"; laden.textContent = "Even geduld, de journaals worden opgehaald…"; vak.appendChild(laden);
+    const van = +t.van || 1950, tot = +t.tot || 1970;
+    fetch(`/api/openbeelden?van=${van}&tot=${tot}&aantal=80`).then(r => r.json().then(d => { if (!r.ok) throw new Error(d.fout || "Fout"); return d; })).then(d => {
+      if (!vak.isConnected) return;
+      const lijst = (d.items || []).filter(x => x && x.v);
+      laden.remove();
+      if (!lijst.length) { bericht(vak, "Er zijn nog geen journaals", "Het ophalen van de beelden is net begonnen. Probeer het over een kwartier nog eens.", null); return; }
+      const v = document.createElement("video"); v.playsInline = true; v.setAttribute("playsinline", ""); v.autoplay = true; v.preload = "auto";
+      vak.appendChild(v);
+      vak.insertAdjacentHTML("beforeend", `<div class="over"><b></b><span></span></div><div class="bron">Polygoon / Beeld en Geluid · Open Beelden (CC BY-SA)</div><button class="pijl r volgende" type="button" aria-label="Volgende journaal">${PIJL_R}</button>`);
+      const over = vak.querySelector(".over");
+      let i = -1, fouten = 0, verbergT = null;
+      const speel = () => {
+        i = (i + 1) % lijst.length;
+        const x = lijst[i];
+        over.querySelector("b").textContent = x.t;
+        over.querySelector("span").textContent = [x.p, x.j].filter(Boolean).join(", ");
+        over.classList.remove("weg"); clearTimeout(verbergT); verbergT = later(() => over.classList.add("weg"), 9000);
+        v.src = x.v;
+        v.play().catch(() => {
+          if (vak.querySelector(".bericht")) return;
+          const b = bericht(vak, "", "", ["speel", SPEEL.replace("<svg", '<svg style="width:56px;height:56px"') + "Afspelen"]);
+          b.style.background = "rgba(0,0,0,.35)";
+          b.querySelector("button").addEventListener("click", () => { b.remove(); v.play().catch(() => {}); });
+        });
+      };
+      v.addEventListener("ended", speel);
+      v.addEventListener("playing", () => { fouten = 0; });
+      v.addEventListener("error", () => {
+        if (!v.getAttribute("src")) return;
+        if (++fouten >= 6) { v.removeAttribute("src"); bericht(vak, "De journaals spelen nu niet", "Open Beelden is misschien even niet bereikbaar. Probeer het later nog eens.", null); return; }
+        speel();
+      });
+      vak.querySelector(".volgende").addEventListener("click", speel);
+      speel();
+    }).catch(() => {
+      if (!vak.isConnected) return;
+      laden.remove();
+      bericht(vak, "De journaals zijn nu niet te bereiken", "Probeer het later nog eens.", null);
+    });
   }
 
   /* fotoalbum; ook gebruikt als achtergrond bij de radio (dan zonder pijlen) */
