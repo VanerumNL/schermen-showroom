@@ -471,6 +471,7 @@ ul.tips li{margin:5px 0}
       const zet = u => { t.video = u; inp.value = u; check(); toon(); stuur(); };
       knop(rij, "Filmpje uploaden (mp4, max. 24 MB)", "licht", () => uploadFilm(zet));
       knop(rij, "Uit bibliotheek", "licht", () => kiesMedia("video", zet));
+      vinkje(it, t, "willekeurig", "Afspeellijst in willekeurige volgorde (elke keer met een ander nummer beginnen)", true);
     } else if (t.soort === "radio") {
       const r2 = h("div", "rij2", it);
       veld(r2, "Naam van de zender", invoer(t, "zender", "text", { maxLength: 40, placeholder: "bijv. NPO Radio 5" }));

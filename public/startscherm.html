@@ -459,16 +459,57 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     f.src = t.url;
   }
 
+  /* hele afspeellijst op volgorde: speelt alles na elkaar en begint daarna opnieuw */
+  function speelLijst(vak, lijst) {
+    const f = document.createElement("iframe");
+    f.allow = "autoplay; encrypted-media; fullscreen"; f.referrerPolicy = "strict-origin-when-cross-origin";
+    f.src = `https://www.youtube-nocookie.com/embed/videoseries?list=${lijst}&autoplay=1&loop=1&rel=0&controls=0&disablekb=1&fs=0&iv_load_policy=3&modestbranding=1&playsinline=1`;
+    vak.appendChild(f);
+  }
+  /* de speler van YouTube één keer inladen */
+  let ytBelofte = null;
+  function ytApi() {
+    if (window.YT && window.YT.Player) return Promise.resolve();
+    if (ytBelofte) return ytBelofte;
+    ytBelofte = new Promise((klaar, mis) => {
+      const vorige = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => { if (vorige) vorige(); klaar(); };
+      const sc = document.createElement("script"); sc.src = "https://www.youtube.com/iframe_api";
+      sc.onerror = () => { ytBelofte = null; mis(new Error("YouTube niet bereikbaar")); };
+      document.head.appendChild(sc);
+      setTimeout(() => mis(new Error("YouTube reageert niet")), 15000);
+    });
+    return ytBelofte;
+  }
   function video(vak, t) {
     const lijst = SS.youtubeLijst(t.video);
-    if (lijst) {
-      /* hele afspeellijst: speelt alles na elkaar en begint daarna opnieuw */
-      const f = document.createElement("iframe");
-      f.allow = "autoplay; encrypted-media; fullscreen"; f.referrerPolicy = "strict-origin-when-cross-origin";
-      f.src = `https://www.youtube-nocookie.com/embed/videoseries?list=${lijst}&autoplay=1&loop=1&rel=0&controls=0&disablekb=1&fs=0&iv_load_policy=3&modestbranding=1&playsinline=1`;
-      vak.appendChild(f);
+    if (lijst && t.willekeurig !== false) {
+      /* afspeellijst in willekeurige volgorde: via de speler van YouTube, die kan schudden */
+      const plek = document.createElement("div"); vak.appendChild(plek);
+      ytApi().then(() => {
+        if (!plek.isConnected) return;
+        let n = 0;
+        const p = new YT.Player(plek, {
+          host: "https://www.youtube-nocookie.com", width: "100%", height: "100%",
+          playerVars: { listType: "playlist", list: lijst, autoplay: 1, rel: 0, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1 },
+          events: {
+            onReady: () => {
+              const schud = () => {
+                try {
+                  const l = p.getPlaylist();
+                  if (l && l.length) { p.setShuffle(true); p.setLoop(true); p.playVideoAt(Math.floor(Math.random() * l.length)); }
+                  else if (n++ < 30) later(schud, 300);
+                  else p.playVideo();
+                } catch (e) {}
+              };
+              schud();
+            }
+          }
+        });
+      }).catch(() => { if (plek.isConnected) { plek.remove(); speelLijst(vak, lijst); } });
       return;
     }
+    if (lijst) { speelLijst(vak, lijst); return; }
     const yt = SS.youtubeId(t.video);
     if (yt) {
       const f = document.createElement("iframe");
