@@ -96,3 +96,10 @@ Na een paar minuten zonder aanraking gaat het scherm vanzelf terug naar de tegel
 | `public/startscherm.html` | Het startscherm zelf (liggend 1920 × 1080 of staand 1080 × 1920) |
 | `public/startschermen.html` | Instellingen van de startschermen |
 | `public/startscherm-gedeeld.js` | Standaardtegels, tekeningen, kleuren |
+
+### Oude journaals (Open Beelden)
+
+De tegelsoort **Oude journaals** speelt Polygoon-journaals en ander oud nieuws van [Open Beelden](https://www.openbeelden.nl) (Beeld en Geluid) als een tv-zender af, gefilterd op jaren. De beelden zijn vrij te gebruiken met naamsvermelding (CC BY-SA); die staat klein in beeld.
+
+- `src/openbeelden.js` haalt via de OAI-PMH-koppeling stap voor stap de lijst op (elke cron-run een paar pagina's, daarna wekelijks bijwerken) en bewaart die in KV (`ob:lijst`, `ob:stand`).
+- `/api/openbeelden?van=1950&tot=1970` geeft een geschudde selectie voor het scherm.

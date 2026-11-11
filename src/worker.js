@@ -9,6 +9,7 @@
    AbleSign-koppeling en offline-melding: zie src/ablesign.js */
 
 import { ableSignAan, overzicht, zetOpTv, haalVanTv, controleer, stuurMelding, AbleSignFout } from "./ablesign.js";
+import { verzamel, selectie } from "./openbeelden.js";
 
 const JSON_H = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: JSON_H });
@@ -397,6 +398,23 @@ async function api(req, env, url, ctx) {
       await env.KV.delete("start:" + id); return json({ ok: true });
     }
   }
+  /* Oude journaals van Open Beelden (Beeld en Geluid) voor een startscherm-tegel; openbaar, het scherm is niet ingelogd */
+  if (p === "/api/openbeelden" && m === "GET") {
+    const jr = (k, d) => { const n = parseInt(url.searchParams.get(k), 10); return Number.isFinite(n) ? Math.min(2000, Math.max(1900, n)) : d; };
+    let van = jr("van", 1950), tot = jr("tot", 1970);
+    if (van > tot) [van, tot] = [tot, van];
+    const aantal = Math.min(100, Math.max(1, parseInt(url.searchParams.get("aantal"), 10) || 60));
+    try {
+      const d = await selectie(env, van, tot, aantal);
+      return new Response(JSON.stringify(d), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" } });
+    } catch (e) { return fout("Open Beelden is nu niet bereikbaar: " + (e && e.message || e), 502); }
+  }
+  /* Stand van het ophalen (voor de editor) */
+  if (p === "/api/openbeelden/stand" && m === "GET") {
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    return json((await env.KV.get("ob:stand", "json")) || { aantal: 0, klaar: false });
+  }
+
   /* Mag deze website binnen het startscherm worden getoond? (X-Frame-Options en frame-ancestors) */
   if (p === "/api/insluitbaar" && m === "GET") {
     if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
@@ -551,5 +569,7 @@ export default {
   /* elk kwartier: kijken of er tv's offline zijn (zie "triggers" in wrangler.jsonc) */
   async scheduled(event, env, ctx) {
     ctx.waitUntil(controleer(env).catch(e => console.error("AbleSign-controle mislukt:", e && e.message || e)));
+    /* en stap voor stap de lijst met oude journaals van Open Beelden bijwerken */
+    ctx.waitUntil(verzamel(env).catch(e => console.error("Open Beelden ophalen mislukt:", e && e.message || e)));
   }
 };

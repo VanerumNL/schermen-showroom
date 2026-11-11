@@ -15,6 +15,7 @@
     website: { naam: "Website", kleur: "#b8e7f9", uitleg: "Opent een website binnen het scherm, met een grote Terug-knop erboven." },
     video: { naam: "Filmpje", kleur: "#fbb900", uitleg: "Een YouTube-filmpje, een hele YouTube-afspeellijst (bijv. clips van vroeger) of een eigen filmpje (mp4). Alles begint aan het eind weer opnieuw." },
     radio: { naam: "Radio", kleur: "#a8cb67", uitleg: "Een radiozender, met grote knoppen voor aan/uit en harder/zachter. Foto's erbij lopen mee in beeld." },
+    journaal: { naam: "Oude journaals", kleur: "#a8cb67", uitleg: "Een eigen tv-zender met Polygoon-journaals en ander oud nieuws van Open Beelden (Beeld en Geluid). Kies de jaren; de filmpjes spelen in willekeurige volgorde na elkaar." },
     fotos: { naam: "Fotoalbum", kleur: "#bda8bd", uitleg: "Foto's die rustig na elkaar in beeld komen, met grote pijlen om zelf te bladeren." }
   };
 
@@ -45,7 +46,7 @@
         tegel("video", "Vissen", "vis", "#b8e7f9", { video: "" }),
         tegel("video", "Haardvuur", "vuur", "#f2c7a5", { video: "" }),
         tegel("fotos", "Vroeger", "foto", "#bda8bd", { fotos: [], seconden: 12 }),
-        tegel("video", "Oude tv", "tv", "#a8cb67", { video: "" }),
+        tegel("journaal", "Journaal", "tv", "#a8cb67", { van: 1950, tot: 1970 }),
         tegel("video", "Zingen", "muziek", "#fbb900", { video: "" })
       ]
     };
@@ -58,6 +59,7 @@
     if (t.soort === "video") return !!(youtubeLijst(t.video) || youtubeId(t.video) || /^(https:\/\/|\/media\/)/i.test(t.video || ""));
     if (t.soort === "radio") return /^https:\/\//i.test(t.stream || "");
     if (t.soort === "fotos") return Array.isArray(t.fotos) && t.fotos.some(f => f && f.src);
+    if (t.soort === "journaal") return true;
     return false;
   }
   function ontbreekt(t) {
