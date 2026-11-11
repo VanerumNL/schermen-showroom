@@ -2,7 +2,8 @@
    KV-sleutels:
      scherm:<id>      JSON van één scherm
      kiosk:<id>       JSON van één aanraakscherm (bijv. de NOT-stand)
-     media:<id>       geüploade afbeelding (metadata: type, naam)
+     start:<id>       JSON van één startscherm met tegels (bijv. een touchscreen in de zorg)
+     media:<id>       geüploade afbeelding of filmpje (metadata: type, naam)
      instelling:ww    gehasht gedeeld wachtwoord (als er geen secret WACHTWOORD is); instelling:ww_uit zet het gedeelde wachtwoord uit
      gebruiker:<naam> eigen account per collega; sessie:<hash> ingelogde sessie; poging:<hash> teller verkeerde wachtwoorden
    AbleSign-koppeling en offline-melding: zie src/ablesign.js */
@@ -359,13 +360,75 @@ async function api(req, env, url, ctx) {
     }
   }
 
+  /* Startschermen: tegels die een website, filmpje, radio of fotoalbum openen (bijv. Isselwaerde) */
+  if (p === "/api/startschermen" && m === "GET") {
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    const lijst = await env.KV.list({ prefix: "start:" });
+    const uit = [];
+    for (const k of lijst.keys) {
+      const s = await env.KV.get(k.name, "json");
+      if (s) uit.push({ id: s.id, naam: s.naam, bijgewerkt: s.bijgewerkt });
+    }
+    uit.sort((a, b) => (a.naam || "").localeCompare(b.naam || "", "nl"));
+    return json(uit);
+  }
+  let mst = p.match(/^\/api\/startscherm\/([^/]+)$/);
+  if (mst) {
+    const id = mst[1];
+    if (!ID.test(id)) return fout("Ongeldige naam voor het scherm");
+    if (m === "GET") {
+      const s = await env.KV.get("start:" + id, "json");
+      if (!s) return fout("Dit scherm bestaat niet", 404);
+      if (!(await magBewerken(req, env))) delete s.bijgewerktDoor;
+      return json(s);
+    }
+    const wie = await magBewerken(req, env);
+    if (!wie) return fout("Niet ingelogd", 401);
+    if (m === "PUT") {
+      const s = await req.json().catch(() => null);
+      if (!s || typeof s !== "object" || !Array.isArray(s.tegels)) return fout("Geen geldige instellingen");
+      if (JSON.stringify(s).length > 200000) return fout("De instellingen zijn te groot");
+      s.id = id; s.bijgewerkt = new Date().toISOString(); s.bijgewerktDoor = wie.naam;
+      await env.KV.put("start:" + id, JSON.stringify(s));
+      return json(s);
+    }
+    if (m === "DELETE") {
+      if (wie.rol !== "beheerder") return fout("Alleen een beheerder mag schermen verwijderen", 403);
+      await env.KV.delete("start:" + id); return json({ ok: true });
+    }
+  }
+  /* Mag deze website binnen het startscherm worden getoond? (X-Frame-Options en frame-ancestors) */
+  if (p === "/api/insluitbaar" && m === "GET") {
+    if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
+    let doel;
+    try { doel = new URL(url.searchParams.get("url") || ""); } catch (e) { return fout("Dit is geen geldig adres"); }
+    if (doel.protocol !== "https:") return json({ insluitbaar: false, reden: "Het adres moet met https:// beginnen" });
+    let res;
+    try { res = await fetch(doel.href, { redirect: "follow", headers: { "user-agent": UA[0], accept: "text/html,*/*;q=0.8", "accept-language": "nl-NL,nl;q=0.9" } }); }
+    catch (e) { return json({ insluitbaar: null, reden: "De website reageerde niet" }); }
+    const xfo = (res.headers.get("x-frame-options") || "").toLowerCase();
+    const csp = (res.headers.get("content-security-policy") || "").toLowerCase();
+    const fa = (csp.match(/frame-ancestors([^;]*)/) || [])[1];
+    let insluitbaar = true, reden = "";
+    if (fa !== undefined) {
+      const bronnen = fa.trim().split(/\s+/).filter(Boolean);
+      if (!bronnen.some(b => b === "*" || b === "https:" || b === url.origin.toLowerCase())) { insluitbaar = false; reden = "De website staat alleen zichzelf toe (frame-ancestors)"; }
+    } else if (xfo.includes("deny") || xfo.includes("sameorigin")) { insluitbaar = false; reden = "De website staat dat niet toe (X-Frame-Options)"; }
+    if (!res.ok && insluitbaar) return json({ insluitbaar: null, reden: "De website gaf een fout (" + res.status + ")", status: res.status });
+    return json({ insluitbaar, reden, eindadres: res.url || doel.href });
+  }
+
   /* Afbeeldingen */
   if (p === "/api/media" && m === "GET") {
     if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
     const uit = []; let cursor;
     do {
       const l = await env.KV.list({ prefix: "media:", cursor });
-      l.keys.forEach(k => uit.push({ id: k.name.slice(6), url: "/media/" + k.name.slice(6), naam: (k.metadata || {}).naam || "", grootte: (k.metadata || {}).grootte || 0, datum: (k.metadata || {}).datum || "" }));
+      l.keys.forEach(k => {
+        const md = k.metadata || {}, video = /^video\//.test(md.type || "");
+        if (video !== (url.searchParams.get("soort") === "video")) return;   /* standaard alleen afbeeldingen; ?soort=video voor filmpjes */
+        uit.push({ id: k.name.slice(6), url: "/media/" + k.name.slice(6), naam: md.naam || "", grootte: md.grootte || 0, datum: md.datum || "", type: md.type || "" });
+      });
       cursor = l.list_complete ? null : l.cursor;
     } while (cursor);
     uit.sort((a, b) => (b.datum || "").localeCompare(a.datum || ""));
@@ -380,9 +443,11 @@ async function api(req, env, url, ctx) {
   if (p === "/api/media" && m === "POST") {
     if (!(await magBewerken(req, env))) return fout("Niet ingelogd", 401);
     const type = req.headers.get("content-type") || "";
-    if (!/^image\/(png|jpeg|webp|gif|svg\+xml)$/.test(type)) return fout("Alleen afbeeldingen (png, jpg, webp, gif, svg)");
+    const isVideo = /^video\/(mp4|webm)$/.test(type);
+    if (!isVideo && !/^image\/(png|jpeg|webp|gif|svg\+xml)$/.test(type)) return fout("Alleen afbeeldingen (png, jpg, webp, gif, svg) of filmpjes (mp4, webm)");
     const buf = await req.arrayBuffer();
-    if (buf.byteLength > 8 * 1024 * 1024) return fout("Afbeelding is groter dan 8 MB; maak hem eerst kleiner");
+    if (!isVideo && buf.byteLength > 8 * 1024 * 1024) return fout("Afbeelding is groter dan 8 MB; maak hem eerst kleiner");
+    if (isVideo && buf.byteLength > 24 * 1024 * 1024) return fout("Filmpje is groter dan 24 MB; kies een kortere versie (een lus van 1 tot 3 minuten is genoeg)");
     const id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
     const naam = decodeURIComponent(req.headers.get("x-naam") || "afbeelding").slice(0, 80);
     await env.KV.put("media:" + id, buf, { metadata: { type, naam, grootte: buf.byteLength, datum: new Date().toISOString() } });
@@ -461,7 +526,16 @@ export default {
     if (mm) {
       const { value, metadata } = await env.KV.getWithMetadata("media:" + mm[1], "arrayBuffer");
       if (!value) return new Response("Niet gevonden", { status: 404 });
-      return new Response(value, { headers: { "content-type": (metadata && metadata.type) || "application/octet-stream", "cache-control": "public, max-age=31536000, immutable" } });
+      const kop = { "content-type": (metadata && metadata.type) || "application/octet-stream", "cache-control": "public, max-age=31536000, immutable", "accept-ranges": "bytes" };
+      /* filmpjes vragen stukjes op (Range); zo kan het scherm ze netjes in een lus afspelen */
+      const rm = (req.headers.get("range") || "").match(/^bytes=(\d*)-(\d*)$/);
+      if (rm && (rm[1] || rm[2])) {
+        const n = value.byteLength;
+        let van = rm[1] ? +rm[1] : Math.max(0, n - +rm[2]), tot = rm[1] && rm[2] ? Math.min(+rm[2], n - 1) : n - 1;
+        if (van >= n || van > tot) return new Response(null, { status: 416, headers: { "content-range": `bytes */${n}` } });
+        return new Response(value.slice(van, tot + 1), { status: 206, headers: Object.assign(kop, { "content-range": `bytes ${van}-${tot}/${n}`, "content-length": String(tot - van + 1) }) });
+      }
+      return new Response(value, { headers: kop });
     }
     /* /s/<id> is een kort adres voor AbleSign */
     const kort = url.pathname.match(/^\/s\/([a-z0-9-]+)\/?$/);
@@ -469,6 +543,9 @@ export default {
     /* /k/<id> is het adres van een aanraakscherm (kiosk) */
     const kiosk = url.pathname.match(/^\/k\/([a-z0-9-]+)\/?$/);
     if (kiosk) return env.ASSETS.fetch(new Request(url.origin + "/kiosk", req));
+    /* /t/<id> is het adres van een startscherm met tegels */
+    const start = url.pathname.match(/^\/t\/([a-z0-9-]+)\/?$/);
+    if (start) return env.ASSETS.fetch(new Request(url.origin + "/startscherm", req));
     return env.ASSETS.fetch(req);
   },
   /* elk kwartier: kijken of er tv's offline zijn (zie "triggers" in wrangler.jsonc) */

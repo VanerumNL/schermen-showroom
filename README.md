@@ -75,3 +75,24 @@ Het weer komt van Open-Meteo (gratis, geen sleutel nodig). Nieuws komt uit RSS-f
 npm install
 npx wrangler dev
 ```
+
+## Startscherm (tegels voor een touchscreen in de zorg)
+
+Een rustig startscherm met grote tegels, zoals Symbaloo, bijvoorbeeld voor een touchscreen in een verpleeghuis. Bovenaan staan een groet, de dag, de datum en de klok. Elke tegel opent:
+
+- **Website**: binnen het scherm, met een grote **Terug**-knop erboven. Bij het invullen controleert de editor of de website dat toestaat.
+- **Filmpje**: een YouTube-link of een eigen mp4 (max. 24 MB) die steeds opnieuw begint, bijv. een aquarium of haardvuur.
+- **Radio**: een radiostream met grote knoppen voor aan/uit en harder/zachter; foto's van vroeger lopen mee in beeld.
+- **Fotoalbum**: foto's die rustig na elkaar komen, met grote pijlen en een korte tekst eronder.
+
+Na een paar minuten zonder aanraking gaat het scherm vanzelf terug naar de tegels, behalve bij tegels die mogen openblijven.
+
+- **Instellingen:** `https://<adres>/startschermen` (zelfde inlog).
+- **Scherm:** `https://<adres>/t/<naam>`, bijvoorbeeld `/t/isselwaerde`.
+- **Windows-pc:** snelkoppeling naar `msedge --kiosk https://<adres>/t/<naam> --edge-kiosk-type=fullscreen --no-first-run --autoplay-policy=no-user-gesture-required` en die in de map Opstarten zetten.
+
+| Bestand | Wat |
+|---|---|
+| `public/startscherm.html` | Het startscherm zelf (liggend 1920 × 1080 of staand 1080 × 1920) |
+| `public/startschermen.html` | Instellingen van de startschermen |
+| `public/startscherm-gedeeld.js` | Standaardtegels, tekeningen, kleuren |
