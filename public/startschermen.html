@@ -234,6 +234,7 @@ ul.tips li{margin:5px 0}
 
 <script src="/startscherm-gedeeld.js"></script>
 <script src="/spellen.js"></script>
+<script src="/muziek.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id);
@@ -473,11 +474,12 @@ ul.tips li{margin:5px 0}
     tekenTegelsNu = tekenTegels;
     tekenTegels();
     const tv = h("div", "toevoegen", b2);
-    const nieuw = (soort, extra) => { gekozenT = null; k.tegels.push(Object.assign({ soort, titel: "", icoon: { website: "ster", video: "vis", radio: "radio", fotos: "foto", journaal: "tv", spellen: "puzzel" }[soort], kleur: "#fbb900", foto: "", blijfAan: soort !== "website" }, extra)); gekozenT = k.tegels[k.tegels.length - 1]; tekenTegels(); stuur(); setTimeout(() => { const l = items.lastElementChild; if (l) { l.scrollIntoView({ behavior: "smooth", block: "center" }); const i = l.querySelector("input"); if (i) i.focus(); } }, 50); };
+    const nieuw = (soort, extra) => { gekozenT = null; k.tegels.push(Object.assign({ soort, titel: "", icoon: { website: "ster", video: "vis", radio: "radio", fotos: "foto", journaal: "tv", spellen: "puzzel", instrumenten: "muziek" }[soort], kleur: "#fbb900", foto: "", blijfAan: soort !== "website" }, extra)); gekozenT = k.tegels[k.tegels.length - 1]; tekenTegels(); stuur(); setTimeout(() => { const l = items.lastElementChild; if (l) { l.scrollIntoView({ behavior: "smooth", block: "center" }); const i = l.querySelector("input"); if (i) i.focus(); } }, 50); };
     knop(tv, "+ Website", "licht", () => nieuw("website", { url: "" }));
     knop(tv, "+ Filmpje", "licht", () => nieuw("video", { video: "" }));
     knop(tv, "+ Radio", "licht", () => nieuw("radio", { zender: "", stream: "", zenders: [], fotos: [], seconden: 15 }));
     knop(tv, "+ Fotoalbum", "licht", () => nieuw("fotos", { fotos: [], seconden: 12 }));
+    knop(tv, "+ Muziek maken", "licht", () => nieuw("instrumenten", { titel: "Muziek maken", icoon: "muziek", kleur: "#b8e7f9", blijfAan: false }));
     knop(tv, "+ Spelletjes", "licht", () => nieuw("spellen", { titel: "Spelletjes", icoon: "puzzel", kleur: "#f2c7a5", paren: "4", stukjes: "4", fotos: [], blijfAan: false }));
     knop(tv, "+ Oude journaals", "licht", () => nieuw("journaal", { van: 1950, tot: 1970, titel: "Journaal", icoon: "tv", kleur: "#a8cb67" }));
 
@@ -528,7 +530,7 @@ ul.tips li{margin:5px 0}
 
     const r = h("div", "rij2", it);
     veld(r, "Naam op de tegel", invoer(t, "titel", "text", { maxLength: 18, placeholder: "bijv. Vissen" }, v => { kop.querySelector(".tnaam").textContent = v || "Nieuwe tegel"; check(); }));
-    veld(r, "Soort", keuze(t, "soort", Object.entries(SS.SOORTEN).map(([w, x]) => [w, x.naam]), () => { t.blijfAan = !["website", "spellen"].includes(t.soort); if (t.soort === "radio" || t.soort === "fotos") t.fotos = t.fotos || []; if (t.soort === "radio") t.zenders = t.zenders || []; opnieuw(); }));
+    veld(r, "Soort", keuze(t, "soort", Object.entries(SS.SOORTEN).map(([w, x]) => [w, x.naam]), () => { t.blijfAan = !["website", "spellen", "instrumenten"].includes(t.soort); if (t.soort === "radio" || t.soort === "fotos") t.fotos = t.fotos || []; if (t.soort === "radio") t.zenders = t.zenders || []; opnieuw(); }));
     h("p", "hulp", it).textContent = soort.uitleg;
     knop(knoppenRij(it), "▶ Testen in het voorbeeld", "licht", () => test(i));
 
@@ -576,6 +578,19 @@ ul.tips li{margin:5px 0}
       album(it, t, "Foto's in beeld tijdens de radio (mag leeg)");
     } else if (t.soort === "fotos") {
       album(it, t, "Foto's", check);
+    } else if (t.soort === "instrumenten") {
+      const alle = Object.entries(window.Muziek ? window.Muziek.INSTRUMENTEN : {});
+      if (!Array.isArray(t.instrumenten) || !t.instrumenten.length) t.instrumenten = alle.map(([k]) => k);
+      const v = h("div", "veld", it); h("span", "lab", v).textContent = "Welke instrumenten";
+      const box = h("div", "", v); box.style.cssText = "display:flex;flex-wrap:wrap;gap:6px 18px";
+      alle.forEach(([k, x]) => {
+        const l = h("label", "vink", box, `<input type="checkbox"${t.instrumenten.includes(k) ? " checked" : ""}> ${esc(x.naam)}`);
+        l.querySelector("input").addEventListener("change", e => {
+          t.instrumenten = e.target.checked ? [...new Set([...t.instrumenten, k])] : t.instrumenten.filter(s => s !== k);
+          if (!t.instrumenten.length) { t.instrumenten = [k]; e.target.checked = true; }
+          stuur();
+        });
+      });
     } else if (t.soort === "spellen") {
       const alle = Object.entries(window.Spellen ? window.Spellen.SPELLEN : {});
       const OUD = ["memory", "puzzel", "spreekwoord", "bellen", "kleuren"];
