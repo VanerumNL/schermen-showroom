@@ -487,6 +487,8 @@ ul.tips li{margin:5px 0}
       h("div", "hulp goed", it).textContent = "Dit filmpje staat op de computer bij het touchscreen en wordt daar afgespeeld, zonder uploaden.";
       h("p", "hulp", it).innerHTML = "Het bestand kiezen of vervangen doet u op het touchscreen zelf: houd de klok 3 seconden ingedrukt, log in en tik op <b>📁 Kiezen</b> op deze tegel. In het voorbeeld hiernaast speelt het niet af, omdat het filmpje alleen op die computer staat.";
       knop(knoppenRij(it), "Toch liever een link of upload", "licht", () => { delete t.lokaal; opnieuw(); stuur(); });
+      { const r = h("div", "rij2", it); if (t.startOp === undefined || t.startOp === "") t.startOp = 10;
+        veld(r, "Beginnen bij (seconden)", invoer(t, "startOp", "number", { min: 0, max: 600 }), "Slaat een intro of reclame aan het begin over. 0 = vanaf het begin. Geldt niet voor afspeellijsten."); }
     } else if (t.soort === "video") {
       const naam = h("div", "hulp");
       const toon = () => { naam.textContent = SS.youtubeLijst(t.video) ? "YouTube-afspeellijst; speelt alle filmpjes na elkaar en begint daarna opnieuw." : SS.youtubeId(t.video) ? "YouTube-filmpje; speelt in een lus, zonder voorgestelde filmpjes erna." : /^\/media\//.test(t.video || "") ? "Eigen filmpje uit de bibliotheek; speelt in een lus." : ""; };
@@ -499,6 +501,8 @@ ul.tips li{margin:5px 0}
       knop(rij, "Uit bibliotheek", "licht", () => kiesMedia("video", zet));
       knop(rij, "Groot bestand op de computer bij het scherm", "licht", () => { t.lokaal = "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); t.video = ""; check(); opnieuw(); stuur(); });
       vinkje(it, t, "willekeurig", "Afspeellijst in willekeurige volgorde (elke keer met een ander nummer beginnen)", true);
+      { const r = h("div", "rij2", it); if (t.startOp === undefined || t.startOp === "") t.startOp = 10;
+        veld(r, "Beginnen bij (seconden)", invoer(t, "startOp", "number", { min: 0, max: 600 }), "Slaat een intro of reclame aan het begin over. 0 = vanaf het begin. Geldt niet voor afspeellijsten."); }
     } else if (t.soort === "radio") {
       zenderLijst(it, t, check);
       album(it, t, "Foto's in beeld tijdens de radio (mag leeg)");
