@@ -40,6 +40,9 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .tegel .beeld svg{position:absolute;left:50%;top:50%;height:80%;max-width:80%;transform:translate(-50%,-50%)}
 .tegel .naam{display:flex;align-items:center;justify-content:center;padding:calc(var(--maat,360px) * .055) calc(var(--maat,360px) * .07);font-weight:700;font-size:calc(var(--maat,360px) * .125);line-height:1.05;letter-spacing:0;border-top:calc(var(--maat,360px) * .03) solid var(--c);text-align:center}
 .tegel .naam span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tegel.gekozen{box-shadow:0 0 0 12px var(--geel),0 0 0 18px var(--zwart)}
+.tegel.sleept{z-index:10;transition:none;opacity:.92;box-shadow:0 40px 80px rgba(0,0,0,.3)}
+.tegel.doel{box-shadow:0 0 0 12px var(--geel);transform:scale(.94)}
 .tegel.onaf{opacity:.45}
 .tegel.onaf::after{content:"Nog instellen";position:absolute;left:20px;top:20px;background:#fff;border-radius:999px;padding:8px 18px;font-weight:700;font-size:24px}
 /* tegels aanpassen op het scherm zelf */
@@ -247,8 +250,9 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     best = Math.floor(Math.min(best, 560));
     box.style.setProperty("--maat", best + "px"); box.style.setProperty("--kol", kol); box.style.setProperty("--gap", gap + "px");
   }
+  let gekozenI = -1;
   function tegelHtml(t, i) {
-    return `<button class="tegel${SS.compleet(t) ? "" : " onaf"}" type="button" data-i="${i}" style="--c:${esc(t.kleur || "#fbb900")}">
+    return `<button class="tegel${SS.compleet(t) ? "" : " onaf"}${VOORBEELD && i === gekozenI ? " gekozen" : ""}" type="button" data-i="${i}" style="--c:${esc(t.kleur || "#fbb900")}">
       <div class="beeld">${t.foto ? `<img src="${esc(t.foto)}" alt="">` : ((SS.ICONEN[t.icoon] || SS.ICONEN.ster).svg)}</div>
       <div class="naam"><span>${esc(t.titel)}</span></div>${bewerk ? `<span class="weg" data-weg="${i}" aria-label="Weghalen">✕</span>` : ""}${bewerk && t.soort === "video" && (t.lokaal || !SS.compleet(t)) ? `<span class="kies" data-kies="${i}">📁 Kiezen</span>` : ""}
     </button>`;
@@ -300,10 +304,47 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
       if (a.dataset.actie === "klaar") return stopBewerken();
       return;
     }
+    if (VOORBEELD) return;   /* in het voorbeeld: kiezen en slepen, zie hieronder */
     const b = e.target.closest(".tegel"); if (!b) return;
     const t = (cfg.tegels || [])[+b.dataset.i];
     if (t && SS.compleet(t)) openTegel(t);
   });
+
+  /* ===== in het voorbeeld van de editor: klik = tegel aanpassen, slepen = verplaatsen ===== */
+  if (VOORBEELD) {
+    let sleep = null;
+    $("thuisVlak").addEventListener("pointerdown", e => {
+      const b = e.target.closest(".tegel"); if (!b || b.classList.contains("plus")) return;
+      e.preventDefault();
+      sleep = { b, i: +b.dataset.i, x: e.clientX, y: e.clientY, bezig: false, doel: null };
+      b.setPointerCapture(e.pointerId);
+    });
+    $("thuisVlak").addEventListener("pointermove", e => {
+      if (!sleep) return;
+      const dx = e.clientX - sleep.x, dy = e.clientY - sleep.y;
+      if (!sleep.bezig && Math.hypot(dx, dy) < 8) return;
+      sleep.bezig = true;
+      const k = sleep.b.getBoundingClientRect().width / sleep.b.offsetWidth || 1;   /* het voorbeeld is verkleind */
+      sleep.b.classList.add("sleept");
+      sleep.b.style.transform = `translate(${dx / k}px,${dy / k}px) scale(1.04)`;
+      sleep.b.style.pointerEvents = "none";
+      const onder = document.elementFromPoint(e.clientX, e.clientY);
+      const doel = onder && onder.closest(".tegel:not(.sleept)");
+      if (sleep.doel && sleep.doel !== doel) sleep.doel.classList.remove("doel");
+      sleep.doel = doel || null; if (doel) doel.classList.add("doel");
+    });
+    const los = e => {
+      if (!sleep) return;
+      const s = sleep; sleep = null;
+      s.b.style.transform = ""; s.b.style.pointerEvents = ""; s.b.classList.remove("sleept");
+      if (s.doel) s.doel.classList.remove("doel");
+      if (e.type === "pointercancel") return;
+      if (s.bezig && s.doel) parent.postMessage({ type: "verplaats", van: s.i, naar: +s.doel.dataset.i }, location.origin);
+      else if (!s.bezig) parent.postMessage({ type: "kies", i: s.i }, location.origin);
+    };
+    $("thuisVlak").addEventListener("pointerup", los);
+    $("thuisVlak").addEventListener("pointercancel", los);
+  }
 
   /* ================= tegels aanpassen op het scherm zelf =================
      Medewerkers houden de klok (of de naam bovenaan) 3 seconden ingedrukt, loggen in
@@ -900,7 +941,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   if (VOORBEELD) {
     addEventListener("message", e => {
       if (e.origin !== location.origin || !e.data) return;
-      if (e.data.type === "start") { cfg = e.data.start; schaal(); if (modus === "bekijk") naarThuis(); else tekenThuis(); }
+      if (e.data.type === "start") { cfg = e.data.start; gekozenI = e.data.gekozen; schaal(); if (modus === "bekijk") naarThuis(); else tekenThuis(); }
+      if (e.data.type === "open") { const t = (cfg.tegels || [])[e.data.i]; if (t && SS.compleet(t)) openTegel(t); }
     });
     parent.postMessage({ type: "klaar" }, location.origin);
   } else if (!ID) {

@@ -112,6 +112,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 .bieb button:hover{outline-color:var(--zwart)}
 
 .voorbeeld .scherm.staand{aspect-ratio:9/16;width:auto;height:min(78vh,900px);margin:0 auto}
+.item .kop{cursor:pointer;user-select:none;margin-bottom:0}
+.item.open .kop{margin-bottom:6px}
+.item .kop .greep{cursor:grab;color:var(--grijs);font-size:16px;padding:0 4px 0 0}
+.item .kop .pijl{color:var(--grijs);font-size:13px;padding-left:4px}
+.item.open{border-color:var(--zwart);box-shadow:0 0 0 3px var(--geel);background:#fff}
+.item.sleept{opacity:.4}
+.item.doel{box-shadow:0 -4px 0 var(--geel)}
 .item .kop .tnaam{font-size:14px;margin-left:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .waarschuw{background:#fff5d6;color:#7a5200;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:700;margin:4px 0 6px}
 .hulp.fout{color:var(--fout);font-weight:700}
@@ -202,7 +209,7 @@ ul.tips li{margin:5px 0}
   <section class="formulier" id="formulier"><div class="leegstaat"><h2>Kies of maak een startscherm</h2><p>Met <b>+ Nieuw startscherm</b> begint u met zes tegels: muziek, vissen, haardvuur, foto's van vroeger, oude tv en zingen. Daarna vult u per tegel in wat er moet openen.</p></div></section>
   <section class="voorbeeld"><div class="plak">
     <div class="scherm" id="voorbeeldVak"><iframe id="voorbeeld" src="/startscherm.html?voorbeeld=1" title="Voorbeeld van het startscherm" allow="autoplay; fullscreen; encrypted-media"></iframe></div>
-    <p class="hulp" style="margin:10px 2px 0">Het voorbeeld werkt echt: tik op een tegel om te testen of de website, het filmpje of de radio goed opent. Tegels die nog niet af zijn, ziet u hier half doorzichtig; op het echte scherm staan ze niet.</p>
+    <p class="hulp" style="margin:10px 2px 0"><b>Klik</b> op een tegel in het voorbeeld om hem aan te passen. <b>Sleep</b> een tegel naar een andere plek om de volgorde te veranderen. Met <b>▶ Testen</b> bij een tegel ziet u of de website, het filmpje of de radio goed opent. Tegels die nog niet af zijn, ziet u hier half doorzichtig; op het echte scherm staan ze niet.</p>
     <div class="adres" id="adres" hidden>
       <b>Adres voor de computer bij het touchscreen</b>
       <code id="adresTekst"></code>
@@ -305,7 +312,7 @@ ul.tips li{margin:5px 0}
       const std = SS.nieuwStartscherm(huidig.id, huidig.naam);
       huidig.start = Object.assign(std.start, huidig.start || {});
       if (!Array.isArray(huidig.tegels)) huidig.tegels = [];
-      opgeslagen = JSON.stringify(huidig); bewaar("ss-laatste", id, true);
+      opgeslagen = JSON.stringify(huidig); bewaar("ss-laatste", id, true); gekozenT = null;
       document.querySelectorAll("#lijst button.scherm").forEach(b => b.classList.toggle("aan", b.dataset.id === id));
       tekenFormulier(); stuur(); toonAdres();
     } catch (e) { toast(e.message); }
@@ -320,14 +327,20 @@ ul.tips li{margin:5px 0}
 
   /* ===== voorbeeld ===== */
   let klaar = false, stuurT = null;
-  addEventListener("message", e => { if (e.origin === location.origin && e.data && e.data.type === "klaar") { klaar = true; stuur(); } });
+  addEventListener("message", e => {
+    if (e.origin !== location.origin || !e.data) return;
+    if (e.data.type === "klaar") { klaar = true; stuur(); }
+    if (!huidig) return;
+    if (e.data.type === "kies") kiesTegel(huidig.tegels[e.data.i] || null, true);
+    if (e.data.type === "verplaats") verplaats(e.data.van, e.data.naar);
+  });
   function stuur() {
     status();
     if (!huidig) return;
     $("voorbeeldVak").classList.toggle("staand", huidig.start.stand === "staand");
     if (!klaar) return;
     clearTimeout(stuurT);
-    stuurT = setTimeout(() => { $("voorbeeld").contentWindow.postMessage({ type: "start", start: JSON.parse(JSON.stringify(huidig)) }, location.origin); }, 300);
+    stuurT = setTimeout(() => { $("voorbeeld").contentWindow.postMessage({ type: "start", start: JSON.parse(JSON.stringify(huidig)), gekozen: huidig.tegels.indexOf(gekozenT) }, location.origin); }, 300);
   }
   function status() {
     const s = document.querySelector(".opslaanbalk .status");
@@ -425,10 +438,35 @@ ul.tips li{margin:5px 0}
     /* tegels */
     const b2 = blok(f, "Tegels", "#fbb900", "Zes tot negen tegels werkt het best: groot genoeg om makkelijk aan te tikken. Eén woord per tegel is genoeg.");
     const items = h("div", "items", b2);
-    const tekenTegels = () => { items.innerHTML = ""; if (!k.tegels.length) h("p", "hulp", items, "Nog geen tegels."); k.tegels.forEach((t, i) => tegelForm(items, t, i, tekenTegels)); };
+    const tekenTegels = () => {
+      items.innerHTML = "";
+      if (!k.tegels.length) h("p", "hulp", items, "Nog geen tegels.");
+      k.tegels.forEach((t, i) => {
+        tegelForm(items, t, i, tekenTegels);
+        /* inklapbaar: alleen de gekozen tegel staat open */
+        const it = items.lastElementChild, kop = it.querySelector(".kop");
+        const body = document.createElement("div"); body.className = "tbody";
+        [...it.children].filter(c => c !== kop).forEach(c => body.appendChild(c));
+        it.appendChild(body);
+        const open = gekozenT === t;
+        it.classList.toggle("open", open); body.hidden = !open;
+        it.dataset.i = i;
+        const greep = document.createElement("span"); greep.className = "greep"; greep.title = "Slepen om te verplaatsen"; greep.textContent = "⠿";
+        kop.prepend(greep);
+        kop.insertAdjacentHTML("beforeend", `<span class="pijl">${open ? "▴" : "▾"}</span>`);
+        kop.addEventListener("click", e => { if (e.target.closest("button")) return; kiesTegel(open ? null : t); });
+        /* slepen in de lijst */
+        kop.draggable = true;
+        kop.addEventListener("dragstart", e => { e.dataTransfer.setData("text/plain", String(i)); e.dataTransfer.effectAllowed = "move"; it.classList.add("sleept"); });
+        kop.addEventListener("dragend", () => { it.classList.remove("sleept"); items.querySelectorAll(".doel").forEach(x => x.classList.remove("doel")); });
+        it.addEventListener("dragover", e => { e.preventDefault(); items.querySelectorAll(".doel").forEach(x => x !== it && x.classList.remove("doel")); it.classList.add("doel"); });
+        it.addEventListener("drop", e => { e.preventDefault(); const van = +e.dataTransfer.getData("text/plain"); verplaats(van, i); });
+      });
+    };
+    tekenTegelsNu = tekenTegels;
     tekenTegels();
     const tv = h("div", "toevoegen", b2);
-    const nieuw = (soort, extra) => { k.tegels.push(Object.assign({ soort, titel: "", icoon: { website: "ster", video: "vis", radio: "radio", fotos: "foto", journaal: "tv", spellen: "puzzel" }[soort], kleur: "#fbb900", foto: "", blijfAan: soort !== "website" }, extra)); tekenTegels(); stuur(); setTimeout(() => { const l = items.lastElementChild; if (l) { l.scrollIntoView({ behavior: "smooth", block: "center" }); const i = l.querySelector("input"); if (i) i.focus(); } }, 50); };
+    const nieuw = (soort, extra) => { gekozenT = null; k.tegels.push(Object.assign({ soort, titel: "", icoon: { website: "ster", video: "vis", radio: "radio", fotos: "foto", journaal: "tv", spellen: "puzzel" }[soort], kleur: "#fbb900", foto: "", blijfAan: soort !== "website" }, extra)); gekozenT = k.tegels[k.tegels.length - 1]; tekenTegels(); stuur(); setTimeout(() => { const l = items.lastElementChild; if (l) { l.scrollIntoView({ behavior: "smooth", block: "center" }); const i = l.querySelector("input"); if (i) i.focus(); } }, 50); };
     knop(tv, "+ Website", "licht", () => nieuw("website", { url: "" }));
     knop(tv, "+ Filmpje", "licht", () => nieuw("video", { video: "" }));
     knop(tv, "+ Radio", "licht", () => nieuw("radio", { zender: "", stream: "", zenders: [], fotos: [], seconden: 15 }));
@@ -450,6 +488,28 @@ ul.tips li{margin:5px 0}
     status();
   }
 
+  /* ===== tegels kiezen en verplaatsen (ook vanuit het voorbeeld) ===== */
+  let gekozenT = null, tekenTegelsNu = null;
+  function kiesTegel(t, scroll) {
+    gekozenT = t;
+    if (tekenTegelsNu) tekenTegelsNu();
+    stuur();
+    if (t && scroll) setTimeout(() => {
+      const it = document.querySelector(".items .item.open");
+      if (it) it.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 30);
+  }
+  function verplaats(van, naar) {
+    const l = huidig.tegels;
+    if (!(van >= 0 && van < l.length && naar >= 0 && naar < l.length) || van === naar) return;
+    const [t] = l.splice(van, 1); l.splice(naar, 0, t);
+    if (tekenTegelsNu) tekenTegelsNu();
+    stuur();
+  }
+  function test(i) {
+    if (klaar) $("voorbeeld").contentWindow.postMessage({ type: "open", i }, location.origin);
+  }
+
   function tegelForm(ouder, t, i, opnieuw) {
     const it = h("div", "item", ouder);
     const soort = SS.SOORTEN[t.soort] || SS.SOORTEN.website;
@@ -463,6 +523,7 @@ ul.tips li{margin:5px 0}
     veld(r, "Naam op de tegel", invoer(t, "titel", "text", { maxLength: 18, placeholder: "bijv. Vissen" }, v => { kop.querySelector(".tnaam").textContent = v || "Nieuwe tegel"; check(); }));
     veld(r, "Soort", keuze(t, "soort", Object.entries(SS.SOORTEN).map(([w, x]) => [w, x.naam]), () => { t.blijfAan = !["website", "spellen"].includes(t.soort); if (t.soort === "radio" || t.soort === "fotos") t.fotos = t.fotos || []; if (t.soort === "radio") t.zenders = t.zenders || []; opnieuw(); }));
     h("p", "hulp", it).textContent = soort.uitleg;
+    knop(knoppenRij(it), "▶ Testen in het voorbeeld", "licht", () => test(i));
 
     if (t.soort === "website") {
       const uitslag = h("div", "hulp");
