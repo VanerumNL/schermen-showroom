@@ -682,7 +682,8 @@ body.verberg{cursor:none}
     }
     const sj = VS.sjabloon(s.sjabloon, staand);
     const grid = h("div", "vlakken", scr);
-    grid.style.gridTemplateColumns = sj.cols; grid.style.gridTemplateRows = sj.rows;
+    const rs = VS.raster(s);
+    grid.style.gridTemplateColumns = rs.cols; grid.style.gridTemplateRows = rs.rows;
     grid.style.gridTemplateAreas = sj.areas.map(a => `"${a}"`).join(" ");
     VS.vakkenVan(s.sjabloon in VS.SJABLONEN ? s.sjabloon : "zijbalk").forEach((k, idx) => {
       const v = (s.vakken || {})[k] || { type: "leeg" };

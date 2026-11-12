@@ -26,6 +26,14 @@
     const k = sj in SJABLONEN ? sj : "zijbalk";
     return staand ? STAAND[k] : SJABLONEN[k];
   };
+  /* eigen maten: s.maten["l-zijbalk"] = { kol: [1.9, 1], rij: [1, 1] } (verhoudingen in fr), per sjabloon en stand */
+  const matenKey = s => (isStaand(s) ? "s-" : "l-") + (s.sjabloon in SJABLONEN ? s.sjabloon : "zijbalk");
+  const frVan = tekst => tekst.split(" ").map(x => parseFloat(x));
+  const raster = s => {
+    const sj = sjabloon(s.sjabloon, isStaand(s)), m = (s.maten && s.maten[matenKey(s)]) || {};
+    const gebruik = (tekst, arr) => Array.isArray(arr) && arr.length === frVan(tekst).length && arr.every(x => x > 0 && isFinite(x)) ? arr.map(x => `minmax(0,${x}fr)`).join(" ") : tekst;
+    return { cols: gebruik(sj.cols, m.kol), rows: gebruik(sj.rows, m.rij), areas: sj.areas };
+  };
   const vakkenVan = sj => [...new Set(SJABLONEN[sj].areas.join(" ").split(" "))];
 
   const THEMAS = {
@@ -143,5 +151,5 @@
     return m ? m[1] : "";
   }
 
-  window.VS = { WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, STAAND, isStaand, sjabloon, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId, QUOTES, TUSSEN_TYPEN, TUSSENDOOR_STD };
+  window.VS = { matenKey, frVan, raster, WELKOM_STD, WELKOM_BEWEGINGEN, SJABLONEN, STAAND, isStaand, sjabloon, vakkenVan, THEMAS, FEEDS, BLOKKEN, VIMO_BEWEGINGEN, nieuwScherm, youtubeId, QUOTES, TUSSEN_TYPEN, TUSSENDOOR_STD };
 })();
