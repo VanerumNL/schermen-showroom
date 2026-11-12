@@ -57,7 +57,7 @@
   function compleet(t) {
     if (!t || !t.titel) return false;
     if (t.soort === "website") return /^https:\/\//i.test(t.url || "");
-    if (t.soort === "video") return !!(youtubeLijst(t.video) || youtubeId(t.video) || /^(https:\/\/|\/media\/)/i.test(t.video || ""));
+    if (t.soort === "video") return !!(t.lokaal || youtubeLijst(t.video) || youtubeId(t.video) || /^(https:\/\/|\/media\/)/i.test(t.video || ""));
     if (t.soort === "radio") return zendersVan(t).length > 0;
     if (t.soort === "fotos") return Array.isArray(t.fotos) && t.fotos.some(f => f && f.src);
     if (t.soort === "journaal") return true;
