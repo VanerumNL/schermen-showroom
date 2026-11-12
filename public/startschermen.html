@@ -408,7 +408,7 @@ ul.tips li{margin:5px 0}
 
     const b1 = blok(f, "Bovenaan het scherm", "#b8e7f9", "Een groet met dag, datum en klok helpt bij het besef van tijd.");
     veld(b1, "Naam bovenaan (mag leeg)", invoer(s, "titel", "text", { maxLength: 40, placeholder: "bijv. Isselwaerde" }));
-    vinkje(b1, s, "welkom", "Groet, dag, datum en klok tonen (bijv. ‘Goedemiddag · Het is woensdag 11 november’)");
+    vinkje(b1, s, "welkom", "Groet, dag, datum en klok tonen (groet en klok bovenaan, de datum groot onder de tegels)");
     veld(b1, "Achtergrond", kleurKeuze(s, "achtergrond", true));
     const r1 = h("div", "rij2", b1);
     veld(r1, "Stand van het scherm", keuze(s, "stand", [["liggend", "Liggend (breed)"], ["staand", "Staand (hoog)"]]));
