@@ -41,7 +41,7 @@
   function nieuwStartscherm(id, naam) {
     return {
       id, naam,
-      start: { titel: naam || "", welkom: true, achtergrond: "warm", stand: "liggend", logo: "", vanerum: false, terugNa: 5 },
+      start: { titel: naam || "", welkom: true, achtergrond: "warm", stand: "liggend", logo: "", vanerum: false, terugNa: 5, rust: true, rustNa: 5 },
       tegels: [
         tegel("radio", "Muziek", "radio", "#fbb900", { zenders: [{ naam: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3" }], zender: "NPO Radio 5", stream: "https://icecast.omroep.nl/radio5-bb-mp3", fotos: [], seconden: 15 }),
         tegel("video", "Vissen", "vis", "#b8e7f9", { video: "" }),

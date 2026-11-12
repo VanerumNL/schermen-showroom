@@ -436,6 +436,13 @@ ul.tips li{margin:5px 0}
     vinkje(b1, s, "vanerum", "Vanerum-logo tonen", false);
 
     /* tegels */
+    const br = blok(f, "Schermbeveiliging", "#bda8bd", "Als niemand het scherm een tijdje aanraakt, komen er rustig wisselende foto's van vroeger in beeld (uit de fotoalbums), met de klok en een grote knop ‘Raak mij aan’. Zonder foto's een zacht bewegend kleurverloop.");
+    vinkje(br, s, "rust", "Schermbeveiliging aan", true);
+    const rr = h("div", "rij2", br);
+    veld(rr, "Na hoeveel minuten zonder aanraking", invoer(s, "rustNa", "number", { min: 1, max: 120, placeholder: "5" }));
+    const rk = h("div", "", rr); rk.style.alignSelf = "end";
+    knop(rk, "▶ Bekijk in het voorbeeld", "licht", () => { if (klaar) $("voorbeeld").contentWindow.postMessage({ type: "rust" }, location.origin); });
+
     const b2 = blok(f, "Tegels", "#fbb900", "Zes tot negen tegels werkt het best: groot genoeg om makkelijk aan te tikken. Eén woord per tegel is genoeg.");
     const items = h("div", "items", b2);
     const tekenTegels = () => {

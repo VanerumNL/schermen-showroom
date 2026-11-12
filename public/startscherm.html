@@ -158,6 +158,26 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .toetsen button.aan{background:var(--geel)}
 .toetsen button:active{transform:translateY(2px);box-shadow:none}
 
+/* schermbeveiliging: rustige foto's of een zacht verloop, met een knop om terug te gaan */
+#rustLaag{background:#111}
+#rustVlak{background:#111}
+.rust{position:absolute;inset:0;overflow:hidden;cursor:pointer}
+.rust .rfoto{position:absolute;inset:0;opacity:0;transition:opacity 2.5s ease}
+.rust .rfoto.aan{opacity:1}
+.rust .rfoto .vaag{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(50px) brightness(.55)}
+.rust .rfoto img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scale(1);transition:transform 16s linear}
+.rust .rfoto.aan img{transform:scale(1.07)}
+.rust .rfoto .rtekst{position:absolute;left:50%;top:60px;transform:translateX(-50%);background:rgba(255,255,255,.92);color:var(--zwart);border-radius:24px;padding:16px 34px;font-size:40px;font-weight:700;max-width:70%;text-align:center}
+.rust .lucht{position:absolute;inset:-20%;background:radial-gradient(circle at 30% 30%,#fbb900 0,transparent 45%),radial-gradient(circle at 70% 60%,#b8e7f9 0,transparent 50%),radial-gradient(circle at 40% 80%,#bda8bd 0,transparent 45%),#f2c7a5;animation:drijf 60s ease-in-out infinite alternate;filter:saturate(.9)}
+@keyframes drijf{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(-6%,4%) rotate(8deg)}100%{transform:translate(5%,-5%) rotate(-6deg)}}
+.rust .rtijd{position:absolute;left:64px;bottom:56px;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.45);font-weight:700;letter-spacing:0}
+.rust .rtijd b{display:block;font-size:150px;line-height:.9;font-variant-numeric:tabular-nums}
+.rust .rtijd span{display:block;font-size:54px;margin-top:10px}
+.rust.geenfoto .rtijd{color:var(--zwart);text-shadow:none}
+.rust .raak{position:absolute;right:64px;bottom:64px;display:inline-flex;align-items:center;gap:26px;background:var(--geel);color:var(--zwart);font-weight:700;font-size:62px;border-radius:999px;padding:34px 64px 34px 46px;box-shadow:0 20px 50px rgba(0,0,0,.35);animation:adem 3.5s ease-in-out infinite}
+.rust .raak svg{width:84px;height:84px}
+@keyframes adem{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
 /* een melding die over alles heen ligt */
 .melding{position:fixed;inset:0;display:grid;place-items:center;background:#fdf8ef;font-size:3vh;color:var(--antraciet);text-align:center;gap:3vh;align-content:center;padding:6vh}
 </style>
@@ -173,6 +193,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   <div class="inhoud" id="inhoud"></div>
 </div></section>
 
+<section class="laag" id="rustLaag" hidden><div class="vlak" id="rustVlak"></div></section>
 <section class="laag" id="beheerLaag" hidden><div class="vlak" id="beheerVlak"></div></section>
 
 <script src="/startscherm-gedeeld.js"></script>
@@ -928,6 +949,59 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     if (Date.now() - laatsteAanraking > wacht) naarThuis();
   }, 5000);
 
+  /* ---------- schermbeveiliging na een tijd zonder aanraking (alleen bij de tegels) ---------- */
+  const HAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V3.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 10V5.5a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7h-.6a6 6 0 0 1-4.6-2.2L3.3 15.4a1.6 1.6 0 0 1 2.4-2.1L9 16V11"/></svg>';
+  let rust = false, rustT = null;
+  function rustFotos() {
+    const uit = [];
+    (cfg.tegels || []).forEach(t => { if (t && (t.soort === "fotos" || t.soort === "radio") && Array.isArray(t.fotos)) t.fotos.forEach(f => { if (f && f.src) uit.push(f); }); });
+    for (let a = uit.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [uit[a], uit[b]] = [uit[b], uit[a]]; }
+    return uit;
+  }
+  function toonRust() {
+    if (rust || !cfg) return;
+    rust = true;
+    const fotos = rustFotos(), vlak = $("rustVlak");
+    vlak.innerHTML = `<div class="rust${fotos.length ? "" : " geenfoto"}">${fotos.length ? "" : '<div class="lucht"></div>'}
+      <div class="rtijd"><b data-klok></b><span data-rdatum></span></div>
+      <button class="raak" type="button">${HAND}Raak mij aan</button></div>`;
+    const doos = vlak.firstElementChild;
+    if (fotos.length) {
+      let i = -1, huidige = null;
+      const volgende = () => {
+        if (!rust) return;
+        i = (i + 1) % fotos.length;
+        const f = fotos[i], el = document.createElement("div");
+        el.className = "rfoto";
+        el.innerHTML = `<div class="vaag" style="background-image:url('${esc(f.src)}')"></div><img src="${esc(f.src)}" alt="">${f.tekst ? `<div class="rtekst">${esc(f.tekst)}</div>` : ""}`;
+        doos.insertBefore(el, doos.querySelector(".rtijd"));
+        const img = el.querySelector("img");
+        const wissel = () => { requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("aan"))); const oud = huidige; huidige = el; if (oud) setTimeout(() => oud.remove(), 2700); };
+        img.decode ? img.decode().then(wissel, wissel) : wissel();
+        rustT = setTimeout(volgende, 14000);
+      };
+      volgende();
+    }
+    const dag = () => { const d = new Date(), n = DAGEN[d.getDay()]; const e = vlak.querySelector("[data-rdatum]"); if (e) e.textContent = `${n[0].toUpperCase() + n.slice(1)} ${d.getDate()} ${MAANDEN[d.getMonth()]}`; };
+    dag(); tikKlok();
+    $("rustLaag").hidden = false; schaal();
+  }
+  function verbergRust() {
+    if (!rust) return;
+    rust = false; clearTimeout(rustT);
+    $("rustLaag").hidden = true; $("rustVlak").innerHTML = "";
+    aangeraakt();
+  }
+  /* een tik ergens op de schermbeveiliging brengt de tegels terug (en opent niet per ongeluk een tegel) */
+  $("rustLaag").addEventListener("click", e => { e.stopPropagation(); verbergRust(); });
+  setInterval(() => {
+    if (VOORBEELD || rust || !cfg || bewerk || modus !== "thuis" || !$("beheerLaag").hidden) return;
+    const s = cfg.start || {};
+    if (s.rust === false) return;
+    const wacht = Math.max(1, +s.rustNa || 5) * 60000;
+    if (Date.now() - laatsteAanraking > wacht) toonRust();
+  }, 5000);
+
   /* muispijl weg als hij stilstaat; geen rechtermuis- of lang-drukken-menu */
   let muisT = null;
   addEventListener("pointermove", e => { if (e.pointerType !== "mouse") return; document.body.classList.remove("geenmuis"); clearTimeout(muisT); muisT = setTimeout(() => document.body.classList.add("geenmuis"), 3000); });
@@ -967,6 +1041,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     addEventListener("message", e => {
       if (e.origin !== location.origin || !e.data) return;
       if (e.data.type === "start") { cfg = e.data.start; gekozenI = e.data.gekozen; schaal(); if (modus === "bekijk") naarThuis(); else tekenThuis(); }
+      if (e.data.type === "rust") { if (rust) verbergRust(); else { rust = false; toonRust(); } }
       if (e.data.type === "open") { const t = (cfg.tegels || [])[e.data.i]; if (t && SS.compleet(t)) openTegel(t); }
     });
     parent.postMessage({ type: "klaar" }, location.origin);
