@@ -501,8 +501,8 @@ ul.tips li{margin:5px 0}
       knop(rij, "Uit bibliotheek", "licht", () => kiesMedia("video", zet));
       knop(rij, "Groot bestand op de computer bij het scherm", "licht", () => { t.lokaal = "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); t.video = ""; check(); opnieuw(); stuur(); });
       vinkje(it, t, "willekeurig", "Afspeellijst in willekeurige volgorde (elke keer met een ander nummer beginnen)", true);
-      { const r = h("div", "rij2", it); if (t.startOp === undefined || t.startOp === "") t.startOp = 10;
-        veld(r, "Beginnen bij (seconden)", invoer(t, "startOp", "number", { min: 0, max: 600 }), "Slaat een intro of reclame aan het begin over. 0 = vanaf het begin. Geldt niet voor afspeellijsten."); }
+      { const r = h("div", "rij2", it); if (t.startOp === undefined || t.startOp === "") t.startOp = SS.youtubeLijst(t.video) ? 0 : 10;
+        veld(r, "Beginnen bij (seconden)", invoer(t, "startOp", "number", { min: 0, max: 600 }), "Slaat een intro of reclame aan het begin over; bij een afspeellijst bij elk nummer. 0 = vanaf het begin."); }
     } else if (t.soort === "radio") {
       zenderLijst(it, t, check);
       album(it, t, "Foto's in beeld tijdens de radio (mag leeg)");
