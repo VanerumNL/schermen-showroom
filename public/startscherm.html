@@ -49,6 +49,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .bewerk .tegel:not(.plus){animation:wiebel .5s ease-in-out infinite alternate}
 @keyframes wiebel{from{transform:rotate(-.6deg)}to{transform:rotate(.6deg)}}
 .tegel .weg{position:absolute;right:14px;top:14px;width:96px;height:96px;border-radius:50%;background:#1e1e1e;color:#fff;display:grid;place-items:center;font-size:52px;font-weight:700;z-index:2;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.tegel .kies{position:absolute;left:14px;right:124px;top:14px;background:var(--geel);color:var(--zwart);border:4px solid var(--zwart);border-radius:999px;padding:14px 20px;font-weight:700;font-size:30px;text-align:center;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.tegel .kies.ok{background:#fff}
 .bewerkkop{display:flex;align-items:center;gap:40px;padding:52px 72px 40px}
 .bewerkkop div{flex:1}
 .bewerkkop h1{margin:0;font-size:76px;line-height:1;letter-spacing:0}
@@ -248,7 +250,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   function tegelHtml(t, i) {
     return `<button class="tegel${SS.compleet(t) ? "" : " onaf"}" type="button" data-i="${i}" style="--c:${esc(t.kleur || "#fbb900")}">
       <div class="beeld">${t.foto ? `<img src="${esc(t.foto)}" alt="">` : ((SS.ICONEN[t.icoon] || SS.ICONEN.ster).svg)}</div>
-      <div class="naam"><span>${esc(t.titel)}</span></div>${bewerk ? `<span class="weg" data-weg="${i}" aria-label="Weghalen">✕</span>` : ""}
+      <div class="naam"><span>${esc(t.titel)}</span></div>${bewerk ? `<span class="weg" data-weg="${i}" aria-label="Weghalen">✕</span>` : ""}${bewerk && t.soort === "video" && (t.lokaal || !SS.compleet(t)) ? `<span class="kies" data-kies="${i}">📁 Kiezen</span>` : ""}
     </button>`;
   }
   function tekenThuis() {
@@ -271,10 +273,28 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     tikKlok();
     pasDatumAan();
     pasTegelsAan();
+    /* laat bij lokale filmpjes zien of het bestand al op deze computer staat */
+    if (bewerk) v.querySelectorAll("[data-kies]").forEach(async k => {
+      const t = cfg.tegels[+k.dataset.kies], f = t && t.lokaal && await lokaalBestand(t.lokaal);
+      k.textContent = f ? "✓ Wissel" : "📁 Kiezen";
+      k.classList.toggle("ok", !!f);
+    });
   }
   $("thuisVlak").addEventListener("click", e => {
     if (bewerk) {
       const w = e.target.closest("[data-weg]"); if (w) return vraagWeg(+w.dataset.weg);
+      const kz = e.target.closest("[data-kies]");
+      if (kz) {
+        const i = +kz.dataset.kies, t = cfg.tegels[i];
+        /* een lege filmpjestegel (bijv. Vissen) wordt een filmpje van deze computer */
+        const id = t.lokaal || "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        return kiesLokaal(id, async () => {
+          if (!t.lokaal) {
+            try { const vers = await haalVers(); const x = vers.tegels[i]; if (x && x.soort === "video") { x.lokaal = id; x.video = ""; x.blijfAan = true; await bewaar(vers); } } catch (e) {}
+          }
+          tekenThuis();
+        });
+      }
       const a = e.target.closest("[data-actie]"); if (!a) return;
       if (a.dataset.actie === "plus") return kiesSoort();
       if (a.dataset.actie === "klaar") return stopBewerken();
@@ -300,7 +320,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   const SOORT_NIEUW = [
     { soort: "website", titel: "", url: "https://", icoon: "ster", kleur: "#b8e7f9", naam: "Eigen website", uitleg: "Adres intikken" },
     { soort: "video", titel: "", video: "https://www.youtube.com/watch?v=", icoon: "vis", kleur: "#fbb900", naam: "YouTube", uitleg: "Filmpje of afspeellijst" },
-    { soort: "radio", titel: "", zender: "", stream: "https://", icoon: "radio", kleur: "#fbb900", naam: "Radiozender", uitleg: "Adres van de stream" }
+    { soort: "radio", titel: "", zender: "", stream: "https://", icoon: "radio", kleur: "#fbb900", naam: "Radiozender", uitleg: "Adres van de stream" },
+    { soort: "video", titel: "", video: "", lokaal: "?", icoon: "vis", kleur: "#b8e7f9", naam: "Filmpje van deze pc", uitleg: "Groot bestand, niet uploaden" }
   ];
 
   /* lang indrukken op de klok of de kop opent het inloggen */
@@ -401,6 +422,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     return `<button class="keuze" type="button" data-groep="${groep}" data-i="${i}" style="--c:${x.kleur}"><div class="k">${(SS.ICONEN[x.icoon] || SS.ICONEN.ster).svg}</div><b>${esc(x.naam || x.titel)}</b><small>${esc(x.uitleg || "")}</small></button>`;
   }
   function kiesSoort() {
+    lokaalGekozen = false;
     const d = toonDlg(`<h2>Tegel toevoegen</h2><p class="sub">Kies een idee, of maak zelf een tegel. Foto's en eigen filmpjes zet u erbij via de editor op de computer.</p>
       <div class="keuzes">${IDEEEN.map((x, i) => keuzeHtml(x, i, "idee")).join("")}${SOORT_NIEUW.map((x, i) => keuzeHtml(x, i, "nieuw")).join("")}</div>
       <div class="knoppen"><button class="knop2" type="button" data-k="stop">Annuleren</button></div>`);
@@ -408,18 +430,47 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     d.querySelectorAll(".keuze").forEach(b => b.addEventListener("click", () => {
       const bron = (b.dataset.groep === "idee" ? IDEEEN : SOORT_NIEUW)[+b.dataset.i];
       const t = JSON.parse(JSON.stringify(bron)); delete t.naam; delete t.uitleg;
+      if (t.lokaal) t.lokaal = "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
       t.foto = ""; t.blijfAan = !["website", "spellen"].includes(t.soort);
       maakTegel(t);
     }));
   }
 
+  /* bestand kiezen op deze computer en naar de opslag van het scherm kopiëren */
+  function kiesLokaal(id, klaar) {
+    let inp = $("lokaalBestand");
+    if (!inp) { inp = document.createElement("input"); inp.type = "file"; inp.id = "lokaalBestand"; inp.accept = "video/*"; inp.hidden = true; document.body.appendChild(inp); }
+    inp.value = "";
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      aangeraakt();
+      const mb = n => n >= 1e9 ? (n / 1e9).toLocaleString("nl-NL", { maximumFractionDigits: 1 }) + " GB" : Math.round(n / 1e6) + " MB";
+      const d = toonDlg(`<h2>Filmpje op deze computer zetten</h2><p class="sub">${esc(f.name)} · ${mb(f.size)}</p>
+        <div style="height:40px;border-radius:999px;background:#efeee9;overflow:hidden"><div id="lBalk" style="height:100%;width:0;background:var(--geel);transition:width .3s"></div></div>
+        <p class="sub" id="lTekst" style="margin-top:18px">Bezig met kopiëren… Laat het scherm aan staan.</p>
+        <div class="knoppen"><div class="fout" id="lFout"></div></div>`);
+      try {
+        await bewaarLokaal(id, f, p => { aangeraakt(); d.querySelector("#lBalk").style.width = Math.round(p * 100) + "%"; d.querySelector("#lTekst").textContent = `Bezig met kopiëren… ${Math.round(p * 100)}%`; });
+        d.querySelector("#lTekst").textContent = "Klaar! Het filmpje staat nu op deze computer.";
+        setTimeout(() => { sluitDlg(); if (klaar) klaar(f); }, 1200);
+      } catch (e) {
+        d.querySelector("#lFout").textContent = "Het kopiëren lukte niet: " + (e && e.message || e);
+        d.querySelector(".knoppen").insertAdjacentHTML("beforeend", `<button class="knop2" type="button">Sluiten</button>`);
+        d.querySelector(".knoppen button").addEventListener("click", sluitDlg);
+      }
+    };
+    inp.click();
+  }
+
+  let lokaalGekozen = false;
   function maakTegel(t) {
-    const geenAdres = t.soort === "journaal" || t.soort === "spellen";
+    const geenAdres = t.soort === "journaal" || t.soort === "spellen" || !!t.lokaal;
     const veld = t.soort === "website" ? "url" : t.soort === "video" ? "video" : t.soort === "journaal" ? "van" : "stream";
     const labels = { url: "Adres van de website", video: "Link naar YouTube-filmpje of -afspeellijst", stream: "Adres van de radiostream" };
     const d = toonDlg(`<h2>${esc(SS.SOORTEN[t.soort].naam)} toevoegen</h2>
       <div class="twee"><div><label>Naam op de tegel</label><input type="text" id="mNaam" maxlength="18" value="${esc(t.titel)}" autocomplete="off"></div>
-      ${t.soort === "spellen" ? `<div><label>Spelletjes</label><p style="font-size:30px;margin:12px 0 0;opacity:.75">Memory, legpuzzel, spreekwoorden, zeepbellen, kleurplaat en knopen sorteren</p></div>` : geenAdres ? `<div><label>Jaren</label><div class="twee" style="grid-template-columns:1fr 1fr;gap:16px"><input type="text" id="mVan" value="${esc(t.van)}" maxlength="4" autocomplete="off"><input type="text" id="mTot" value="${esc(t.tot)}" maxlength="4" autocomplete="off"></div></div>`
+      ${t.lokaal ? `<div><label>Filmpje van deze computer</label><button class="knop2" type="button" id="mKies" style="width:100%">📁 Bestand kiezen</button><p id="mGekozen" style="font-size:28px;margin:10px 0 0;opacity:.75">Het filmpje wordt niet geüpload, maar op deze computer bewaard.</p></div>`
+        : t.soort === "spellen" ? `<div><label>Spelletjes</label><p style="font-size:30px;margin:12px 0 0;opacity:.75">Memory, legpuzzel, spreekwoorden, zeepbellen, kleurplaat en knopen sorteren</p></div>` : geenAdres ? `<div><label>Jaren</label><div class="twee" style="grid-template-columns:1fr 1fr;gap:16px"><input type="text" id="mVan" value="${esc(t.van)}" maxlength="4" autocomplete="off"><input type="text" id="mTot" value="${esc(t.tot)}" maxlength="4" autocomplete="off"></div></div>`
         : `<div><label>${labels[veld]}</label><input type="text" id="mAdres" value="${esc(t[veld])}" autocomplete="off" spellcheck="false"></div>`}</div>
       <div class="twee ruim"><div><label>Plaatje</label><div class="ikonen">${Object.entries(SS.ICONEN).map(([k, x]) => `<button type="button" data-ic="${k}" class="${k === t.icoon ? "aan" : ""}" aria-label="${esc(x.naam)}">${x.svg}</button>`).join("")}</div></div>
       <div><label>Kleur</label><div class="kleurrij">${SS.KLEUREN.filter(k => k[0] !== "#1e1e1e").map(([hex, n]) => `<button type="button" data-kl="${hex}" class="${hex === t.kleur ? "aan" : ""}" style="background:${hex}" aria-label="${esc(n)}"></button>`).join("")}</div></div></div>
@@ -430,10 +481,22 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const naamV = d.querySelector("#mNaam"), adresV = d.querySelector("#mAdres");
     (t.titel && adresV ? adresV : naamV).focus();
     d.querySelector('[data-k="terug"]').addEventListener("click", kiesSoort);
+    if (t.lokaal) d.querySelector("#mKies").addEventListener("click", () => {
+      const bewaard = { titel: naamV.value, icoon: t.icoon, kleur: t.kleur };
+      kiesLokaal(t.lokaal, f => {
+        Object.assign(t, bewaard);
+        if (!t.titel.trim()) t.titel = f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").slice(0, 18);
+        maakTegel(t);
+        const g = $("beheerVlak").querySelector("#mGekozen"); if (g) g.textContent = "✓ " + f.name + " staat op deze computer";
+        const k = $("beheerVlak").querySelector("#mKies"); if (k) k.textContent = "📁 Ander bestand kiezen";
+        lokaalGekozen = true;
+      });
+    });
     const ok = d.querySelector('[data-k="ok"]'), fout = d.querySelector("#mFout");
     ok.addEventListener("click", async () => {
       t.titel = naamV.value.trim();
-      if (t.soort === "spellen") { /* niets in te vullen */ }
+      if (t.lokaal) { if (!lokaalGekozen && !(await lokaalBestand(t.lokaal))) { fout.textContent = "Kies eerst het bestand op deze computer"; return; } }
+      else if (t.soort === "spellen") { /* niets in te vullen */ }
       else if (geenAdres) {
         const jv = +d.querySelector("#mVan").value, jt = +d.querySelector("#mTot").value;
         if (!(jv >= 1900 && jv <= 2000 && jt >= 1900 && jt <= 2000)) { fout.textContent = "Vul twee jaartallen in, bijvoorbeeld 1950 en 1970"; return; }
@@ -501,6 +564,64 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     f.src = t.url;
   }
 
+  /* ===== filmpjes die op de computer bij het scherm staan =====
+     Een groot filmpje (bijv. een aquarium van een uur) hoeft niet geüpload te worden:
+     een medewerker kiest het bestand één keer op deze computer, het scherm kopieert het
+     naar zijn eigen opslag in de browser (Origin Private File System) en speelt het daarvandaan.
+     Er gaat niets over internet. Het filmpje staat alleen op deze computer. */
+  const LOKAAL_MAP = "filmpjes";
+  async function lokaleMap() {
+    if (!navigator.storage || !navigator.storage.getDirectory) throw new Error("Deze browser kan geen filmpjes bewaren");
+    return (await navigator.storage.getDirectory()).getDirectoryHandle(LOKAAL_MAP, { create: true });
+  }
+  async function lokaalBestand(id) {
+    try { return await (await (await lokaleMap()).getFileHandle(id)).getFile(); } catch (e) { return null; }
+  }
+  /* bestand kopiëren naar de opslag van deze computer, met voortgang (0..1) */
+  async function bewaarLokaal(id, file, voortgang) {
+    if (navigator.storage.persist) { try { await navigator.storage.persist(); } catch (e) {} }
+    if (navigator.storage.estimate) {
+      const { quota = 0, usage = 0 } = await navigator.storage.estimate();
+      const oud = await lokaalBestand(id);
+      if (quota && file.size > quota - usage + (oud ? oud.size : 0)) throw new Error("Er is niet genoeg ruimte op deze computer voor dit filmpje");
+    }
+    const map = await lokaleMap();
+    const tijdelijk = id + ".nieuw";
+    const fh = await map.getFileHandle(tijdelijk, { create: true });
+    const w = await fh.createWritable();
+    let klaar = 0;
+    try {
+      const lezer = file.stream().getReader();
+      for (;;) {
+        const { done, value } = await lezer.read();
+        if (done) break;
+        await w.write(value); klaar += value.byteLength;
+        if (voortgang) voortgang(klaar / (file.size || 1));
+      }
+      await w.close();
+    } catch (e) { try { await w.abort(); } catch (x) {} try { await map.removeEntry(tijdelijk); } catch (x) {} throw e; }
+    /* het oude filmpje pas weghalen als het nieuwe er helemaal op staat */
+    try { await map.removeEntry(id); } catch (e) {}
+    if (fh.move) await fh.move(id);
+    else {
+      const doel = await (await map.getFileHandle(id, { create: true })).createWritable();
+      await (await fh.getFile()).stream().pipeTo(doel);
+      await map.removeEntry(tijdelijk);
+    }
+  }
+  function lokaalVideo(vak, t) {
+    lokaalBestand(t.lokaal).then(f => {
+      if (!vak.isConnected) return;
+      if (!f) {
+        bericht(vak, "Dit filmpje staat nog niet op deze computer", "Een medewerker kan het kiezen: houd de klok 3 seconden ingedrukt, log in en tik op ‘Kiezen’ bij deze tegel.", null);
+        return;
+      }
+      const url = URL.createObjectURL(f);
+      timers.push({ stop: () => URL.revokeObjectURL(url) });
+      speelEigen(vak, url);
+    });
+  }
+
   /* hele afspeellijst op volgorde: speelt alles na elkaar en begint daarna opnieuw */
   function speelLijst(vak, lijst) {
     const f = document.createElement("iframe");
@@ -523,7 +644,22 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     });
     return ytBelofte;
   }
+  /* een eigen filmpje (geüpload of van deze computer) in een lus afspelen */
+  function speelEigen(vak, src) {
+    const v = document.createElement("video");
+    v.src = src; v.loop = true; v.playsInline = true; v.autoplay = true; v.setAttribute("playsinline", "");
+    vak.appendChild(v);
+    const probeer = () => v.play().catch(() => {
+      if (vak.querySelector(".bericht")) return;
+      const b = bericht(vak, "", "", ["speel", SPEEL.replace("<svg", '<svg style="width:56px;height:56px"') + "Afspelen"]);
+      b.style.background = "rgba(0,0,0,.35)";
+      b.querySelector("button").addEventListener("click", () => { b.remove(); v.play().catch(() => {}); });
+    });
+    v.addEventListener("error", () => bericht(vak, "Dit filmpje speelt nu niet", "Probeer het later nog eens.", null));
+    probeer();
+  }
   function video(vak, t) {
+    if (t.lokaal) { lokaalVideo(vak, t); return; }
     const lijst = SS.youtubeLijst(t.video);
     if (lijst && t.willekeurig !== false) {
       /* afspeellijst in willekeurige volgorde: via de speler van YouTube, die kan schudden */
@@ -560,17 +696,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
       vak.appendChild(f);
       return;
     }
-    const v = document.createElement("video");
-    v.src = t.video; v.loop = true; v.playsInline = true; v.autoplay = true; v.setAttribute("playsinline", "");
-    vak.appendChild(v);
-    const probeer = () => v.play().catch(() => {
-      if (vak.querySelector(".bericht")) return;
-      const b = bericht(vak, "", "", ["speel", SPEEL.replace("<svg", '<svg style="width:56px;height:56px"') + "Afspelen"]);
-      b.style.background = "rgba(0,0,0,.35)";
-      b.querySelector("button").addEventListener("click", () => { b.remove(); v.play().catch(() => {}); });
-    });
-    v.addEventListener("error", () => bericht(vak, "Dit filmpje speelt nu niet", "Probeer het later nog eens.", null));
-    probeer();
+    speelEigen(vak, t.video);
   }
 
   /* oude journaals van Open Beelden: als een tv-zender, het ene filmpje na het andere */

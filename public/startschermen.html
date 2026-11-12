@@ -483,6 +483,10 @@ ul.tips li{margin:5px 0}
       };
       veld(it, "Adres van de website", invoer(t, "url", "text", { placeholder: "https://…" }, () => { check(); clearTimeout(testT); testT = setTimeout(test, 900); }));
       it.lastElementChild.appendChild(uitslag); toonUitslag();
+    } else if (t.soort === "video" && t.lokaal) {
+      h("div", "hulp goed", it).textContent = "Dit filmpje staat op de computer bij het touchscreen en wordt daar afgespeeld, zonder uploaden.";
+      h("p", "hulp", it).innerHTML = "Het bestand kiezen of vervangen doet u op het touchscreen zelf: houd de klok 3 seconden ingedrukt, log in en tik op <b>📁 Kiezen</b> op deze tegel. In het voorbeeld hiernaast speelt het niet af, omdat het filmpje alleen op die computer staat.";
+      knop(knoppenRij(it), "Toch liever een link of upload", "licht", () => { delete t.lokaal; opnieuw(); stuur(); });
     } else if (t.soort === "video") {
       const naam = h("div", "hulp");
       const toon = () => { naam.textContent = SS.youtubeLijst(t.video) ? "YouTube-afspeellijst; speelt alle filmpjes na elkaar en begint daarna opnieuw." : SS.youtubeId(t.video) ? "YouTube-filmpje; speelt in een lus, zonder voorgestelde filmpjes erna." : /^\/media\//.test(t.video || "") ? "Eigen filmpje uit de bibliotheek; speelt in een lus." : ""; };
@@ -493,6 +497,7 @@ ul.tips li{margin:5px 0}
       const zet = u => { t.video = u; inp.value = u; check(); toon(); stuur(); };
       knop(rij, "Filmpje uploaden (mp4, max. 24 MB)", "licht", () => uploadFilm(zet));
       knop(rij, "Uit bibliotheek", "licht", () => kiesMedia("video", zet));
+      knop(rij, "Groot bestand op de computer bij het scherm", "licht", () => { t.lokaal = "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); t.video = ""; check(); opnieuw(); stuur(); });
       vinkje(it, t, "willekeurig", "Afspeellijst in willekeurige volgorde (elke keer met een ander nummer beginnen)", true);
     } else if (t.soort === "radio") {
       zenderLijst(it, t, check);

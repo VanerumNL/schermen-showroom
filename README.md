@@ -103,3 +103,7 @@ De tegelsoort **Oude journaals** speelt Polygoon-journaals en ander oud nieuws v
 
 - `src/openbeelden.js` haalt via de OAI-PMH-koppeling stap voor stap de lijst op (elke cron-run een paar pagina's, daarna wekelijks bijwerken) en bewaart die in KV (`ob:lijst`, `ob:stand`).
 - `/api/openbeelden?van=1950&tot=1970` geeft een geschudde selectie voor het scherm.
+
+### Filmpjes van de computer bij het scherm
+
+Grote filmpjes (bijv. een aquarium van een uur) hoeven niet geüpload te worden. Op het touchscreen zelf (klok 3 seconden ingedrukt → inloggen) kiest een medewerker het bestand; het scherm kopieert het naar de opslag van de browser op die computer (Origin Private File System) en speelt het daarvandaan. Het filmpje staat dus alleen op die computer, niet online.
