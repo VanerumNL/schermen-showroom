@@ -677,6 +677,9 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     if (lijst) {
       /* afspeellijst via de speler van YouTube: geschud (standaard) of op volgorde, met een knop voor het volgende nummer */
       const schudden = t.willekeurig !== false;
+      /* bij afspeellijsten alleen overslaan als het bij de tegel is ingesteld; dan bij elk nummer */
+      const st = Math.max(0, +t.startOp || 0);
+      let laatsteId = "";
       const plek = document.createElement("div"); vak.appendChild(plek);
       ytApi().then(() => {
         if (!plek.isConnected) return;
@@ -697,6 +700,17 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
                 } catch (e) {}
               };
               begin();
+              /* elk nieuw nummer: meteen door naar het beginpunt (intro overslaan) */
+              if (st) p.addEventListener("onStateChange", e => {
+                if (e.data !== YT.PlayerState.PLAYING) return;
+                try {
+                  const id = (p.getVideoData() || {}).video_id || "";
+                  if (id === laatsteId) return;
+                  laatsteId = id;
+                  const duur = p.getDuration() || 0;
+                  if (p.getCurrentTime() < st - 1 && (!duur || duur > st + 5)) p.seekTo(st, true);
+                } catch (x) {}
+              });
               vak.insertAdjacentHTML("beforeend", `<button class="volgendknop" type="button">Volgend nummer ${PIJL_R.replace('stroke="#1e1e1e"', 'stroke="currentColor"')}</button>`);
               const knop = vak.querySelector(".volgendknop");
               knop.addEventListener("click", () => {
