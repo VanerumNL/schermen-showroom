@@ -213,7 +213,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const g = document.querySelector("[data-groet]"); if (g) g.textContent = groet(d);
     const dt = document.querySelector("[data-datum]");
     if (dt) {
-      const dag = DAGEN[d.getDay()], tekst = `${dag[0].toUpperCase() + dag.slice(1)} ${d.getDate()} ${MAANDEN[d.getMonth()]} ${d.getFullYear()}`;
+      const dag = DAGEN[d.getDay()], tekst = `${dag[0].toUpperCase() + dag.slice(1)} ${d.getDate()} ${MAANDEN[d.getMonth()]}`;
       if (dt.textContent !== tekst) { dt.textContent = tekst; pasDatumAan(); pasTegelsAan(); }
     }
   }
