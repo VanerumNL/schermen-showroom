@@ -105,6 +105,9 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .radio .zenders button{background:rgba(255,255,255,.92);color:var(--zwart);font-weight:700;font-size:40px;border-radius:999px;padding:22px 40px;box-shadow:0 12px 30px rgba(0,0,0,.25);border:6px solid transparent;max-width:640px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .radio .zenders button.aan{background:var(--geel);border-color:var(--zwart)}
 .radio .zenders button:active{transform:scale(.96)}
+.volgendknop{position:absolute;right:40px;bottom:40px;z-index:3;display:inline-flex;align-items:center;gap:18px;background:var(--geel);color:var(--zwart);font-weight:700;font-size:48px;border-radius:999px;padding:26px 34px 26px 50px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.volgendknop svg{width:52px;height:52px}
+.volgendknop:active,.volgendknop.tik{transform:scale(.95)}
 /* oude journaals */
 .journaal video{object-fit:contain!important;background:#000}
 .journaal .over{position:absolute;left:56px;top:48px;max-width:70%;background:#fff;color:var(--zwart);border-radius:26px;padding:22px 34px;box-shadow:0 18px 40px rgba(0,0,0,.3);transition:opacity 1.2s;z-index:2}
@@ -671,8 +674,9 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   function video(vak, t) {
     if (t.lokaal) { lokaalVideo(vak, t); return; }
     const lijst = SS.youtubeLijst(t.video);
-    if (lijst && t.willekeurig !== false) {
-      /* afspeellijst in willekeurige volgorde: via de speler van YouTube, die kan schudden */
+    if (lijst) {
+      /* afspeellijst via de speler van YouTube: geschud (standaard) of op volgorde, met een knop voor het volgende nummer */
+      const schudden = t.willekeurig !== false;
       const plek = document.createElement("div"); vak.appendChild(plek);
       ytApi().then(() => {
         if (!plek.isConnected) return;
@@ -682,22 +686,29 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
           playerVars: { listType: "playlist", list: lijst, autoplay: 1, rel: 0, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1 },
           events: {
             onReady: () => {
-              const schud = () => {
+              const begin = () => {
                 try {
                   const l = p.getPlaylist();
-                  if (l && l.length) { p.setShuffle(true); p.setLoop(true); p.playVideoAt(Math.floor(Math.random() * l.length)); }
-                  else if (n++ < 30) later(schud, 300);
+                  if (l && l.length) {
+                    p.setLoop(true);
+                    if (schudden) { p.setShuffle(true); p.playVideoAt(Math.floor(Math.random() * l.length)); } else p.playVideo();
+                  } else if (n++ < 30) later(begin, 300);
                   else p.playVideo();
                 } catch (e) {}
               };
-              schud();
+              begin();
+              vak.insertAdjacentHTML("beforeend", `<button class="volgendknop" type="button">Volgend nummer ${PIJL_R.replace('stroke="#1e1e1e"', 'stroke="currentColor"')}</button>`);
+              const knop = vak.querySelector(".volgendknop");
+              knop.addEventListener("click", () => {
+                try { p.nextVideo(); } catch (e) {}
+                knop.classList.add("tik"); later(() => knop.classList.remove("tik"), 400);
+              });
             }
           }
         });
       }).catch(() => { if (plek.isConnected) { plek.remove(); speelLijst(vak, lijst); } });
       return;
     }
-    if (lijst) { speelLijst(vak, lijst); return; }
     const yt = SS.youtubeId(t.video);
     if (yt && startOp(t)) {
       /* via de YouTube-speler, zodat hij bij elke herhaling weer op het beginpunt start */
