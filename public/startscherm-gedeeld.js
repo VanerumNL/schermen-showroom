@@ -16,6 +16,7 @@
     video: { naam: "Filmpje", kleur: "#fbb900", uitleg: "Een YouTube-filmpje, een hele YouTube-afspeellijst (bijv. clips van vroeger) of een eigen filmpje (mp4). Alles begint aan het eind weer opnieuw." },
     radio: { naam: "Radio", kleur: "#a8cb67", uitleg: "Een radiozender, met grote knoppen voor aan/uit en harder/zachter. Foto's erbij lopen mee in beeld." },
     journaal: { naam: "Oude journaals", kleur: "#a8cb67", uitleg: "Een eigen tv-zender met Polygoon-journaals van Beeld en Geluid (via Open Beelden en Wikimedia Commons). Kies de jaren; de filmpjes spelen in willekeurige volgorde na elkaar." },
+    instrumenten: { naam: "Muziek maken", kleur: "#b8e7f9", uitleg: "Instrumenten om op te tikken: piano, xylofoon, trommels, harp en klokjes. De tonen passen altijd bij elkaar, dus het klinkt nooit vals." },
     spellen: { naam: "Spelletjes", kleur: "#f2c7a5", uitleg: "Rustige spelletjes zonder tijdsdruk en zonder verliezen: memory, legpuzzel, spreekwoorden, zeepbellen, kleurplaat en knopen sorteren. Met eigen foto's worden memory en puzzel persoonlijk." },
     fotos: { naam: "Fotoalbum", kleur: "#bda8bd", uitleg: "Foto's die rustig na elkaar in beeld komen, met grote pijlen om zelf te bladeren." }
   };
@@ -62,6 +63,7 @@
     if (t.soort === "fotos") return Array.isArray(t.fotos) && t.fotos.some(f => f && f.src);
     if (t.soort === "journaal") return true;
     if (t.soort === "spellen") return true;
+    if (t.soort === "instrumenten") return true;
     return false;
   }
   function ontbreekt(t) {
