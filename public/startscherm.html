@@ -21,14 +21,15 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 .vlak{position:absolute;left:50%;top:50%;width:var(--w);height:var(--h);transform:translate(-50%,-50%);transform-origin:50% 50%;overflow:hidden;background:var(--bg);color:var(--ink)}
 
 /* ===== tegels ===== */
-#thuisVlak{display:grid;grid-template-rows:auto minmax(0,1fr)}
+#thuisVlak{display:grid;grid-template-rows:auto minmax(0,1fr) auto}
 .kop{display:flex;align-items:flex-end;gap:40px;padding:52px 72px 40px}
 .kop .links{flex:1;min-width:0}
 .plek{display:flex;align-items:center;gap:18px;font-weight:700;font-size:30px;opacity:.8;margin-bottom:14px}
 .plek img.str{height:28px;display:block}
 .plek img.logo{height:58px;display:block;max-width:420px;object-fit:contain}
-.kop h1{margin:0;font-size:88px;line-height:1;letter-spacing:0;font-weight:700}
-.kop p{margin:14px 0 0;font-size:44px;line-height:1.15;opacity:.82}
+.kop h1{margin:0;font-size:128px;line-height:.9;letter-spacing:0;font-weight:700}
+/* de datum onder de tegels, zo groot als past */
+.datumvoet{padding:0 72px 36px;text-align:center;font-weight:700;letter-spacing:0;line-height:1;white-space:nowrap;overflow:hidden}
 .kop .klok{font-size:128px;font-weight:700;line-height:.9;letter-spacing:0;font-variant-numeric:tabular-nums}
 .tegels{display:grid;gap:var(--gap,36px);padding:0 72px 56px;min-height:0;grid-template-columns:repeat(var(--kol,3),var(--maat,360px));grid-auto-rows:var(--maat,360px);justify-content:center;align-content:center}
 .tegel{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto;width:var(--maat,360px);height:var(--maat,360px);background:#fff;color:var(--zwart);border-radius:calc(var(--maat,360px) * .12);overflow:hidden;text-align:left;
@@ -198,8 +199,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const k = Math.min(innerWidth / w, innerHeight / h);
     document.querySelectorAll(".vlak").forEach(v => { v.style.transform = `translate(-50%,-50%) scale(${k})`; });
   }
-  addEventListener("resize", () => { schaal(); pasTegelsAan(); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => pasTegelsAan());
+  addEventListener("resize", () => { schaal(); pasDatumAan(); pasTegelsAan(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { pasDatumAan(); pasTegelsAan(); });
 
   /* ---------- klok en groet ---------- */
   const DAGEN = ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"];
@@ -210,7 +211,20 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const d = new Date();
     document.querySelectorAll("[data-klok]").forEach(e => { e.textContent = tijd(d); });
     const g = document.querySelector("[data-groet]"); if (g) g.textContent = groet(d);
-    const dt = document.querySelector("[data-datum]"); if (dt) dt.textContent = `Het is ${DAGEN[d.getDay()]} ${d.getDate()} ${MAANDEN[d.getMonth()]}`;
+    const dt = document.querySelector("[data-datum]");
+    if (dt) {
+      const dag = DAGEN[d.getDay()], tekst = `${dag[0].toUpperCase() + dag.slice(1)} ${d.getDate()} ${MAANDEN[d.getMonth()]} ${d.getFullYear()}`;
+      if (dt.textContent !== tekst) { dt.textContent = tekst; pasDatumAan(); pasTegelsAan(); }
+    }
+  }
+  /* de datum zo groot mogelijk: zo breed als het scherm, maar niet hoger dan een vijfde ervan */
+  function pasDatumAan() {
+    const dt = document.querySelector("[data-datum]"); if (!dt) return;
+    const v = $("thuisVlak"), W = v.clientWidth - 144, staand = v.clientHeight > v.clientWidth;
+    dt.style.fontSize = "100px";
+    const r = document.createRange(); r.selectNodeContents(dt);
+    const breed = r.getBoundingClientRect().width / (v.getBoundingClientRect().width / v.clientWidth || 1) || 1;
+    dt.style.fontSize = Math.floor(Math.min(100 * W / breed * 0.97, staand ? 150 : 170)) + "px";
   }
   setInterval(tikKlok, 5000);
 
@@ -221,7 +235,8 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const box = $("thuisVlak").querySelector(".tegels"); if (!box) return;
     const v = $("thuisVlak"), kop = v.querySelector(".kop, .bewerkkop");
     const n = box.children.length, gap = n > 9 ? 28 : 36;
-    const W = v.clientWidth - 144, H = v.clientHeight - (kop ? kop.offsetHeight : 0) - 64;
+    const voet = v.querySelector(".datumvoet");
+    const W = v.clientWidth - 144, H = v.clientHeight - (kop ? kop.offsetHeight : 0) - (voet ? voet.offsetHeight + 8 : 0) - 64;
     let best = 0, kol = 1;
     for (let c = 1; c <= n; c++) {
       const r = Math.ceil(n / c), m = Math.min((W - gap * (c - 1)) / c, (H - gap * (r - 1)) / r);
@@ -245,14 +260,16 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     const kopHtml = bewerk
       ? `<header class="bewerkkop"><div><h1>Tegels aanpassen</h1><p>Tik op ✕ om een tegel weg te halen, of op + om er een toe te voegen.</p></div><button class="grootknop" type="button" data-actie="klaar">Klaar</button></header>`
       : s.welkom !== false
-      ? `<header class="kop"><div class="links"><div class="plek"><img class="str" src="/img/streepjes.png" alt="">${plek}${s.titel ? `<span>${esc(s.titel)}</span>` : ""}</div><h1 data-groet></h1><p data-datum></p></div><div class="klok" data-klok></div></header>`
+      ? `<header class="kop"><div class="links"><div class="plek"><img class="str" src="/img/streepjes.png" alt="">${plek}${s.titel ? `<span>${esc(s.titel)}</span>` : ""}</div><h1 data-groet></h1></div><div class="klok" data-klok></div></header>`
       : `<header class="kop"><div class="links"><div class="plek" style="margin:0"><img class="str" src="/img/streepjes.png" alt="">${plek}${s.titel ? `<span style="font-size:52px;opacity:1">${esc(s.titel)}</span>` : ""}</div></div><div class="klok" data-klok style="font-size:72px"></div></header>`;
     v.classList.toggle("bewerk", bewerk);
     v.innerHTML = kopHtml + (lijst.length || bewerk
       ? `<div class="tegels">${lijst.map(({ t, i }) => tegelHtml(t, i)).join("")}${bewerk ? `<button class="tegel plus" type="button" data-actie="plus"><div><b>+</b><span>Toevoegen</span></div></button>` : ""}</div>`
-      : `<div class="leeg">Er staan nog geen tegels klaar.</div>`);
+      : `<div class="leeg">Er staan nog geen tegels klaar.</div>`)
+      + (!bewerk && s.welkom !== false ? `<footer class="datumvoet" data-datum></footer>` : "");
     v.querySelectorAll(".tegel img").forEach(img => img.addEventListener("error", () => { const b = img.parentNode; img.remove(); b.insertAdjacentHTML("beforeend", SS.ICONEN.ster.svg); }));
     tikKlok();
+    pasDatumAan();
     pasTegelsAan();
   }
   $("thuisVlak").addEventListener("click", e => {
