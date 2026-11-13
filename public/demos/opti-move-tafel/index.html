@@ -187,6 +187,7 @@ footer .stripes i:nth-child(3) { background: #cfcac1 !important; } footer .strip
       <div class="group"><h3>Voetenplank <span id="footName"></span></h3>
         <div class="seg" role="group" aria-label="Voetenplank verstellen"><button type="button" id="footDown">▼ Lager</button><button type="button" id="footUp">▲ Hoger</button></div></div>
       <div class="group"><h3>Frame <span id="frameName"></span></h3><div class="swatches" id="frames" role="group" aria-label="Framekleur"></div></div>
+      <div class="group"><h3>Bladmateriaal <span id="matName"></span></h3><div class="seg" id="mats" role="group" aria-label="Bladmateriaal"></div></div>
       <div class="group"><h3>Tafelblad <span id="topName"></span></h3><div class="swatches" id="tops" role="group" aria-label="Decor tafelblad"></div></div>
       <div class="row"><button class="btn" id="viewFront" type="button">Vooraanzicht</button><button class="btn" id="viewSide" type="button">Zijaanzicht</button><button class="btn" id="viewSpin" type="button">Laat draaien</button></div>
       <dl class="facts" id="facts"></dl>
@@ -201,7 +202,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 // Opti+ Move (Vanerum) – parametrisch 3D-model voor three.js.
 // Maten uit productblad PDS_Opti+ move (Table) v2025.1: hoogte A 76/90/102 cm,
-// bladvormen rechthoek 50×75, trapezium 50×75/60, Ecta 59×90, Pebble 60×95 cm, blad 25 mm.
+// bladvormen rechthoek 50×75, trapezium 50×75/60, Ecta 59×90, Pebble 60×95 cm, blad volkern 12 mm (standaard) of Durapan 19 mm.
 // Eenheden: meter. y omhoog; de leerling zit aan de voorkant (+z); de kolom staat achter.
 
 const SHAPES = {
@@ -232,6 +233,12 @@ const FRAMES = {
   'koraal': { name: 'Koraal RAL3033', hex: '#b5534a' },
   'frutella': { name: 'Frutella NCS S1070-R20B', hex: '#c8417a' },
   'geel': { name: 'Geel RAL1007', hex: '#e5a400' },
+};
+// Bladmateriaal: volkern (compact laminaat) 12 mm met zichtbare zwarte kern (standaard), of Durapan 19 mm met ABS-rand.
+// Volkern is volgens de Vanerum-portal ("Table tops - SOLID CORE 12 MM") leverbaar in 9 van de 13 decors.
+const MATS = {
+  volkern: { name: 'Volkern 12 mm', short: 'Volkern', thick: .012, tops: ['beuk', 'kers', 'eik', 'acacia', 'esdoorn', 'wit', 'wit-grijs', 'zilvergrijs', 'grafiet'] },
+  durapan: { name: 'Durapan 19 mm', short: 'Durapan', thick: .019, tops: null },
 };
 const TOPS = {
   'beuk': { name: 'Lichte beuk H1518', hex: '#e2c39a', wood: true },
@@ -322,7 +329,10 @@ function buildOptiMove(opts = {}) {
 
   const frameMat = new THREE.MeshStandardMaterial({ color: F.hex, roughness: F.metal ? .35 : .55, metalness: F.metal ? .55 : .1, name: 'frame' });
   const topMat = new THREE.MeshStandardMaterial({ color: T.wood ? '#ffffff' : T.hex, map: T.wood ? woodTexture(T.hex) : null, roughness: .6, name: 'tafelblad' });
-  const edgeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(T.hex).offsetHSL(0, 0, -.06), roughness: .45, name: 'abs-rand' });
+  const M = MATS[opts.mat] || MATS.volkern, volkern = M === MATS.volkern, tt = M.thick;
+  const edgeMat = volkern
+    ? new THREE.MeshStandardMaterial({ color: '#1c1c1d', roughness: .5, name: 'volkern-kern' })
+    : new THREE.MeshStandardMaterial({ color: new THREE.Color(T.hex).offsetHSL(0, 0, -.06), roughness: .45, name: 'abs-rand' });
   const add = (geo, mat, name) => { const m = new THREE.Mesh(geo, mat); m.name = name; m.castShadow = true; m.receiveShadow = true; root.add(m); return m; };
 
   const zc = -.165;                 // kolom achter het midden
@@ -378,7 +388,7 @@ function buildOptiMove(opts = {}) {
 
   // 2. Kolom: ronde buis. Onderaan een huls van bolle segmenten met inkepingen ertussen;
   //    in die inkepingen klikt de voetenplank vast. Daarboven een gladde, iets slankere buis.
-  const headY = A - .025 - .06;
+  const headY = A - tt - .06;
   // alle modellen: 8 segmenten met 7 ringvormige inkepingen
   const nSeg = 8, segH = .052, y0 = baseTop + .03;
   const sleeveTop = y0 + nSeg * segH;
@@ -424,7 +434,7 @@ function buildOptiMove(opts = {}) {
 
   // 4. Gebogen tafelsteun (ovale buis 31 × 16 mm) en draagrail onder het blad
   const head = new THREE.BoxGeometry(.075, .05, .085); head.translate(0, headY + .02, zc + .01); add(head, frameMat, 'kop');
-  const railY = A - .025 - .012;
+  const railY = A - tt - .012;
   const rail = slab(roundedPoly([[-.025, zc - .03], [.025, zc - .03], [.025, .2], [-.025, .2]], .012), .022, .004, 2); rail.translate(0, railY - .011, 0); add(rail, frameMat, 'draagrail');
   for (const sx of [-1, 1]) {
     const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(.03 * sx, headY + .02, zc + .03), new THREE.Vector3(.12 * sx, railY - .02, zc + .08), new THREE.Vector3(.2 * sx, railY - .005, zc + .2)]);
@@ -432,14 +442,14 @@ function buildOptiMove(opts = {}) {
     const cross = new THREE.BoxGeometry(.012, .016, .28); cross.translate(.2 * sx, railY - .002, .1); add(cross, frameMat, 'steun onder blad');
   }
 
-  // 5. Tafelblad 25 mm met ABS-rand
-  const top = slab(topShape(shape), .025, .005, 4); top.translate(0, A - .025, 0);
+  // 5. Tafelblad: 25 mm met ABS-rand, of volkern 12 mm (dunne plaat, scherpe rand met kleine afschuining, zwarte kern zichtbaar)
+  const top = volkern ? slab(topShape(shape), tt, .0008, 1) : slab(topShape(shape), tt, .005, 4); top.translate(0, A - tt, 0);
   const topMesh = add(top, [topMat, edgeMat], 'tafelblad');
   // blad omgedraaid monteren: een halve slag om de kolom (niet bij de rechthoek, die is symmetrisch)
   const flipAxis = shape === 'rechthoek' ? null : 'y';
   if (opts.flip && flipAxis) topMesh.rotation.y = Math.PI;
 
-  root.userData = { flip: !!(opts.flip && flipAxis), flipAxis, topMesh, shape, height: Acm, frame: opts.frame, top: opts.top, footrest: fy, notches, notch, foot };
+  root.userData = { mat: volkern ? 'volkern' : 'durapan', flip: !!(opts.flip && flipAxis), flipAxis, topMesh, shape, height: Acm, frame: opts.frame, top: opts.top, footrest: fy, notches, notch, foot };
   return root;
 }
 
@@ -448,7 +458,7 @@ const $ = id => document.getElementById(id);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const stage = $('stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(1);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.35;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
@@ -468,8 +478,8 @@ controls.autoRotate = !reduce; controls.autoRotateSpeed = 0.8;
 function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stage); resize();
 
-const state = { flip: false, shape: 'rechthoek', height: 76, frame: 'zwart', top: 'beuk', footNotch: null };
-try { const h = location.hash.slice(1); if (SHAPES[h]) state.shape = h; } catch (e) {}
+const state = { mat: 'volkern', flip: false, shape: 'rechthoek', height: 76, frame: 'zwart', top: 'beuk', footNotch: null };
+try { for (const h of location.hash.slice(1).split(/[,&]/)) { if (SHAPES[h]) state.shape = h; if (MATS[h]) state.mat = h; } } catch (e) {}
 let model = null;
 function rebuild() {
   if (model) { scene.remove(model); model.traverse(o => { if (o.isMesh) { o.geometry.dispose(); [].concat(o.material).forEach(m => { m.map?.dispose(); m.dispose(); }); } }); }
@@ -477,10 +487,13 @@ function rebuild() {
   const A = state.height / 100;
   controls.target.set(0, A * 0.55, 0);
   const S = SHAPES[state.shape];
-  $('dim').innerHTML = `<b>${state.height} cm</b><span>${S.name} · ${S.B} × ${S.C} cm</span>`;
+  const Mt = MATS[state.mat];
+  $('dim').innerHTML = `<b>${state.height} cm</b><span>${S.name} · ${S.B} × ${S.C} cm · ${state.mat === 'volkern' ? 'volkern 12 mm' : 'durapan 19 mm'}</span>`;
+  $('matName').textContent = Mt.name;
   $('shapeName').textContent = S.name; $('heightName').textContent = `${state.height} cm`;
   $('frameName').textContent = FRAMES[state.frame].name; $('topName').textContent = TOPS[state.top].name;
   $('facts').innerHTML = `<dt>Afmetingen</dt><dd>B ${S.B} × C ${S.C} cm, hoogte ${state.height} cm</dd>
+    <dt>Tafelblad</dt><dd>${state.mat === 'volkern' ? 'volkern (compact laminaat) 12 mm: massief en vochtbestendig, met de zwarte kern zichtbaar aan de rand' : 'Durapan 19 mm met ABS-rand in de kleur van het blad'}</dd>
     <dt>Voetenplank</dt><dd>zwart, klikt vast in de inkepingen van de poot</dd>
     <dt>Frame</dt><dd>gegoten aluminium U-voet uit één stuk, ronde kolom met inkepingen</dd>
     <dt>Norm</dt><dd>getest volgens EN 1729-1,2 (FCBA-GS)</dd><dt>Kleuren</dt><dd>benadering van de RAL- en decorcodes</dd>`;
@@ -493,12 +506,15 @@ function outline(kind) {
 $('shapes').innerHTML = Object.entries(SHAPES).map(([k, s]) => `<button type="button" data-shape="${k}" aria-pressed="false">${outline(k)}${s.name}</button>`).join('');
 $('heights').innerHTML = HEIGHTS.map(h => `<button type="button" data-height="${h}" aria-pressed="false">${h} cm</button>`).join('');
 $('frames').innerHTML = Object.entries(FRAMES).map(([k, f]) => `<button type="button" data-frame="${k}" class="${f.metal ? 'metal' : ''}" style="--sw:${f.hex}" title="${f.name}" aria-label="${f.name}" aria-pressed="false"></button>`).join('');
+$('mats').innerHTML = Object.entries(MATS).map(([k, m]) => `<button type="button" data-mat="${k}" aria-pressed="false">${m.name}</button>`).join('');
 $('tops').innerHTML = Object.entries(TOPS).map(([k, t]) => `<button type="button" data-top="${k}" class="${t.wood ? 'wood' : ''}" style="--sw:${t.hex}" title="${t.name}" aria-label="${t.name}" aria-pressed="false"></button>`).join('');
 function syncButtons() {
   document.querySelectorAll('[data-shape]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.shape === state.shape)));
   document.querySelectorAll('[data-height]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.height === state.height)));
   document.querySelectorAll('[data-frame]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.frame === state.frame)));
-  document.querySelectorAll('[data-top]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.top === state.top)));
+  document.querySelectorAll('[data-mat]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mat === state.mat)));
+  const allowed = MATS[state.mat].tops;
+  document.querySelectorAll('[data-top]').forEach(b => { b.hidden = !!allowed && !allowed.includes(b.dataset.top); b.setAttribute('aria-pressed', String(b.dataset.top === state.top)); });
   $('shapes').style.setProperty('--sw', TOPS[state.top].hex);
   const canFlip = state.shape !== 'rechthoek'; $('flipTop').disabled = !canFlip;
   $('flipTop').setAttribute('aria-pressed', String(canFlip && state.flip));
@@ -529,6 +545,7 @@ document.querySelector('.panel').addEventListener('click', e => {
   else if (b.dataset.height) { state.height = +b.dataset.height; state.footNotch = null; }
   else if (b.dataset.frame) state.frame = b.dataset.frame;
   else if (b.dataset.top) state.top = b.dataset.top;
+  else if (b.dataset.mat) { state.mat = b.dataset.mat; const al = MATS[state.mat].tops; if (al && !al.includes(state.top)) state.top = 'beuk'; }
   else return;
   rebuild();
 });
