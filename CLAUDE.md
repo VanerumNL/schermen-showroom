@@ -20,5 +20,7 @@ Header `x-wachtwoord` = gedeeld wachtwoord (secret WACHTWOORD) of sessietoken `v
 - Films/demo's licht houden: de tv-boxen zijn traag.
 - Nieuwe Opti+-pagina's komen als Claude-artifacts; die worden naar `public/demos/<naam>/index.html` gekopieerd (zie opti-move-tafel).
 
+- Uitgebreid overzicht (onderdelen, blokken, demo's, secrets) staat in het Claude-project "Vanerum Schermen": `claude/schermen-overzicht.md`.
+
 ## Openstaande punten
 Citaat-bronnen in `public/gedeeld.js` (Plutarchus, Ford, Chinees gezegde) controleren; NOT-data 19–23 januari 2027 (Jaarbeurs Utrecht) met de organisator bevestigen; QR-wifi is alleen op korte afstand scanbaar.
