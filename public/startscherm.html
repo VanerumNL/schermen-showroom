@@ -393,8 +393,10 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
 
   /* lang indrukken op de klok of de kop opent het inloggen */
   let drukT = null;
+  /* uitgezet: tegels beheer je op afstand in de editor (schermen.vanerumnederland.nl/startschermen) */
+  const INLOG_OP_SCHERM = false;
   $("thuisVlak").addEventListener("pointerdown", e => {
-    if (bewerk || VOORBEELD || !e.target.closest(".kop")) return;
+    if (!INLOG_OP_SCHERM || bewerk || VOORBEELD || !e.target.closest(".kop")) return;
     clearTimeout(drukT); drukT = setTimeout(vraagLogin, 3000);
   });
   ["pointerup", "pointercancel", "pointerleave"].forEach(t => $("thuisVlak").addEventListener(t, () => clearTimeout(drukT)));
@@ -682,7 +684,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
     lokaalBestand(t.lokaal).then(f => {
       if (!vak.isConnected) return;
       if (!f) {
-        bericht(vak, "Dit filmpje staat nog niet op deze computer", "Een medewerker kan het kiezen: houd de klok 3 seconden ingedrukt, log in en tik op ‘Kiezen’ bij deze tegel.", null);
+        bericht(vak, "Dit filmpje staat nog niet op deze computer", "Kies in de editor een filmpje dat online staat (YouTube of een eigen mp4).", null);
         return;
       }
       const url = URL.createObjectURL(f);

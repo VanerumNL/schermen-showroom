@@ -338,6 +338,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   async function binnen() {
     $("login").hidden = true; $("werk").hidden = false; $("uitlog").hidden = false; $("accountKnop").hidden = false;
     $("ikNaam").textContent = ik && ik.naam ? ik.naam : ""; $("ikNaam").hidden = !(ik && ik.naam);
+    if (ik && ik.centraal) { $("accountKnop").textContent = isBeheerder() ? "Accounts" : "Wachtwoord"; $("accountKnop").title = "Opent account.vanerumnederland.nl"; }
     await laadLijst();
     const laatste = lees("vs-laatste");
     const kies = lijst.find(s => s.id === laatste) || lijst[0];
@@ -1125,6 +1126,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   /* ===== account en gebruikers ===== */
   const rolNaam = r => r === "beheerder" ? "Beheerder" : "Redacteur";
   async function openAccount() {
+    /* centrale inlog: collega's, toegang en wachtwoorden staan op account.vanerumnederland.nl */
+    if (ik && ik.centraal) { window.open("https://account.vanerumnederland.nl" + (isBeheerder() ? "/beheer" : "/wachtwoord"), "_blank", "noopener"); return; }
     $("acc").hidden = false;
     $("accWie").textContent = ik && ik.gedeeld ? "U bent ingelogd met het gedeelde wachtwoord." : ik && ik.centraal ? `Ingelogd als ${ik.naam} via account.vanerumnederland.nl (${rolNaam(ik.rol).toLowerCase()}). Uw wachtwoord en toegang regelt u daar. Hieronder staan de losse accounts voor het inloggen op een touchscreen zelf.` : `Ingelogd als ${ik.naam} (${rolNaam(ik.rol).toLowerCase()}).`;
     $("accEigen").hidden = !!(ik && (ik.gedeeld || ik.centraal));

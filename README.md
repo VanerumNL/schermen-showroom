@@ -16,8 +16,9 @@ centrale inlog van **account.vanerumnederland.nl**: één account voor alle Vane
 - De schermen zelf (`/s/…`, `/k/…`, `/t/…`) blijven openbaar, op het nieuwe adres én op het oude workers.dev-adres dat al in
   AbleSign en op de touchscreens staat. Die hoeven niet te worden aangepast.
 - De editors op het workers.dev-adres sturen door naar schermen.vanerumnederland.nl.
-- De losse accounts hieronder (onder *Account* in de editor) blijven bestaan voor het inloggen op een touchscreen zelf
-  (klok 3 seconden ingedrukt).
+- De knop *Accounts* in de editor opent account.vanerumnederland.nl (beheer van collega's en toegang).
+- Inloggen op een touchscreen zelf (klok 3 seconden ingedrukt) staat uit (`INLOG_OP_SCHERM` in `startscherm.html`);
+  tegels beheer je op afstand in de editor. De oude losse schermen-accounts worden niet meer gebruikt.
 - Techniek: `src/worker.js` vraagt via de service binding `ACCOUNT` (Worker `kaartenmaker`) aan `/api/check?site=schermen`
   of de bezoeker binnen mag. De AbleSign-koppeling herkent een indeling op het oude en op het nieuwe adres.
 
@@ -120,4 +121,4 @@ De tegelsoort **Oude journaals** speelt Polygoon-journaals en ander oud nieuws v
 
 ### Filmpjes van de computer bij het scherm
 
-Grote filmpjes (bijv. een aquarium van een uur) hoeven niet geüpload te worden. Op het touchscreen zelf (klok 3 seconden ingedrukt → inloggen) kiest een medewerker het bestand; het scherm kopieert het naar de opslag van de browser op die computer (Origin Private File System) en speelt het daarvandaan. Het filmpje staat dus alleen op die computer, niet online.
+*Staat uit sinds de centrale inlog (zie hierboven); dit stuk beschrijft hoe het werkte.* Grote filmpjes (bijv. een aquarium van een uur) hoeven niet geüpload te worden. Op het touchscreen zelf (klok 3 seconden ingedrukt → inloggen) kiest een medewerker het bestand; het scherm kopieert het naar de opslag van de browser op die computer (Origin Private File System) en speelt het daarvandaan. Het filmpje staat dus alleen op die computer, niet online.
