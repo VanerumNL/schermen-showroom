@@ -51,10 +51,39 @@ async function wachtwoordStatus(env) {
   const gebruikers = (await env.KV.list({ prefix: "gebruiker:", limit: 1 })).keys.length > 0;
   return { ingesteld: gedeeld || gebruikers, gedeeld, gebruikers, bron: env.WACHTWOORD ? "secret" : (gedeeld ? "kv" : null) };
 }
+/* Centrale inlog (account.vanerumnederland.nl): op schermen.vanerumnederland.nl logt een collega één keer in voor
+   alle Vanerum-tools. Het accountsysteem is de Worker "kaartenmaker" (service binding ACCOUNT); de site-id is "schermen".
+   Een centrale beheerder is hier ook beheerder, anderen redacteur. */
+const CENTRAAL_HOST = "schermen.vanerumnederland.nl";
+const ACCOUNT = "https://account.vanerumnederland.nl";
+const centraalCache = new Map();
+async function centraal(req, env) {
+  const cookie = req.headers.get("cookie") || "";
+  const k = (cookie.match(/(?:^|;\s*)vn_sessie=([^;]+)/) || [])[1];
+  if (!k) return { status: 401, data: {} };
+  const x = centraalCache.get(k);
+  if (x && x.tot > Date.now()) return x;
+  let status = 502, data = {};
+  try {
+    const adres = (env.ACCOUNT_URL || ACCOUNT) + "/api/check?site=schermen", init = { headers: { cookie } };
+    const r = env.ACCOUNT ? await env.ACCOUNT.fetch(new Request(adres, init)) : await fetch(adres, init);
+    status = r.status; data = await r.json().catch(() => ({}));
+  } catch (e) {}
+  const uit = { status, data, tot: Date.now() + (status === 502 ? 0 : 30000) };
+  if (centraalCache.size > 500) centraalCache.clear();
+  centraalCache.set(k, uit);
+  return uit;
+}
+async function centraalPersoon(req, env) {
+  const c = await centraal(req, env);
+  if (c.status !== 200 || c.data.openbaar || !c.data.email) return false;
+  return { naam: c.data.naam || c.data.email, sleutel: "", rol: c.data.admin ? "beheerder" : "redacteur", centraal: true };
+}
+
 /* geeft de ingelogde persoon terug ({ naam, sleutel, rol }) of false */
 async function magBewerken(req, env) {
   const ww = req.headers.get("x-wachtwoord") || "";
-  if (!ww) return false;
+  if (!ww) return centraalPersoon(req, env);
   if (ww.startsWith("vs1.")) {
     const sessie = await env.KV.get("sessie:" + (await sha(ww)), "json");
     if (!sessie) return false;
@@ -206,7 +235,7 @@ async function api(req, env, url, ctx) {
       return json({ ok: true, token, naam: g.naam, rol: g.rol });
     }
     const u = await magBewerken(req, env);
-    return u ? json({ ok: true, naam: u.naam, rol: u.rol, gedeeld: !!u.gedeeld }) : fout("Wachtwoord klopt niet", 401);
+    return u ? json({ ok: true, naam: u.naam, rol: u.rol, gedeeld: !!u.gedeeld, centraal: !!u.centraal }) : fout("Wachtwoord klopt niet", 401);
   }
 
   /* het allereerste account (alleen zolang er nog geen enkele inlog bestaat) */
@@ -222,6 +251,7 @@ async function api(req, env, url, ctx) {
     const wie = await magBewerken(req, env);
     if (!wie) return fout("Niet ingelogd", 401);
     if (wie.gedeeld) return fout("Met het gedeelde wachtwoord heeft u geen eigen account", 409);
+    if (wie.centraal) return fout("Uw wachtwoord wijzigt u op account.vanerumnederland.nl", 409);
     const body = await req.json().catch(() => ({}));
     const g = await gebruiker(env, wie.sleutel);
     if (!gelijk(await pbkdf2(String(body.oud || ""), g.zout), g.hash)) return fout("Het huidige wachtwoord klopt niet", 403);
@@ -559,9 +589,30 @@ async function api(req, env, url, ctx) {
   return fout("Onbekend adres", 404);
 }
 
+const GEEN_TOEGANG = `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Geen toegang · Vanerum Schermen</title></head>
+<body style="margin:0;font-family:Arial,sans-serif;background:#e9e8e4;display:flex;align-items:center;justify-content:center;min-height:100vh">
+<div style="background:#fff;border-top:6px solid #fbb900;padding:32px;max-width:400px;margin:20px"><h1 style="font-size:22px;margin:0 0 8px">Geen toegang</h1>
+<p style="color:#6b6b68;line-height:1.45">Je bent ingelogd, maar je hebt geen toegang tot de schermen. Vraag Paul om je toegang te geven.</p>
+<p><a href="${ACCOUNT}/" style="color:#1e1e1e;font-weight:700">Naar mijn sites</a> &nbsp; <a href="${ACCOUNT}/uitloggen" style="color:#6b6b68">Ander account</a></p></div></body></html>`;
+
 export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
+    /* De editors (schermen, aanraakscherm, startschermen) alleen via de centrale inlog op schermen.vanerumnederland.nl.
+       De schermen zelf (/s/, /k/, /t/) blijven openbaar, ook op het workers.dev-adres dat in AbleSign staat. */
+    const host = env.TEST ? req.headers.get("x-test-host") || url.hostname : url.hostname;
+    const editor = req.method === "GET" && /^\/(index\.html)?$|^\/(aanraakscherm|startschermen)(\.html)?\/?$/.test(url.pathname);
+    if (host === CENTRAAL_HOST) {
+      if (url.pathname === "/uitloggen" || url.pathname === "/login") return Response.redirect((env.ACCOUNT_URL || ACCOUNT) + url.pathname, 302);
+      if (editor) {
+        const c = await centraal(req, env);
+        if (c.status === 401) return Response.redirect((c.data.wachtwoord || (env.ACCOUNT_URL || ACCOUNT) + "/login") + "?terug=" + encodeURIComponent(url.href), 302);
+        if (c.status === 403) return new Response(GEEN_TOEGANG, { status: 403, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+        if (c.status !== 200) return new Response("Inlogcontrole even niet bereikbaar, probeer het zo opnieuw.", { status: 502, headers: { "content-type": "text/plain; charset=utf-8" } });
+      }
+    } else if (editor && url.hostname.endsWith(".workers.dev")) {
+      return Response.redirect("https://" + CENTRAAL_HOST + url.pathname + url.search, 302);
+    }
     if (url.pathname.startsWith("/api/")) {
       try { return await api(req, env, url, ctx); }
       catch (e) { return fout("Er ging iets mis: " + (e && e.message || e), 500); }

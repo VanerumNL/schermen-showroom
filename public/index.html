@@ -282,7 +282,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   const lees = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (e) { return null; } };
   const bewaar = (k, v, lang) => { try { (lang ? localStorage : sessionStorage).setItem(k, v); } catch (e) {} };
   const wis = k => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} };
-  let ww = lees("vs-ww") || "", lijst = [], huidig = null, opgeslagen = "", eersteKeer = false, gedeeldAan = false, ik = null;
+  const CENTRAAL = location.hostname.endsWith("vanerumnederland.nl");
+  let ww = CENTRAAL ? "" : lees("vs-ww") || "", lijst = [], huidig = null, opgeslagen = "", eersteKeer = false, gedeeldAan = false, ik = null;
   const isBeheerder = () => !!ik && ik.rol === "beheerder";
   const tijd = t => t ? new Date(t).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
 
@@ -299,6 +300,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   async function start() {
     const st = await fetch("/api/status").then(r => r.json()).catch(() => ({ ingesteld: true }));
     eersteKeer = !st.ingesteld; gedeeldAan = !!st.gedeeld;
+    /* centrale inlog (account.vanerumnederland.nl): geen eigen inlogscherm nodig */
+    if (CENTRAAL && !ww) { try { ik = await api("/api/login", { method: "POST" }); return binnen(); } catch (e) { return; } }
     if (!eersteKeer && ww) { try { ik = await api("/api/login", { method: "POST" }); return binnen(); } catch (e) {} }
     toonLogin();
   }
@@ -330,7 +333,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
       binnen();
     } catch (err) { $("loginFout").textContent = err.message; }
   });
-  $("uitlog").addEventListener("click", () => { wis("vs-ww"); ww = ""; huidig = null; toonLogin(); });
+  $("uitlog").addEventListener("click", () => { if (CENTRAAL && !ww) { location.href = "/uitloggen"; return; } wis("vs-ww"); ww = ""; huidig = null; toonLogin(); });
 
   async function binnen() {
     $("login").hidden = true; $("werk").hidden = false; $("uitlog").hidden = false; $("accountKnop").hidden = false;
@@ -1123,8 +1126,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
   const rolNaam = r => r === "beheerder" ? "Beheerder" : "Redacteur";
   async function openAccount() {
     $("acc").hidden = false;
-    $("accWie").textContent = ik && ik.gedeeld ? "U bent ingelogd met het gedeelde wachtwoord." : `Ingelogd als ${ik.naam} (${rolNaam(ik.rol).toLowerCase()}).`;
-    $("accEigen").hidden = !!(ik && ik.gedeeld);
+    $("accWie").textContent = ik && ik.gedeeld ? "U bent ingelogd met het gedeelde wachtwoord." : ik && ik.centraal ? `Ingelogd als ${ik.naam} via account.vanerumnederland.nl (${rolNaam(ik.rol).toLowerCase()}). Uw wachtwoord en toegang regelt u daar. Hieronder staan de losse accounts voor het inloggen op een touchscreen zelf.` : `Ingelogd als ${ik.naam} (${rolNaam(ik.rol).toLowerCase()}).`;
+    $("accEigen").hidden = !!(ik && (ik.gedeeld || ik.centraal));
     $("pwMelding").textContent = "";
     $("accBeheer").hidden = !isBeheerder();
     if (isBeheerder()) await laadGebruikers();

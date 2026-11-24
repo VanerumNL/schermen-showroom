@@ -242,7 +242,8 @@ ul.tips li{margin:5px 0}
   const lees = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (e) { return null; } };
   const bewaar = (k, v, lang) => { try { (lang ? localStorage : sessionStorage).setItem(k, v); } catch (e) {} };
   const wis = k => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} };
-  let ww = lees("vs-ww") || "", lijst = [], huidig = null, opgeslagen = "";
+  const CENTRAAL = location.hostname.endsWith("vanerumnederland.nl");
+  let ww = CENTRAAL ? "" : lees("vs-ww") || "", lijst = [], huidig = null, opgeslagen = "";
 
   function toast(t) { const d = document.createElement("div"); d.className = "toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
   async function api(pad, opties = {}) {
@@ -257,6 +258,8 @@ ul.tips li{margin:5px 0}
   async function start() {
     const st = await fetch("/api/status").then(r => r.json()).catch(() => ({ ingesteld: true }));
     if (!st.ingesteld) { location.href = "/"; return; }
+    /* centrale inlog (account.vanerumnederland.nl): geen eigen inlogscherm nodig */
+    if (CENTRAAL) { try { await api("/api/login", { method: "POST" }); return binnen(); } catch (e) { return; } }
     if (ww) { try { await api("/api/login", { method: "POST" }); return binnen(); } catch (e) {} }
     toonLogin();
   }
@@ -270,7 +273,7 @@ ul.tips li{margin:5px 0}
       bewaar("vs-ww", ww, $("onthoud").checked); $("ww1").value = ""; binnen();
     } catch (err) { $("loginFout").textContent = err.message; }
   });
-  $("uitlog").addEventListener("click", () => { wis("vs-ww"); ww = ""; huidig = null; toonLogin(); });
+  $("uitlog").addEventListener("click", () => { if (CENTRAAL) { location.href = "/uitloggen"; return; } wis("vs-ww"); ww = ""; huidig = null; toonLogin(); });
 
   async function binnen() {
     $("login").hidden = true; $("werk").hidden = false; $("uitlog").hidden = false;

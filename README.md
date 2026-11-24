@@ -7,6 +7,20 @@ Zelf indelingen maken voor de tv-schermen (AbleSign): klok, logo, mededelingen, 
 
 Wijzigingen die u in de editor opslaat, verschijnen binnen een minuut op het scherm. Valt het internet weg, dan blijft het scherm de laatste indeling tonen.
 
+## Inloggen (centraal)
+
+De editors staan op **https://schermen.vanerumnederland.nl** (Schermen, `/aanraakscherm`, `/startschermen`) en gebruiken de
+centrale inlog van **account.vanerumnederland.nl**: één account voor alle Vanerum-tools. Wie erbij mag, regel je daar onder
+**Beheer** met het vinkje *Schermen*. Een centrale beheerder is hier ook beheerder, anderen zijn redacteur.
+
+- De schermen zelf (`/s/…`, `/k/…`, `/t/…`) blijven openbaar, op het nieuwe adres én op het oude workers.dev-adres dat al in
+  AbleSign en op de touchscreens staat. Die hoeven niet te worden aangepast.
+- De editors op het workers.dev-adres sturen door naar schermen.vanerumnederland.nl.
+- De losse accounts hieronder (onder *Account* in de editor) blijven bestaan voor het inloggen op een touchscreen zelf
+  (klok 3 seconden ingedrukt).
+- Techniek: `src/worker.js` vraagt via de service binding `ACCOUNT` (Worker `kaartenmaker`) aan `/api/check?site=schermen`
+  of de bezoeker binnen mag. De AbleSign-koppeling herkent een indeling op het oude en op het nieuwe adres.
+
 ## Koppeling met AbleSign
 
 Met de koppeling zet u een indeling vanuit de editor op een tv, zonder AbleSign te openen. Rechts onder het voorbeeld staat dan **Op de tv**: alle tv's uit AbleSign, of ze online zijn en welke indeling ze tonen. Vink een of meer tv's aan en kies:

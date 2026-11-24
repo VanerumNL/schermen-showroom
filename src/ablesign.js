@@ -55,6 +55,13 @@ async function alles(env, pad) {
 
 const schermUrl = (origin, id) => origin + "/s/" + id;
 const zelfdeUrl = (a, b) => (a || "").replace(/\/+$/, "").toLowerCase() === (b || "").replace(/\/+$/, "").toLowerCase();
+/* Zelfde indeling op het oude (workers.dev) of het nieuwe adres (schermen.vanerumnederland.nl): dan niet opnieuw aanmaken */
+function zelfdeScherm(a, id) {
+  try {
+    const u = new URL(a);
+    return u.pathname.replace(/\/+$/, "").toLowerCase() === "/s/" + id && (/\.workers\.dev$/.test(u.hostname) || /(^|\.)vanerumnederland\.nl$/.test(u.hostname));
+  } catch (e) { return false; }
+}
 function minutenGeleden(t) { return t ? (Date.now() - Date.parse(t)) / 60000 : Infinity; }
 
 /* Playlist van een scherm, of van zijn schermgroep als het scherm in een groep zit (dan speelt de groep). */
@@ -87,7 +94,7 @@ async function webAppVoor(env, origin, id, naam) {
   if (bewaard) {
     try {
       const d = await as(env, "/web_apps/" + bewaard);
-      if (d && d.data && zelfdeUrl(d.data.url, url)) return +bewaard;
+      if (d && d.data && (zelfdeUrl(d.data.url, url) || zelfdeScherm(d.data.url, id))) return +bewaard;
     } catch (e) { if (e.code !== "NOT_FOUND") throw e; }
   }
   const lijst = await alles(env, "/web_apps?sortBy=creation_date_desc");
@@ -97,7 +104,7 @@ async function webAppVoor(env, origin, id, naam) {
       const d = await as(env, "/web_apps/" + w.id).catch(() => null);
       w.url = d && d.data && d.data.url;
     }
-    if (zelfdeUrl(w.url, url)) { await env.KV.put("ablesign:webapp:" + id, String(w.id)); return w.id; }
+    if (zelfdeUrl(w.url, url) || zelfdeScherm(w.url, id)) { await env.KV.put("ablesign:webapp:" + id, String(w.id)); return w.id; }
   }
   const nieuw = await as(env, "/web_apps", { method: "POST", body: { title: ("Vanerum Schermen – " + (naam || id)).slice(0, 255), description: "Gemaakt vanuit Vanerum Schermen", url } });
   await env.KV.put("ablesign:webapp:" + id, String(nieuw.data.id));
