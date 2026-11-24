@@ -129,7 +129,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   const { esc, markeer } = KS;
   const params = new URLSearchParams(location.search);
   const VOORBEELD = params.has("voorbeeld");
-  const ID = (location.pathname.match(/^\/k\/([a-z0-9-]+)/) || [])[1] || params.get("k") || "";
+  const ID = (location.pathname.match(/^\/k\/([a-z0-9-]+)/) || [])[1] || params.get("k") || ((document.querySelector('meta[name="scherm-id"]') || {}).content) || "";
   let cfg = null, modus = "pres", laatsteAanraking = Date.now();
 
   /* ---------- timers die bij elke wissel opgeruimd worden ---------- */

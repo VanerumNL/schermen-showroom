@@ -13,6 +13,8 @@ function hoortErbij(url) {
   if (url.origin !== self.location.origin) return VAST.test(url.href) || GOOGLE_CSS.test(url.href);
   const p = url.pathname;
   if (p.startsWith("/api/")) return p.startsWith("/api/kiosk/");
+  /* op een eigen adres (bijv. not.vanerumnederland.nl) is de hoofdpagina het aanraakscherm zelf */
+  if ((p === "/" || p === "/index.html") && /\.vanerumnederland\.nl$/.test(self.location.hostname) && !/^schermen\./.test(self.location.hostname)) return true;
   if (p === "/" || p === "/index.html" || p.startsWith("/s/") || p.startsWith("/scherm")) return false;
   return true;
 }
