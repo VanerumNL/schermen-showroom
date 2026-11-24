@@ -55,6 +55,8 @@ async function wachtwoordStatus(env) {
    alle Vanerum-tools. Het accountsysteem is de Worker "kaartenmaker" (service binding ACCOUNT); de site-id is "schermen".
    Een centrale beheerder is hier ook beheerder, anderen redacteur. */
 const CENTRAAL_HOST = "schermen.vanerumnederland.nl";
+/* adressen die meteen één startscherm tonen (ook bij "routes" in wrangler.jsonc zetten) */
+const EIGEN_ADRES = { "isselwaerde.vanerumnederland.nl": "isselwaerde" };
 const ACCOUNT = "https://account.vanerumnederland.nl";
 const centraalCache = new Map();
 async function centraal(req, env) {
@@ -602,6 +604,15 @@ export default {
        De schermen zelf (/s/, /k/, /t/) blijven openbaar, ook op het workers.dev-adres dat in AbleSign staat. */
     const host = env.TEST ? req.headers.get("x-test-host") || url.hostname : url.hostname;
     const editor = req.method === "GET" && /^\/(index\.html)?$|^\/(aanraakscherm|startschermen)(\.html)?\/?$/.test(url.pathname);
+    /* Eigen adres voor een startscherm, bijv. isselwaerde.vanerumnederland.nl = /t/isselwaerde */
+    const eigen = EIGEN_ADRES[host];
+    if (eigen) {
+      if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+        const pagina = await env.ASSETS.fetch(new Request(url.origin + "/startscherm", req));
+        return new HTMLRewriter().on("head", { element(el) { el.prepend(`<meta name="start-id" content="${eigen}">`, { html: true }); } }).transform(pagina);
+      }
+      if (editor) return Response.redirect("https://" + CENTRAAL_HOST + url.pathname + url.search, 302);
+    }
     if (host === CENTRAAL_HOST) {
       if (url.pathname === "/uitloggen" || url.pathname === "/login") return Response.redirect((env.ACCOUNT_URL || ACCOUNT) + url.pathname, 302);
       if (editor) {

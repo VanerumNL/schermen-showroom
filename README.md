@@ -104,6 +104,7 @@ Na een paar minuten zonder aanraking gaat het scherm vanzelf terug naar de tegel
 
 - **Instellingen:** `https://<adres>/startschermen` (zelfde inlog).
 - **Scherm:** `https://<adres>/t/<naam>`, bijvoorbeeld `/t/isselwaerde`.
+- **Eigen adres:** `https://isselwaerde.vanerumnederland.nl` toont meteen `/t/isselwaerde`. Een nieuw eigen adres: toevoegen in `EIGEN_ADRES` (src/worker.js) en bij `routes` in `wrangler.jsonc`.
 - **Windows-pc:** snelkoppeling naar `msedge --kiosk https://<adres>/t/<naam> --edge-kiosk-type=fullscreen --no-first-run --autoplay-policy=no-user-gesture-required` en die in de map Opstarten zetten.
 
 | Bestand | Wat |

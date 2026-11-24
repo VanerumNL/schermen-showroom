@@ -6,7 +6,11 @@
   /* het workers.dev-adres blijft aan: dat staat in AbleSign en op de touchscreens */
   "workers_dev": true,
   /* de editors op het eigen adres, achter de centrale inlog van account.vanerumnederland.nl */
-  "routes": [{ "pattern": "schermen.vanerumnederland.nl", "custom_domain": true }],
+  "routes": [
+    { "pattern": "schermen.vanerumnederland.nl", "custom_domain": true },
+    /* startscherm Isselwaerde op een eigen adres (EIGEN_ADRES in src/worker.js) */
+    { "pattern": "isselwaerde.vanerumnederland.nl", "custom_domain": true }
+  ],
   /* het centrale accountsysteem is de Worker "kaartenmaker" */
   "services": [{ "binding": "ACCOUNT", "service": "kaartenmaker" }],
   "kv_namespaces": [{ "binding": "KV", "id": "05c361f4095f468bbc181136e5870919" }],

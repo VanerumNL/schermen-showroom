@@ -205,7 +205,7 @@ button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:non
   const { esc } = SS;
   const params = new URLSearchParams(location.search);
   const VOORBEELD = params.has("voorbeeld");
-  const ID = (location.pathname.match(/^\/t\/([a-z0-9-]+)/) || [])[1] || params.get("t") || "";
+  const ID = (location.pathname.match(/^\/t\/([a-z0-9-]+)/) || [])[1] || params.get("t") || ((document.querySelector('meta[name="start-id"]') || {}).content) || "";
   let cfg = null, modus = "thuis", open = null, laatsteAanraking = Date.now();
 
   const PIJL_L = '<svg viewBox="0 0 24 24" fill="none" stroke="#1e1e1e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
