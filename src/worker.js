@@ -597,7 +597,7 @@ async function api(req, env, url, ctx) {
 const GEEN_TOEGANG = `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Geen toegang · Vanerum Schermen</title></head>
 <body style="margin:0;font-family:Arial,sans-serif;background:#e9e8e4;display:flex;align-items:center;justify-content:center;min-height:100vh">
 <div style="background:#fff;border-top:6px solid #fbb900;padding:32px;max-width:400px;margin:20px"><h1 style="font-size:22px;margin:0 0 8px">Geen toegang</h1>
-<p style="color:#6b6b68;line-height:1.45">Je bent ingelogd, maar je hebt geen toegang tot de schermen. Vraag Paul om je toegang te geven.</p>
+<p style="color:#6b6b68;line-height:1.45">Je bent ingelogd, maar je hebt geen toegang tot de schermen.</p>
 <p><a href="${ACCOUNT}/" style="color:#1e1e1e;font-weight:700">Naar mijn sites</a> &nbsp; <a href="${ACCOUNT}/uitloggen" style="color:#6b6b68">Ander account</a></p></div></body></html>`;
 
 export default {
