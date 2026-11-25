@@ -19,7 +19,7 @@ centrale inlog van **account.vanerumnederland.nl**: één account voor alle Vane
 - De knop *Accounts* in de editor opent account.vanerumnederland.nl (beheer van collega's en toegang).
 - Inloggen op een touchscreen zelf (klok 3 seconden ingedrukt) staat uit (`INLOG_OP_SCHERM` in `startscherm.html`);
   tegels beheer je op afstand in de editor. De oude losse schermen-accounts worden niet meer gebruikt.
-- Techniek: `src/worker.js` vraagt via de service binding `ACCOUNT` (Worker `kaartenmaker`) aan `/api/check?site=schermen`
+- Techniek: `src/worker.js` vraagt via de service binding `ACCOUNT` (Worker `vanerum-portaal`) aan `/api/check?site=schermen`
   of de bezoeker binnen mag. De AbleSign-koppeling herkent een indeling op het oude en op het nieuwe adres.
 
 ## Koppeling met AbleSign

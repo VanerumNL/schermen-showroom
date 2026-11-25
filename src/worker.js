@@ -52,7 +52,7 @@ async function wachtwoordStatus(env) {
   return { ingesteld: gedeeld || gebruikers, gedeeld, gebruikers, bron: env.WACHTWOORD ? "secret" : (gedeeld ? "kv" : null) };
 }
 /* Centrale inlog (account.vanerumnederland.nl): op schermen.vanerumnederland.nl logt een collega één keer in voor
-   alle Vanerum-tools. Het accountsysteem is de Worker "kaartenmaker" (service binding ACCOUNT); de site-id is "schermen".
+   alle Vanerum-tools. Het accountsysteem is de Worker "vanerum-portaal" (service binding ACCOUNT); de site-id is "schermen".
    Een centrale beheerder is hier ook beheerder, anderen redacteur. */
 const CENTRAAL_HOST = "schermen.vanerumnederland.nl";
 /* adressen die meteen één startscherm (/t/) of aanraakscherm (/k/) tonen (ook bij "routes" in wrangler.jsonc zetten) */
