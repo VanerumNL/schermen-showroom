@@ -59,6 +59,16 @@ Voor een touchscreen op de beurs: een presentatie die vanzelf loopt (foto's van 
 Kies in de editor bij **Stand van het scherm** voor **Staand**. De indelingen worden dan staand (1080 × 1920).
 Geeft het apparaat nog een liggend beeld, dan draait het scherm de indeling zelf een kwartslag; staat alles op zijn kop, kies dan bij **Draairichting** de andere kant. Draait AbleSign of de tv het beeld al zelf, dan merkt het scherm dat vanzelf.
 
+## Feestdagen en verjaardagen
+
+Blok **Feestdagen** in de editor (per indeling):
+- **Feestthema volgens de kalender** (standaard aan): rond een feestdag krijgt het scherm een rustige rand (slinger bovenaan, versiering in de hoek, streepjes in feestkleuren). Nu: Sinterklaas van 12 november t/m 5 december.
+- **Feestmoment** (standaard uit): elke 10 minuten 8 seconden een feestkaart over het hele scherm.
+- **Verjaardagen**: naam + dag en maand. Op die dag gaat de verjaardag voor (slingers, ballonnen, "Fijne verjaardag, …!").
+- **Voorbeeld**: bekijk Sinterklaas of een verjaardag alvast in het voorbeeld; dit verandert niets op de tv. Op de tv kan het ook met `?feest=sinterklaas` achter het adres.
+
+Een feest toevoegen (bijv. kerst): één item in `FEESTEN` in `public/feest.js` (id, naam, `van`/`tot` als "MM-DD", kleuren, `rand` en `moment`), plus een test in `test/feest.test.js` (`node --test test/feest.test.js`). Het scherm controleert elke 10 minuten of het feest wisselt.
+
 ## Hoe het werkt
 
 | Bestand | Wat |
@@ -90,6 +100,8 @@ Het weer komt van Open-Meteo (gratis, geen sleutel nodig). Nieuws komt uit RSS-f
 npm install
 npx wrangler dev
 ```
+
+Editor lokaal openen (anders stuurt de worker door naar de centrale inlog): `npx wrangler dev --var WACHTWOORD:testtest1 --var TEST:1` en stuur de header `x-test-host: 127.0.0.1` mee.
 
 ## Startscherm (tegels voor een touchscreen in de zorg)
 
