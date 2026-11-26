@@ -784,8 +784,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     if (!s.feest || typeof s.feest !== "object") s.feest = VF.FEEST_STD();
     const fe = s.feest; if (!Array.isArray(fe.verjaardagen)) fe.verjaardagen = [];
     const b = blok(f, "Feestdagen", "#c8102e");
-    b.insertAdjacentHTML("beforeend", `<div class="hulp" style="margin-bottom:8px">Rond feestdagen krijgt het scherm vanzelf een feestelijke rand. Kalender: ${VF.FEESTEN.map(x => `${esc(x.naam)} ${dagMaand(x.van)} – ${dagMaand(x.tot)}`).join(", ")}. Is er iemand jarig, dan gaat dat die dag voor.</div>`);
-    vinkje(b, fe, "aan", "Feestthema volgens de kalender");
+    b.insertAdjacentHTML("beforeend", `<div class="hulp" style="margin-bottom:8px">Zet het feestthema aan, dan krijgt dit scherm rond feestdagen vanzelf een feestelijke rand. Kalender: ${VF.FEESTEN.map(x => `${esc(x.naam)} ${dagMaand(x.van)} – ${dagMaand(x.tot)}`).join(", ")}. Is er iemand jarig, dan gaat dat die dag voor. Met de knoppen bij Voorbeeld ziet u het hier alvast, ook als het thema uit staat.</div>`);
+    const la = vinkje(b, fe, "aan", "Feestthema volgens de kalender (ook verjaardagen)");
+    if (fe.aan !== true) la.firstChild.checked = false;
     const lm = vinkje(b, fe, "moment", "Feestmoment: elke 10 minuten 8 seconden een feestkaart");
     if (fe.moment !== true) lm.firstChild.checked = false;
 

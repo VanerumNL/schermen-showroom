@@ -62,7 +62,7 @@ Geeft het apparaat nog een liggend beeld, dan draait het scherm de indeling zelf
 ## Feestdagen en verjaardagen
 
 Blok **Feestdagen** in de editor (per indeling):
-- **Feestthema volgens de kalender** (standaard aan): rond een feestdag krijgt het scherm een rustige rand (slinger bovenaan, versiering in de hoek, streepjes in feestkleuren). Nu: Sinterklaas van 12 november t/m 5 december.
+- **Feestthema volgens de kalender** (standaard uit, per scherm aan te zetten; geldt ook voor verjaardagen): rond een feestdag krijgt het scherm een rustige rand (slinger bovenaan, versiering in de hoek, streepjes in feestkleuren). Nu: Sinterklaas van 12 november t/m 5 december.
 - **Feestmoment** (standaard uit): elke 10 minuten 8 seconden een feestkaart over het hele scherm.
 - **Verjaardagen**: naam + dag en maand. Op die dag gaat de verjaardag voor (slingers, ballonnen, "Fijne verjaardag, …!").
 - **Voorbeeld**: bekijk Sinterklaas of een verjaardag alvast in het voorbeeld; dit verandert niets op de tv. Op de tv kan het ook met `?feest=sinterklaas` achter het adres.

@@ -55,7 +55,8 @@
     moment: naam => ({ kop: `Gefeliciteerd, *${naam || ""}!*`, tekst: "Een hele fijne verjaardag!", vallen: "confetti" })
   };
 
-  const FEEST_STD = () => ({ aan: true, moment: false, verjaardagen: [] });
+  /* standaard uit: per scherm zelf aanzetten */
+  const FEEST_STD = () => ({ aan: false, moment: false, verjaardagen: [] });
 
   const mmdd = datum => String(datum.getMonth() + 1).padStart(2, "0") + "-" + String(datum.getDate()).padStart(2, "0");
   /* valt dag (MM-DD) binnen van..tot (inclusief)? werkt ook over de jaarwisseling */
@@ -69,7 +70,7 @@
       const fe = FEESTEN.find(x => x.id === forceer);
       if (fe) return { feest: fe };
     }
-    if (f.aan === false) return null;
+    if (f.aan !== true) return null;
     const dag = mmdd(datum);
     const jarig = (Array.isArray(f.verjaardagen) ? f.verjaardagen : [])
       .find(v => v && typeof v.naam === "string" && v.naam.trim() && geldigeDatum(v.datum) && v.datum === dag);
