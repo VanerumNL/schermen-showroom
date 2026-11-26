@@ -250,10 +250,29 @@ body.verberg{cursor:none}
 .melding{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-size:40px;color:var(--ink);background:var(--bg)}
 .melding img{height:60px}
 @media (prefers-reduced-motion: reduce){.wissel,.fotos img{transition:none}}
+/* feestthema: rustige rand over de indeling, plus af en toe een feestmoment */
+.feest{position:absolute;inset:0;pointer-events:none;z-index:50}
+.feest-slinger{position:absolute;left:0;top:0}
+.thema-donker .feest-slinger>path:first-child{stroke:#fff}
+.feest-hoek{position:absolute;right:8px;bottom:var(--feest-onder,4px)}
+.feest-label{position:absolute;right:160px;bottom:calc(var(--feest-onder,4px) + 10px);background:var(--geel);color:#1e1e1e;font-weight:700;font-size:28px;padding:10px 26px;border-radius:999px;box-shadow:0 2px 0 rgba(30,30,30,.12)}
+.staand .feest-label{right:auto;left:40px}
+.thema-geel .feest-label{background:#fff}
+.feest-label.inbalk{bottom:auto;right:auto;top:48px;left:50%;transform:translateX(-50%);font-size:32px}
+.tfeest .in{align-items:center;text-align:center}
+.tfeest .groot{font-weight:700}
+.tfeest .klein{font-size:clamp(28px,min(3.4cqw,6cqh),56px);color:var(--zacht);margin-top:.6em}
+.tfeest .feest-hoek{bottom:14px}
+.valt{position:absolute;top:-60px;animation:vallen 6s ease-in forwards;opacity:.95}
+@keyframes vallen{to{transform:translateY(1250px) rotate(320deg)}}
+.staand .valt{animation-name:vallenstaand}
+@keyframes vallenstaand{to{transform:translateY(2100px) rotate(320deg)}}
+@media (prefers-reduced-motion: reduce){.valt{display:none}}
 </style></head>
 <body class="verberg">
 <div id="screen"></div>
 <script src="/gedeeld.js"></script>
+<script src="/feest.js"></script>
 <script src="/vimo2d.js"></script>
 <script src="/weer.js"></script>
 <script src="/demos.js"></script>
@@ -261,6 +280,7 @@ body.verberg{cursor:none}
 (function () {
   const Q = new URLSearchParams(location.search);
   const VOORBEELD = Q.has("voorbeeld");
+  let forceerFeest = Q.get("feest") || "";   /* ?feest=sinterklaas of ?feest=verjaardag: voorbeeld van een feest */
   const ID = Q.get("id") || (location.pathname.match(/^\/s\/([a-z0-9-]+)/) || [])[1] || "";
   const scr = document.getElementById("screen");
   let ww = "";                      /* alleen in voorbeeldmodus, voor nieuws dat nog niet is opgeslagen */
@@ -619,6 +639,19 @@ body.verberg{cursor:none}
       const bin = h("div", "tinhoud tcount", o);
       bin.innerHTML = `<div class="in"><div class="chip"><i></i>${esc(chip)}</div><div class="telrij"><span class="getal${typeof getal === "string" ? " tekst" : ""}">${esc(getal)}</span>${eenheid ? `<span class="eenheid">${eenheid}</span>` : ""}</div>${k.titel ? `<p class="titel2">${n > 0 ? "tot de " : ""}${markeer(k.titel)}</p>` : ""}${k.ondertitel ? `<p class="sub">${markeer(k.ondertitel)}</p>` : ""}${k.tekst ? `<div class="extra2"><img src="/img/streepjes.png" alt="">${markeer(k.tekst)}</div>` : ""}</div>`;
     },
+    feest(o, k) {
+      const r = VF.actiefFeest(new Date(), {}, k.feest); if (!r) return;
+      const m = r.feest.moment(k.naam || r.naam);
+      o.classList.add("tfeest");
+      h("div", "tinhoud tweetje t-s", o, `<div class="in"><p class="groot">${markeer(m.kop)}</p><p class="klein">${markeer(m.tekst)}</p></div>`);
+      h("div", "feest", o, randVan(r, huidig));
+      if (r.feest.streepjes) { const u = STREEP(r.feest.streepjes); o.querySelectorAll('img[src="/img/streepjes.png"]').forEach(i => { i.src = u; }); }
+      const kl = m.vallen === "pepernoot" ? ["#b8733d", "#a0612f", "#c98a4f"] : KLEUREN;
+      for (let i = 0; i < 12; i++) {
+        const v = h("i", "valt", o), g = m.vallen === "pepernoot" ? 26 + (i % 3) * 8 : 18;
+        Object.assign(v.style, { left: (4 + i * 8 + (i % 2) * 3) + "%", width: g + "px", height: (m.vallen === "pepernoot" ? g : g * .55) + "px", background: kl[i % kl.length], borderRadius: m.vallen === "pepernoot" ? "50%" : "3px", animationDelay: ((i * 37) % 11) / 4 + "s", zIndex: 4 });
+      }
+    },
     tekst(o, k) {
       const t = (k.tekst || "").trim();
       const bin = h("div", "tinhoud tweetje " + (k.kop && k.kop.length > 50 ? "t-m" : "t-s"), o);
@@ -670,7 +703,7 @@ body.verberg{cursor:none}
     st.setProperty("--bg", th.bg); st.setProperty("--kaart", th.kaart); st.setProperty("--ink", th.ink); st.setProperty("--zacht", th.zacht); st.setProperty("--lijn", th.lijn);
     scr.style.background = th.bg;
 
-    if (s.sjabloon === "welkom") { tekenWelkom(s); tussendoor(s); return; }
+    if (s.sjabloon === "welkom") { tekenWelkom(s); tussendoor(s); feest(s); return; }
     if (s.balk && s.balk.aan) {
       const bk = h("div", "balk", scr);
       if (s.balk.logo !== false) bk.innerHTML = `<img class="logo" src="/img/logo.png" alt="Vanerum"><img class="str" src="/img/streepjes.png" alt="">`;
@@ -705,6 +738,24 @@ body.verberg{cursor:none}
       } else h("div", "wifihoek", scr, `Wifi<img src="/img/wifi-qr-klein.png" alt="Wifi: scan de QR-code om te verbinden">`);
     }
     tussendoor(s);
+    feest(s);
+  }
+
+  /* ===== feestthema ===== */
+  const STREEP = k => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 46">${k.map((c, i) => `<path d="M${i * 24 + 10} 46 L${i * 24 + 28} 0 H${i * 24 + 40} L${i * 24 + 22} 46Z" fill="${c}"/>`).join("")}</svg>`);
+  /* op een gele achtergrond wordt het geel van de versiering wit */
+  const randVan = (r, s) => { const html = r.feest.rand(staand); return s && s.thema === "geel" ? html.replace(/#fbb900/gi, "#ffffff") : html; };
+  const feestSleutel = r => r ? r.feest.id + ":" + (r.naam || "") : "";
+  function feest(s) {
+    const r = VF.actiefFeest(new Date(), s.feest, forceerFeest), sleutel = feestSleutel(r);
+    /* elke 10 minuten kijken of het feest wisselt (middernacht, einde van het seizoen) */
+    elke(() => { if (feestSleutel(VF.actiefFeest(new Date(), s.feest, forceerFeest)) !== sleutel) teken(huidig); }, 600000);
+    if (!r) return;
+    const laag = h("div", "feest", scr, randVan(r, s) + (r.feest.id === "verjaardag" ? `<div class="feest-label${!staand && s.sjabloon !== "welkom" && s.balk && s.balk.aan && !s.balk.titel ? " inbalk" : ""}">Fijne verjaardag, ${esc(r.naam)}!</div>` : ""));
+    laag.style.setProperty("--feest-onder", s.sjabloon !== "welkom" && s.band && s.band.aan ? "100px" : "4px");
+    if (r.feest.streepjes) { const u = STREEP(r.feest.streepjes); scr.querySelectorAll('img[src="/img/streepjes.png"]').forEach(i => { i.src = u; }); }
+    if (s.feest && s.feest.moment && !VOORBEELD)
+      elke(() => { if (!scr.querySelector(".tussen")) toonTussendoor({ type: "feest", feest: r.feest.id, naam: r.naam }, 8); }, 600000);
   }
 
   function tekenWelkom(s) {
@@ -766,7 +817,7 @@ body.verberg{cursor:none}
   if (VOORBEELD) {
     addEventListener("message", e => {
       if (e.origin !== location.origin || !e.data || e.data.type !== "indeling") return;
-      ww = e.data.ww || ""; teken(e.data.scherm);
+      ww = e.data.ww || ""; if ("feest" in e.data) forceerFeest = e.data.feest || ""; teken(e.data.scherm);
     });
     addEventListener("message", e => {
       if (e.origin !== location.origin || !e.data || e.data.type !== "toonTussendoor") return;

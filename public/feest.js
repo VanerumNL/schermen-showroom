@@ -7,16 +7,16 @@
 
   /* slinger met vlaggetjes over de volle breedte, twee bogen */
   function slinger(w, kleuren) {
-    const h = 54, bogen = 2, bw = w / bogen, zak = 16;
+    const h = 44, bogen = 2, bw = w / bogen, zak = 11;
     let lijn = "", vlag = "";
     for (let b = 0; b < bogen; b++) {
       const x0 = b * bw;
       lijn += `M${x0} 4 Q${x0 + bw / 2} ${4 + zak * 2} ${x0 + bw} 4 `;
-      const n = Math.round(bw / 62);
+      const n = Math.round(bw / 56);
       for (let i = 1; i < n; i++) {
         const t = i / n, x = x0 + t * bw, y = 4 + 2 * zak * 2 * t * (1 - t) - 1;
         const k = kleuren[(b * n + i) % kleuren.length];
-        vlag += `<path d="M${(x - 15).toFixed(1)} ${y.toFixed(1)}L${(x + 15).toFixed(1)} ${y.toFixed(1)}L${x.toFixed(1)} ${(y + 30).toFixed(1)}Z" fill="${k}"/>`;
+        vlag += `<path d="M${(x - 12).toFixed(1)} ${y.toFixed(1)}L${(x + 12).toFixed(1)} ${y.toFixed(1)}L${x.toFixed(1)} ${(y + 22).toFixed(1)}Z" fill="${k}"/>`;
       }
     }
     return `<svg class="feest-slinger" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${lijn}" fill="none" stroke="#1e1e1e" stroke-opacity=".35" stroke-width="2"/>${vlag}</svg>`;
@@ -26,17 +26,17 @@
     return `<circle cx="${x}" cy="${y}" r="${r}" fill="#b8733d"/><circle cx="${x - r * .3}" cy="${y - r * .25}" r="${r * .14}" fill="#8c5226"/><circle cx="${x + r * .35}" cy="${y + r * .1}" r="${r * .12}" fill="#8c5226"/><circle cx="${x - r * .05}" cy="${y + r * .4}" r="${r * .1}" fill="#8c5226"/>`;
   }
 
-  const mijterHoek = () => `<svg class="feest-hoek" viewBox="0 0 170 130" width="170" height="130" aria-hidden="true">
+  const mijterHoek = () => `<svg class="feest-hoek" viewBox="0 0 170 130" width="136" height="104" aria-hidden="true">
     <path d="M30 118 L30 58 Q30 30 62 8 Q94 30 94 58 L94 118 Z" fill="${ROOD}"/>
-    <path d="M30 104 H94 V118 H30Z M55 8 H69 V104 H55Z" fill="${GOUD}"/>
-    <path d="M44 48 H80 V60 H44Z" fill="${GOUD}"/>
+    <path d="M30 104 H94 V118 H30Z" fill="${GOUD}"/>
+    <path d="M58 40 H66 V88 H58Z M46 54 H78 V62 H46Z" fill="${GOUD}"/>
     <path d="M30 104 H94" stroke="${DONKERROOD}" stroke-width="2"/>
     ${pepernoot(118, 112, 13)}${pepernoot(146, 106, 15)}${pepernoot(132, 86, 11)}
   </svg>`;
 
   const ballonnenHoek = () => {
     const b = (x, y, k, d) => `<path d="M${x} ${y + 34} q${d} 30 ${-d} 60" fill="none" stroke="#1e1e1e" stroke-opacity=".4" stroke-width="2"/><ellipse cx="${x}" cy="${y}" rx="26" ry="32" fill="${k}"/><path d="M${x - 5} ${y + 34} h10 l-5 -6z" fill="${k}"/><ellipse cx="${x - 9}" cy="${y - 12}" rx="6" ry="9" fill="#fff" opacity=".45"/>`;
-    return `<svg class="feest-hoek" viewBox="0 0 170 150" width="170" height="150" aria-hidden="true">${b(40, 52, VANERUM[2], 8)}${b(128, 46, VANERUM[3], -8)}${b(84, 36, VANERUM[0], 6)}</svg>`;
+    return `<svg class="feest-hoek" viewBox="0 0 170 150" width="136" height="120" aria-hidden="true">${b(40, 52, VANERUM[2], 8)}${b(128, 46, VANERUM[3], -8)}${b(84, 36, VANERUM[0], 6)}</svg>`;
   };
 
   const FEESTEN = [
