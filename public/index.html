@@ -275,6 +275,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
 </div></div>
 
 <script src="/demos.js"></script>
+<script src="/feest.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id);
@@ -590,11 +591,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); opnieuw(); }
   });
 
+  let voorbeeldFeest = "";   /* alleen voor het voorbeeld; wordt niet opgeslagen */
   function stuur() {
     clearTimeout(histTimer); histTimer = setTimeout(legVast, 700); knoppenHistorie();
     clearTimeout(stuurTimer);
     document.querySelector(".voorbeeld .scherm").classList.toggle("staand", VS.isStaand(huidig));
-    stuurTimer = setTimeout(() => { if (voorbeeldKlaar && huidig) $("voorbeeld").contentWindow.postMessage({ type: "indeling", scherm: JSON.parse(JSON.stringify(huidig)), ww }, location.origin); setTimeout(plaatsGrepen, 400); }, 250);
+    stuurTimer = setTimeout(() => { if (voorbeeldKlaar && huidig) $("voorbeeld").contentWindow.postMessage({ type: "indeling", scherm: JSON.parse(JSON.stringify(huidig)), ww, feest: voorbeeldFeest }, location.origin); setTimeout(plaatsGrepen, 400); }, 250);
     status();
   }
   function status() {
@@ -717,6 +719,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     }
 
     tussenFormulier(f, s);
+    feestFormulier(f, s);
 
     const ob = document.createElement("div"); ob.className = "opslaanbalk";
     ob.innerHTML = `<button class="knop licht klein" type="button" id="terug" title="Laatste wijziging terugdraaien (Ctrl+Z)">↶ Terug</button><button class="knop licht klein" type="button" id="opnieuw" title="Opnieuw doen (Ctrl+Y)">↷</button><span class="status"></span>${isBeheerder() ? `<button class="knop gevaar klein" type="button" id="verwijder">Verwijderen</button>` : ""}<button class="knop geel" type="button" id="opslaan">Opslaan</button>`;
@@ -773,6 +776,61 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--geel);outline-of
     veld(b3, "Wat zegt Vimo? (één zin per regel)", tz, "Vimo doet steeds een andere beweging: zwaaien, wijzen, op de kubus springen, balanceren… Een lege regel betekent: even niets zeggen.");
   }
 
+
+  /* ===== Feestdagen: rustige versiering volgens de kalender, en verjaardagen ===== */
+  const MAANDEN = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+  const dagMaand = mmdd => { const [m, d] = mmdd.split("-"); return +d + " " + MAANDEN[+m - 1].slice(0, 3); };
+  function feestFormulier(f, s) {
+    if (!s.feest || typeof s.feest !== "object") s.feest = VF.FEEST_STD();
+    const fe = s.feest; if (!Array.isArray(fe.verjaardagen)) fe.verjaardagen = [];
+    const b = blok(f, "Feestdagen", "#c8102e");
+    b.insertAdjacentHTML("beforeend", `<div class="hulp" style="margin-bottom:8px">Rond feestdagen krijgt het scherm vanzelf een feestelijke rand. Kalender: ${VF.FEESTEN.map(x => `${esc(x.naam)} ${dagMaand(x.van)} – ${dagMaand(x.tot)}`).join(", ")}. Is er iemand jarig, dan gaat dat die dag voor.</div>`);
+    vinkje(b, fe, "aan", "Feestthema volgens de kalender");
+    const lm = vinkje(b, fe, "moment", "Feestmoment: elke 10 minuten 8 seconden een feestkaart");
+    if (fe.moment !== true) lm.firstChild.checked = false;
+
+    const vj = document.createElement("div"); b.appendChild(vj);
+    const tekenVj = () => {
+      vj.innerHTML = `<span class="lab" style="display:block;margin-top:12px;font-weight:700;font-size:13px">Verjaardagen</span>`;
+      fe.verjaardagen.forEach((v, i) => {
+        const r = document.createElement("div"); r.style.cssText = "display:flex;gap:8px;align-items:center;margin-top:6px"; vj.appendChild(r);
+        const naam = document.createElement("input"); naam.type = "text"; naam.maxLength = 40; naam.placeholder = "Naam"; naam.value = v.naam || ""; naam.style.flex = "1";
+        naam.setAttribute("aria-label", "Naam");
+        const [m0, d0] = (v.datum || "-").split("-");
+        const dag = document.createElement("select"); dag.setAttribute("aria-label", "Dag");
+        dag.innerHTML = `<option value="">Dag</option>` + Array.from({ length: 31 }, (_, k) => `<option value="${String(k + 1).padStart(2, "0")}">${k + 1}</option>`).join("");
+        const mnd = document.createElement("select"); mnd.setAttribute("aria-label", "Maand");
+        mnd.innerHTML = `<option value="">Maand</option>` + MAANDEN.map((x, k) => `<option value="${String(k + 1).padStart(2, "0")}">${x}</option>`).join("");
+        dag.value = d0 || ""; mnd.value = m0 || "";
+        const bij = () => { v.naam = naam.value; v.datum = mnd.value + "-" + dag.value; stuur(); };
+        naam.addEventListener("input", bij); dag.addEventListener("change", bij); mnd.addEventListener("change", bij);
+        const weg = document.createElement("button"); weg.type = "button"; weg.className = "knop licht klein"; weg.textContent = "✕"; weg.title = "Verjaardag weghalen";
+        weg.addEventListener("click", () => { fe.verjaardagen.splice(i, 1); tekenVj(); stuur(); });
+        r.append(naam, dag, mnd, weg);
+      });
+      const plus = document.createElement("button"); plus.type = "button"; plus.className = "knop klein"; plus.style.marginTop = "8px"; plus.textContent = "+ Verjaardag";
+      plus.addEventListener("click", () => { fe.verjaardagen.push({ naam: "", datum: "" }); tekenVj(); stuur(); });
+      vj.appendChild(plus);
+    };
+    tekenVj();
+
+    const vb = document.createElement("div"); vb.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px"; b.appendChild(vb);
+    vb.innerHTML = `<span class="lab" style="margin-right:4px;font-weight:700;font-size:13px">Voorbeeld</span>`;
+    const opties = [["", "Zoals vandaag"], ...VF.FEESTEN.map(x => [x.id, x.naam]), ["verjaardag", "Verjaardag"]];
+    for (const [id, naam] of opties) {
+      const k = document.createElement("button"); k.type = "button"; k.className = "knop klein" + (voorbeeldFeest === id ? "" : " licht"); k.textContent = naam;
+      k.addEventListener("click", () => { voorbeeldFeest = id; vb.querySelectorAll("button").forEach(x => x.classList.add("licht")); k.classList.remove("licht"); stuur(); });
+      vb.appendChild(k);
+    }
+    const mk = document.createElement("button"); mk.type = "button"; mk.className = "knop licht klein"; mk.textContent = "Bekijk feestmoment";
+    mk.addEventListener("click", () => {
+      const r = VF.actiefFeest(new Date(), fe, voorbeeldFeest) || { feest: VF.FEESTEN[0] };
+      const w = $("voorbeeld").contentWindow;
+      if (w && voorbeeldKlaar) w.postMessage({ type: "toonTussendoor", kaart: { type: "feest", feest: r.feest.id, naam: r.naam }, duur: 8 }, location.origin);
+    });
+    vb.appendChild(mk);
+    b.insertAdjacentHTML("beforeend", `<div class="hulp">Het voorbeeld verandert alleen hier in de editor, niet op de tv.</div>`);
+  }
 
   /* ===== Tussendoor: af en toe een volledig scherm ===== */
   function tussenFormulier(f, s) {
