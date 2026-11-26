@@ -256,7 +256,7 @@ body.verberg{cursor:none}
 .thema-donker .feest-slinger>path:first-child{stroke:#fff}
 .feest-hoek{position:absolute;right:8px;bottom:var(--feest-onder,4px)}
 .feest-label{position:absolute;right:160px;bottom:calc(var(--feest-onder,4px) + 10px);background:var(--geel);color:#1e1e1e;font-weight:700;font-size:28px;padding:10px 26px;border-radius:999px;box-shadow:0 2px 0 rgba(30,30,30,.12)}
-.staand .feest-label{right:auto;left:40px}
+.staand .feest-label{right:150px;max-width:620px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .thema-geel .feest-label{background:#fff}
 .feest-label.inbalk{bottom:auto;right:auto;top:48px;left:50%;transform:translateX(-50%);font-size:32px}
 .tfeest .in{align-items:center;text-align:center}
@@ -754,8 +754,14 @@ body.verberg{cursor:none}
     const laag = h("div", "feest", scr, randVan(r, s) + (r.feest.id === "verjaardag" ? `<div class="feest-label${!staand && s.sjabloon !== "welkom" && s.balk && s.balk.aan && !s.balk.titel ? " inbalk" : ""}">Fijne verjaardag, ${esc(r.naam)}!</div>` : ""));
     laag.style.setProperty("--feest-onder", s.sjabloon !== "welkom" && s.band && s.band.aan ? "100px" : "4px");
     if (r.feest.streepjes) { const u = STREEP(r.feest.streepjes); scr.querySelectorAll('img[src="/img/streepjes.png"]').forEach(i => { i.src = u; }); }
-    if (s.feest && s.feest.moment && !VOORBEELD)
-      elke(() => { if (!scr.querySelector(".tussen")) toonTussendoor({ type: "feest", feest: r.feest.id, naam: r.naam }, 8); }, 600000);
+    if (s.feest && s.feest.moment && !VOORBEELD) {
+      /* verschoven ten opzichte van de tussendoorkaarten; staat er net een, dan even later opnieuw proberen */
+      const toon = (poging = 0) => {
+        if (scr.querySelector(".tussen")) { if (poging < 6) later(() => toon(poging + 1), 30000); return; }
+        toonTussendoor({ type: "feest", feest: r.feest.id, naam: r.naam }, 8);
+      };
+      later(() => { toon(); elke(toon, 600000); }, 300000);
+    }
   }
 
   function tekenWelkom(s) {
